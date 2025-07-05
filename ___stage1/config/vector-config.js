@@ -8,6 +8,8 @@
  */
 
 export default {
+  // Use LocalJSON as primary since ChromaDB v3.x requires a server
+  // Set FOREST_VECTOR_PROVIDER=chroma when you have a ChromaDB server running
   provider: process.env.FOREST_VECTOR_PROVIDER || 'localjson',
   fallbackProvider: 'localjson',
   qdrant: {

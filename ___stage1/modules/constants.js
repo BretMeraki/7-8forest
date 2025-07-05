@@ -151,3 +151,32 @@ export const VERSION = {
   PRD_VERSION: '1.0',
   API_VERSION: 'v1'
 };
+
+// HTA Server Configuration
+export const HTA_SERVER = {
+  HTA_SERVER_URL: 'ws://localhost:8080/hta',
+  HTA_CONNECTION_TIMEOUT: 10000, // 10 seconds
+  HTA_REQUEST_TIMEOUT: 30000,    // 30 seconds
+  HTA_RETRY_ATTEMPTS: 3,
+  HTA_RECONNECT_DELAY: 5000      // 5 seconds
+};
+
+// Consolidated CONSTANTS object for backward compatibility
+export const CONSTANTS = {
+  ...HTA_SERVER,
+  ...HTA_CONFIG,
+  ...STRATEGY_EVOLUTION,
+  ...FILE_SYSTEM,
+  ...VALIDATION,
+  ...DEFAULTS,
+  ...SYSTEM_STATUS,
+  ...ERROR_TYPES,
+  ...LOG_LEVELS,
+  ...MEMORY_SYNC,
+  ...PROJECT_STATUS,
+  ...TASK_STATUS,
+  ...LEARNING_OUTCOMES,
+  ...PRIORITY,
+  ...TIME,
+  ...VERSION
+};

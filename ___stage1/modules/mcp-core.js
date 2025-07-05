@@ -484,6 +484,128 @@ export class McpCore {
           properties: {},
         },
       },
+      {
+        name: 'factory_reset_forest',
+        description: 'Factory reset - delete project(s) with confirmation. WARNING: This permanently deletes data.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            project_id: {
+              type: 'string',
+              description: 'Project to delete (optional - if not provided, offers to reset all projects)',
+            },
+            confirm_deletion: {
+              type: 'boolean',
+              description: 'Required confirmation flag - must be explicitly set to true to proceed',
+              default: false
+            },
+            confirmation_message: {
+              type: 'string',
+              description: 'Confirmation message from user acknowledging data will be permanently deleted'
+            }
+          },
+          required: ['confirm_deletion'],
+        },
+      },
+      {
+        name: 'start_gated_onboarding_forest',
+        description: 'Start the gated onboarding process for new project creation',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: {
+              type: 'string',
+              description: 'Optional session identifier for tracking onboarding progress'
+            }
+          }
+        },
+      },
+      {
+        name: 'submit_goal_forest',
+        description: 'Submit the goal/dream for the gated onboarding process',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: {
+              type: 'string',
+              description: 'Session identifier for tracking onboarding progress'
+            },
+            goal: {
+              type: 'string',
+              description: 'The goal or dream the user wants to achieve'
+            }
+          },
+          required: ['session_id', 'goal']
+        },
+      },
+      {
+        name: 'submit_context_forest',
+        description: 'Submit context/background information for the gated onboarding process',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: {
+              type: 'string',
+              description: 'Session identifier for tracking onboarding progress'
+            },
+            context: {
+              type: 'string',
+              description: 'Background context, current situation, constraints, or additional details'
+            }
+          },
+          required: ['session_id', 'context']
+        },
+      },
+      {
+        name: 'submit_questionnaire_forest',
+        description: 'Submit responses to the dynamic questionnaire in the gated onboarding process',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: {
+              type: 'string',
+              description: 'Session identifier for tracking onboarding progress'
+            },
+            responses: {
+              type: 'object',
+              description: 'Question-answer pairs from the dynamic questionnaire'
+            }
+          },
+          required: ['session_id', 'responses']
+        },
+      },
+      {
+        name: 'build_framework_forest',
+        description: 'Build the strategic framework and HTA tree after completing gated onboarding',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: {
+              type: 'string',
+              description: 'Session identifier for tracking onboarding progress'
+            },
+            project_name: {
+              type: 'string',
+              description: 'Name for the new project'
+            }
+          },
+          required: ['session_id', 'project_name']
+        },
+      },
+      {
+        name: 'check_onboarding_status_forest',
+        description: 'Check the current status of the gated onboarding process',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: {
+              type: 'string',
+              description: 'Session identifier for tracking onboarding progress'
+            }
+          },
+          required: ['session_id']
+        },
+      },
     ];
   }
 
@@ -502,7 +624,8 @@ export class McpCore {
       'current_status_forest',
       'generate_daily_schedule_forest',
       'sync_forest_memory_forest',
-      'ask_truthful_claude_forest'
+      'ask_truthful_claude_forest',
+      'factory_reset_forest'
     ];
     
     tools.push(
@@ -531,6 +654,7 @@ export class McpCore {
   generate_daily_schedule_forest() { return this.callHandler('generate_daily_schedule_forest', arguments); }
   sync_forest_memory_forest() { return this.callHandler('sync_forest_memory_forest', arguments); }
   ask_truthful_claude_forest() { return this.callHandler('ask_truthful_claude_forest', arguments); }
+  factory_reset_forest() { return this.callHandler('factory_reset_forest', arguments); }
   
   // ===== AMBIGUOUS DESIRES TOOLS =====
   

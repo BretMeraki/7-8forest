@@ -43,11 +43,12 @@ class ChromaDBProvider extends IVectorProvider {
         this.config = { ...this.config, ...(config || {}) };
         const ClientClass = await loadChromaClient();
         
-        // Use embedded mode if no URL specified or if server mode fails
-        const useEmbedded = !this.config.url || this.config.url.includes('embedded');
+        // Use embedded mode by default for ChromaDB v3.x
+        const useEmbedded = !this.config.url || this.config.url.includes('embedded') || this.config.url === 'embedded://localhost';
         
         if (useEmbedded) {
             // Embedded mode - ChromaDB v3.x uses default constructor for embedded
+            // For embedded mode, just create client without any configuration
             this.client = new ClientClass();
         } else {
             // Server mode

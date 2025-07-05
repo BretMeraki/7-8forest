@@ -19,6 +19,8 @@ import { MemorySync } from './modules/memory-sync.js';
 import { buildClaudeContext } from './utils/claude-context-builder.js';
 import { validateToolCall } from './utils/tool-schemas.js';
 import { AmbiguousDesiresManager } from './modules/ambiguous-desires/index.js';
+import { GatedOnboardingFlow } from './modules/gated-onboarding-flow.js';
+import { NextPipelinePresenter } from './modules/next-pipeline-presenter.js';
 
 // Replaced pino with simple stderr console logger to avoid JSON log leakage
 
@@ -89,8 +91,27 @@ class Stage1CoreServer {
     // Connect TaskStrategyCore to AmbiguousDesiresManager
     this.ambiguousDesiresManager.taskStrategyCore = this.taskStrategyCore;
 
+    // Initialize gated onboarding flow and Next + Pipeline presenter
+    this.gatedOnboarding = new GatedOnboardingFlow(
+      this.dataPersistence,
+      this.projectManagement,
+      this.htaCore,
+      this.coreIntelligence,
+      null // Will be set after vector store is initialized
+    );
+    
+    this.pipelinePresenter = new NextPipelinePresenter(
+      this.dataPersistence,
+      null, // Will be set after vector store is initialized
+      this.taskStrategyCore,
+      this.htaCore
+    );
+
     this.logger = logger;
     this.debugLogger = debugLogger;
+    
+    // Landing page tracking - ensures first interaction always shows landing page
+    this.hasShownLandingPage = false;
 
     // Use console.error to avoid stdout contamination
     console.error('[Stage1CoreServer] Initialized with consolidated modules');
@@ -127,6 +148,10 @@ class Stage1CoreServer {
           this.ambiguousDesiresManager.vectorStore = htaCore.vectorStore;
           this.ambiguousDesiresManager.adaptiveEvolution.vectorStore = htaCore.vectorStore;
           this.ambiguousDesiresManager.clarificationDialogue.vectorStore = htaCore.vectorStore;
+          
+          // Connect vector store to gated onboarding and pipeline presenter
+          this.gatedOnboarding.vectorStore = htaCore.vectorStore;
+          this.pipelinePresenter.vectorStore = htaCore.vectorStore;
         } catch (vectorError) {
           console.error('⚠️ Vector store initialization failed, continuing without vector support:', vectorError.message);
         }
@@ -165,6 +190,25 @@ class Stage1CoreServer {
     this.toolRouter = {
       handleToolCall: async (toolName, args) => {
         console.error(`[ToolRouter] Received tool call for: ${toolName}`);
+        
+        // FIRST INTERACTION: Always show landing page first, unless explicitly requesting it
+        if (!this.hasShownLandingPage && toolName !== 'get_landing_page_forest') {
+          this.hasShownLandingPage = true;
+          console.error('[ToolRouter] First interaction detected - showing landing page first');
+          const landingPageResult = await this.generateLandingPage();
+          
+          // Return landing page with a note about the original request
+          return {
+            content: [
+              ...landingPageResult.content,
+              {
+                type: 'text',
+                text: `\n\n---\n\n**Note**: You requested \`${toolName}\`. After reviewing the options above, you can try that command again or use any of the suggested actions.`
+              }
+            ]
+          };
+        }
+        
         // Validate payload against schema before dispatch
         try {
           validateToolCall(toolName, args);
@@ -257,6 +301,25 @@ class Stage1CoreServer {
               }
               result = await this.ambiguousDesiresManager.getAmbiguousDesireStatus(currentProject.project_id); break;
             }
+            case 'factory_reset_forest':
+              result = await this.handleFactoryReset(args); break;
+            case 'get_landing_page_forest':
+              result = await this.generateLandingPage(); break;
+            
+            // Gated Onboarding Flow Tools
+            case 'start_learning_journey_forest':
+              result = await this.startLearningJourney(args); break;
+            case 'continue_onboarding_forest':
+              result = await this.continueOnboarding(args); break;
+            case 'get_onboarding_status_forest':
+              result = await this.getOnboardingStatus(args); break;
+            
+            // Next + Pipeline Presentation Tools
+            case 'get_next_pipeline_forest':
+              result = await this.getNextPipeline(args); break;
+            case 'evolve_pipeline_forest':
+              result = await this.evolvePipeline(args); break;
+            
             default:
               throw new Error(`Unknown tool: ${toolName}`);
           }
@@ -537,6 +600,422 @@ class Stage1CoreServer {
     }
   }
 
+  /**
+   * generateLandingPage – Dynamically generates a landing page using Claude/LLM
+   * with a specific schema: title, motto, three core actions, and tool explanations.
+   */
+  async generateLandingPage() {
+    try {
+      // Get list of existing projects for context
+      const projectsList = await this.projectManagement.listProjects();
+      const projects = projectsList.projects || [];
+      const activeProjectId = this.projectManagement.getActiveProjectId();
+      
+      // Build context for LLM generation
+      const userContext = {
+        hasExistingProjects: projects.length > 0,
+        projectCount: projects.length,
+        hasActiveProject: !!activeProjectId,
+        projectNames: projects.map(p => p.name)
+      };
+      
+      // Build detailed project information for LLM context
+      let projectDetails = '';
+      if (userContext.hasExistingProjects) {
+        projectDetails = '\n\nEXISTING PROJECTS TO DISPLAY:\n';
+        for (let i = 0; i < projects.length; i++) {
+          const project = projects[i];
+          const isActive = project.id === activeProjectId;
+          const lastActivity = project.lastActivity ? ` (Last activity: ${new Date(project.lastActivity).toLocaleDateString()})` : ' (No recent activity)';
+          const activeStatus = isActive ? ' [CURRENTLY ACTIVE]' : '';
+          projectDetails += `${i + 1}. "${project.name}"${activeStatus}${lastActivity}\n`;
+          if (project.description) {
+            projectDetails += `   Description: ${project.description}\n`;
+          }
+        }
+        projectDetails += '\nMake sure to display ALL these projects in an organized, easy-to-read format in the "LOAD EXISTING PROJECT" section.';
+      }
+      
+      // Generate landing page using LLM with specific schema
+      const landingPagePrompt = `Generate a landing page for the Forest Suite with this exact structure:
+
+**Title**: "Codename: Forest"
+**Subtitle**: "May no dream be too out of reach, no problem too difficult to solve, and no goal unachievable"
+
+Then provide exactly three main action sections:
+
+1. **START NEW PROJECT** - Guide for creating a new project
+2. **LOAD EXISTING PROJECT** - Options for continuing previous work ${userContext.hasExistingProjects ? `(User has ${userContext.projectCount} existing projects - SHOW THEM ALL IN ORGANIZED LIST)` : '(User has no existing projects yet)'}
+3. **LEARN ABOUT FOREST** - Invitation to ask about the suite's purpose and tools
+
+For each section, provide:
+- A clear action header
+- Brief description of what this option does
+- Specific instructions or commands to use
+${userContext.hasExistingProjects ? '- For LOAD EXISTING PROJECT: Display ALL projects in a numbered, organized list with status and activity info' : ''}
+
+End with a brief explanation of how the Forest Suite tools work together to break down complex goals into manageable tasks.
+
+Use engaging, inspiring language that matches the motto. Keep it concise but motivational.${projectDetails}`;
+      
+      // Use the core intelligence module to generate the landing page
+      let generatedContent;
+      try {
+        const llmResponse = await this.coreIntelligence.generateLogicalDeductions({
+          context: `Landing page generation for Forest Suite`,
+          prompt: landingPagePrompt,
+          userState: userContext
+        });
+        
+        generatedContent = llmResponse.content || llmResponse.text || llmResponse;
+      } catch (llmError) {
+        console.error('[LandingPage] LLM generation failed, using fallback:', llmError.message);
+        generatedContent = await this.generateFallbackLandingPage(userContext);
+      }
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: generatedContent,
+          },
+        ],
+      };
+    } catch (err) {
+      console.error('[LandingPage] Generation failed:', err.message);
+      const fallbackContent = await this.generateFallbackLandingPage({ hasExistingProjects: false, projectCount: 0 });
+      return {
+        content: [
+          {
+            type: 'text',
+            text: fallbackContent,
+          },
+        ],
+      };
+    }
+  }
+  
+  /**
+   * Fallback landing page with the required schema when LLM generation fails
+   */
+  async generateFallbackLandingPage(userContext) {
+    let content = `# **Codename: Forest**\n\n*May no dream be too out of reach, no problem too difficult to solve, and no goal unachievable*\n\n---\n\n`;
+    
+    // Action 1: Start New Project
+    content += `## 🚀 **START NEW PROJECT**\n\n`;
+    content += `Transform any ambitious goal into a clear, step-by-step journey. Whether you're learning a new skill, building something amazing, or solving a complex challenge - every great achievement starts with a single project.\n\n`;
+    content += `**Ready to begin?** Use: \`create_project_forest\`\n\n`;
+    
+    // Action 2: Load Existing Project
+    content += `## 📂 **LOAD EXISTING PROJECT**\n\n`;
+    if (userContext.hasExistingProjects) {
+      content += `Welcome back! You have ${userContext.projectCount} project${userContext.projectCount > 1 ? 's' : ''} waiting for you. Every step forward brings you closer to your goals.\n\n`;
+      
+      // Get the actual projects list for the fallback
+      const projectsList = await this.projectManagement.listProjects();
+      const projects = projectsList.projects || [];
+      const activeProjectId = this.projectManagement.getActiveProjectId();
+      
+      content += `**Your Projects:**\n`;
+      for (let i = 0; i < projects.length; i++) {
+        const project = projects[i];
+        const isActive = project.id === activeProjectId;
+        const activeMarker = isActive ? ' ✅ **(CURRENTLY ACTIVE)**' : '';
+        const lastActivity = project.lastActivity ? ` - Last activity: ${new Date(project.lastActivity).toLocaleDateString()}` : ' - No recent activity';
+        content += `\n**${i + 1}. ${project.name}**${activeMarker}\n`;
+        if (project.description) {
+          content += `   📝 *${project.description}*\n`;
+        }
+        content += `   📅 ${lastActivity}\n`;
+      }
+      
+      content += `\n**Continue your journey:**\n`;
+      content += `• \`switch_project_forest\` + project name - Activate a specific project\n`;
+      content += `• \`current_status_forest\` - Check your current progress\n`;
+      content += `• \`get_next_task_forest\` - Get next task for active project\n\n`;
+    } else {
+      content += `No existing projects yet - but that's about to change! Your first project will be the foundation for achieving something extraordinary.\n\n`;
+      content += `**Once you have projects:** Use \`list_projects_forest\` and \`switch_project_forest\`\n\n`;
+    }
+    
+    // Action 3: Learn About Forest
+    content += `## 🌲 **LEARN ABOUT FOREST**\n\n`;
+    content += `New to the Forest Suite? Curious about how it works? I'm here to guide you through everything - from the philosophy behind goal achievement to the practical tools that make it happen.\n\n`;
+    content += `**Ask me anything:**\n`;
+    content += `• "What does the Forest Suite do?"\n`;
+    content += `• "How do the tools work together?"\n`;
+    content += `• "What is Hierarchical Task Analysis?"\n`;
+    content += `• "How can this help me achieve my goals?"\n\n`;
+    
+    // How it works section
+    content += `---\n\n**How Forest Works:**\n\n`;
+    content += `The Forest Suite uses **Hierarchical Task Analysis (HTA)** to break down any complex goal into manageable, actionable tasks. Think of it as a GPS for your ambitions - it takes you from "I want to achieve X" to "Here's exactly what to do next."\n\n`;
+    content += `🎯 **Goal Clarity** → 🌳 **Task Breakdown** → 📋 **Next Actions** → 🏆 **Achievement**\n\n`;
+    content += `Every tool in the suite works together to keep you moving forward, one meaningful step at a time.`;
+    
+    return content;
+  }
+
+  /**
+   * GATED ONBOARDING FLOW METHODS
+   */
+
+  async startLearningJourney(args) {
+    try {
+      const { goal, user_context = {} } = args;
+      
+      if (!goal) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**Goal Required** ❌\n\nPlease provide a learning goal to start your journey.\n\nExample: `start_learning_journey_forest` with goal "Learn React development"'
+          }]
+        };
+      }
+
+      const result = await this.gatedOnboarding.startNewProject(goal, user_context);
+      
+      if (!result.success) {
+        return {
+          content: [{
+            type: 'text',
+            text: `**Onboarding Issue** ⚠️\n\n${result.message}\n\n**Suggestions**:\n${(result.suggestions || []).map(s => `• ${s}`).join('\n')}`
+          }]
+        };
+      }
+
+      return {
+        content: [{
+          type: 'text',
+          text: `**🎯 Learning Journey Started!**\n\n${result.message}\n\n**Project ID**: ${result.projectId}\n**Goal**: ${goal}\n\n**Next Step**: ${result.next_action?.description || 'Continue with context gathering'}\n\nUse \`continue_onboarding_forest\` to proceed through the guided setup process.`
+        }],
+        success: true,
+        project_id: result.projectId,
+        onboarding_stage: result.stage
+      };
+
+    } catch (error) {
+      console.error('Stage1CoreServer.startLearningJourney failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**Learning Journey Failed** ❌\n\nError: ${error.message}\n\nPlease try again with a clear learning goal.`
+        }],
+        error: error.message
+      };
+    }
+  }
+
+  async continueOnboarding(args) {
+    try {
+      const activeProject = await this.projectManagement.getActiveProject();
+      if (!activeProject || !activeProject.project_id) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**No Active Project** ❌\n\nStart a learning journey first with \`start_learning_journey_forest\`'
+          }]
+        };
+      }
+
+      const projectId = activeProject.project_id;
+      const { stage, input_data = {} } = args;
+
+      const result = await this.gatedOnboarding.continueOnboarding(projectId, stage, input_data);
+      
+      let responseText = `**🚀 Onboarding Progress**\n\n${result.message}\n\n`;
+      
+      if (result.gate_status === 'passed') {
+        responseText += `✅ **${stage}** stage completed!\n\n`;
+      } else if (result.gate_status === 'blocked') {
+        responseText += `⛔ **${stage}** stage blocked - action required\n\n`;
+      } else if (result.gate_status === 'in_progress') {
+        responseText += `⏳ **${stage}** stage in progress\n\n`;
+      }
+
+      if (result.next_action) {
+        responseText += `**Next Action**: ${result.next_action.description}\n`;
+        responseText += `**Command**: ${result.next_action.command}\n\n`;
+      }
+
+      if (result.onboarding_complete) {
+        responseText += `🎉 **Onboarding Complete!** Your personalized learning system is ready.\n\nUse \`get_next_pipeline_forest\` to see your learning pipeline.`;
+      }
+
+      return {
+        content: [{ type: 'text', text: responseText }],
+        success: result.success,
+        project_id: projectId,
+        onboarding_stage: result.stage,
+        gate_status: result.gate_status
+      };
+
+    } catch (error) {
+      console.error('Stage1CoreServer.continueOnboarding failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**Onboarding Error** ❌\n\nError: ${error.message}\n\nUse \`get_onboarding_status_forest\` to check current status.`
+        }],
+        error: error.message
+      };
+    }
+  }
+
+  async getOnboardingStatus(args) {
+    try {
+      const activeProject = await this.projectManagement.getActiveProject();
+      if (!activeProject || !activeProject.project_id) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**No Active Project** ❌\n\nStart a learning journey first with \`start_learning_journey_forest\`'
+          }]
+        };
+      }
+
+      const projectId = activeProject.project_id;
+      const result = await this.gatedOnboarding.getOnboardingStatus(projectId);
+      
+      if (!result.success) {
+        return {
+          content: [{
+            type: 'text',
+            text: `**No Onboarding Found** 📭\n\nNo onboarding process found for this project.\n\nStart with \`start_learning_journey_forest\``
+          }]
+        };
+      }
+
+      let statusText = `**📊 Onboarding Status**\n\n`;
+      statusText += `**Project**: ${projectId}\n`;
+      statusText += `**Current Stage**: ${result.onboarding_status.current_stage}\n`;
+      statusText += `**Progress**: ${result.onboarding_status.progress}%\n\n`;
+      
+      statusText += `**Gates Progress**:\n`;
+      result.gates_progress.forEach(gate => {
+        statusText += `${gate.status} ${gate.name}\n`;
+      });
+      
+      statusText += `\n**Next Action**: ${result.next_action.description}\n`;
+      statusText += `**Command**: ${result.next_action.command}`;
+
+      return {
+        content: [{ type: 'text', text: statusText }],
+        success: true,
+        project_id: projectId,
+        onboarding_status: result.onboarding_status
+      };
+
+    } catch (error) {
+      console.error('Stage1CoreServer.getOnboardingStatus failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**Status Check Failed** ❌\n\nError: ${error.message}`
+        }],
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * NEXT + PIPELINE PRESENTATION METHODS
+   */
+
+  async getNextPipeline(args) {
+    try {
+      const activeProject = await this.projectManagement.getActiveProject();
+      if (!activeProject || !activeProject.project_id) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**No Active Project** ❌\n\nCreate or switch to a project first to see your learning pipeline.'
+          }]
+        };
+      }
+
+      const projectId = activeProject.project_id;
+      const userContext = {
+        energyLevel: args.energy_level || 3,
+        timeAvailable: args.time_available || '30 minutes',
+        ...args.context
+      };
+
+      const result = await this.pipelinePresenter.generateNextPipeline(projectId, userContext);
+      
+      return {
+        content: result.content,
+        success: true,
+        project_id: projectId,
+        pipeline_info: {
+          total_tasks: result.total_pipeline_tasks,
+          presentation_type: result.presentation_type
+        }
+      };
+
+    } catch (error) {
+      console.error('Stage1CoreServer.getNextPipeline failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**Pipeline Generation Failed** ❌\n\nError: ${error.message}\n\nTry using \`get_next_task_forest\` for a single task recommendation.`
+        }],
+        error: error.message
+      };
+    }
+  }
+
+  async evolvePipeline(args) {
+    try {
+      const activeProject = await this.projectManagement.getActiveProject();
+      if (!activeProject || !activeProject.project_id) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**No Active Project** ❌\n\nCreate or switch to a project first to evolve your pipeline.'
+          }]
+        };
+      }
+
+      const projectId = activeProject.project_id;
+      
+      // Trigger strategy evolution first
+      const evolutionResult = await this.taskStrategyCore.evolveStrategy({
+        project_id: projectId,
+        evolution_triggers: args.triggers || {},
+        context: args.context || {}
+      });
+
+      // Generate fresh pipeline with evolved strategy
+      const pipelineResult = await this.pipelinePresenter.generateNextPipeline(projectId, {
+        energyLevel: args.energy_level || 3,
+        timeAvailable: args.time_available || '30 minutes',
+        ...args.context
+      });
+
+      return {
+        content: [{
+          type: 'text',
+          text: `**🔄 Pipeline Evolved!**\n\nYour learning pipeline has been updated based on your progress and changing patterns.\n\n**Evolution Summary**: ${evolutionResult.summary || 'Strategy adapted to current context'}\n\n**Fresh Pipeline Generated**: ${pipelineResult.total_pipeline_tasks || 0} tasks ready\n\n---\n\n${pipelineResult.content[0]?.text || 'Pipeline updated successfully'}`
+        }],
+        success: true,
+        project_id: projectId,
+        evolution_result: evolutionResult,
+        fresh_pipeline: pipelineResult
+      };
+
+    } catch (error) {
+      console.error('Stage1CoreServer.evolvePipeline failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**Pipeline Evolution Failed** ❌\n\nError: ${error.message}\n\nYour existing pipeline remains available.`
+        }],
+        error: error.message
+      };
+    }
+  }
+
   getServer() {
     return this.server;
   }
@@ -546,6 +1025,135 @@ class Stage1CoreServer {
       name: 'forest-mcp-server',
       version: '1.0.0'
     };
+  }
+
+  /**
+   * Handle factory reset - delete project(s) with confirmation
+   */
+  async handleFactoryReset(args) {
+    try {
+      const { project_id, confirm_deletion, confirmation_message } = args;
+      
+      // Safety check - require explicit confirmation
+      if (!confirm_deletion) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**⚠️ Factory Reset Cancelled**\n\nFor safety, factory reset requires explicit confirmation.\n\n' +
+                  'To proceed, you must set `confirm_deletion: true` and provide a confirmation message.\n\n' +
+                  '**WARNING**: This will permanently delete project data that cannot be recovered.'
+          }]
+        };
+      }
+      
+      if (!confirmation_message || confirmation_message.trim().length < 10) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**⚠️ Confirmation Required**\n\nPlease provide a meaningful confirmation message (at least 10 characters) ' +
+                  'acknowledging that you understand this will permanently delete data.'
+          }]
+        };
+      }
+      
+      let resetResult;
+      
+      if (project_id) {
+        // Single project reset
+        const projectExists = await this.dataPersistence.projectExists(project_id);
+        if (!projectExists) {
+          return {
+            content: [{
+              type: 'text',
+              text: `**❌ Project Not Found**\n\nProject '${project_id}' does not exist.`
+            }]
+          };
+        }
+        
+        // Delete the project
+        await this.dataPersistence.deleteProject(project_id);
+        
+        // Clear active project if it was the deleted one
+        const activeProject = await this.projectManagement.getActiveProject();
+        if (activeProject.project_id === project_id) {
+          // Clear active project by updating global config
+          const globalData = (await this.dataPersistence.loadGlobalData('config.json')) || { projects: [] };
+          globalData.activeProject = null;
+          await this.dataPersistence.saveGlobalData('config.json', globalData);
+          this.projectManagement.activeProjectId = null;
+        }
+        
+        resetResult = {
+          type: 'single_project',
+          projectId: project_id,
+          message: `Project '${project_id}' has been permanently deleted.`,
+          timestamp: new Date().toISOString()
+        };
+        
+      } else {
+        // All projects reset
+        const allProjects = await this.projectManagement.listProjects();
+        const deletedProjects = [];
+        const errors = [];
+        
+        for (const project of allProjects.projects) {
+          try {
+            await this.dataPersistence.deleteProject(project.id);
+            deletedProjects.push(project.id);
+          } catch (error) {
+            errors.push({
+              projectId: project.id,
+              error: error.message
+            });
+          }
+        }
+        
+        // Clear active project by updating global config
+        const globalData = (await this.dataPersistence.loadGlobalData('config.json')) || { projects: [] };
+        globalData.activeProject = null;
+        globalData.projects = []; // Clear project list too since all are deleted
+        await this.dataPersistence.saveGlobalData('config.json', globalData);
+        this.projectManagement.activeProjectId = null;
+        
+        resetResult = {
+          type: 'all_projects',
+          deletedProjects: deletedProjects,
+          errors: errors,
+          message: `Factory reset completed. ${deletedProjects.length} projects deleted${errors.length > 0 ? ` with ${errors.length} errors` : ''}.`,
+          timestamp: new Date().toISOString()
+        };
+      }
+      
+      // Clear caches after deletion
+      this.dataPersistence.clearCache();
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `**🔄 Factory Reset Complete**\n\n` +
+                `**Type**: ${resetResult.type === 'single_project' ? 'Single Project' : 'All Projects'}\n` +
+                `**Result**: ${resetResult.message}\n` +
+                `**Timestamp**: ${resetResult.timestamp}\n\n` +
+                `**Confirmation**: ${confirmation_message}\n\n` +
+                (resetResult.errors && resetResult.errors.length > 0 ? 
+                  `**Errors**: ${resetResult.errors.map(e => `${e.projectId}: ${e.error}`).join(', ')}\n\n` : '') +
+                '**Next Steps**: Create a new project to continue using Forest.'
+        }],
+        success: true,
+        resetResult: resetResult
+      };
+      
+    } catch (error) {
+      console.error('Stage1CoreServer.handleFactoryReset failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**❌ Factory Reset Failed**\n\nError: ${error.message}\n\nPlease try again or contact support if the issue persists.`
+        }],
+        success: false,
+        error: error.message
+      };
+    }
   }
 
   async cleanup() {

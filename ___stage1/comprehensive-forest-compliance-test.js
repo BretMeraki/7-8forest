@@ -435,11 +435,230 @@ class ComprehensiveForestComplianceTest {
     }
 
     // ========================================
+    // SUPER INTELLIGENT SCHEMA-DRIVEN TESTS
+    // ========================================
+    
+    async testSuperIntelligentSchemaCompliance() {
+        this.log('🧠 SECTION 5: SUPER INTELLIGENT SCHEMA-DRIVEN TASK GENERATION', 'SECTION');
+        
+        await this.runTest(
+            'PURE_SCHEMA_DRIVEN_HTA_ENGINE',
+            'Verify Pure Schema-Driven HTA System is present and functional',
+            async () => {
+                const htaCore = this.system.htaCore;
+                
+                // Check if Enhanced HTA Core includes schema engine
+                if (!htaCore.schemaEngine && !htaCore.generateHTATree) {
+                    return 'Pure Schema-Driven HTA Engine missing';
+                }
+                
+                // Check for schema-driven methods
+                const schemaEngine = htaCore.schemaEngine || htaCore;
+                const schemaMethods = [
+                    'generateHTATree',
+                    'generateTaskDecomposition', 
+                    'generateMicroParticles',
+                    'generateNanoActions',
+                    'generateContextAdaptivePrimitives'
+                ];
+                
+                for (const method of schemaMethods) {
+                    if (typeof schemaEngine[method] !== 'function') {
+                        return `Schema method missing: ${method}`;
+                    }
+                }
+                
+                return true;
+            }
+        );
+        
+        await this.runTest(
+            'SIX_LEVEL_HIERARCHICAL_DECOMPOSITION_COMPLETE',
+            'Verify complete 6-level hierarchical decomposition capability',
+            async () => {
+                const htaCore = this.system.htaCore;
+                const schemaEngine = htaCore.schemaEngine || htaCore;
+                
+                // Test the 6 levels:
+                // Level 1: Goal Context → Level 2: Strategic Branches → Level 3: Task Decomposition
+                // Level 4: Micro-Particles → Level 5: Nano-Actions → Level 6: Context-Adaptive Primitives
+                const levelMethods = [
+                    'generateHTATree',           // Levels 1-2
+                    'generateTaskDecomposition', // Level 3
+                    'generateMicroParticles',    // Level 4
+                    'generateNanoActions',       // Level 5
+                    'generateContextAdaptivePrimitives' // Level 6
+                ];
+                
+                for (const method of levelMethods) {
+                    if (typeof schemaEngine[method] !== 'function') {
+                        return `6-level decomposition incomplete: ${method} missing`;
+                    }
+                }
+                
+                return true;
+            }
+        );
+        
+        await this.runTest(
+            'DOMAIN_AGNOSTIC_INTELLIGENCE',
+            'Verify domain-agnostic, schema-driven content generation',
+            async () => {
+                const htaCore = this.system.htaCore;
+                const schemaEngine = htaCore.schemaEngine || htaCore;
+                
+                // Check for universal prompt building and schema validation
+                const universalMethods = [
+                    'buildUniversalPrompt',
+                    'generateLevelContent',
+                    'validateAndFormatResponse'
+                ];
+                
+                let foundUniversalMethods = 0;
+                for (const method of universalMethods) {
+                    if (typeof schemaEngine[method] === 'function') {
+                        foundUniversalMethods++;
+                    }
+                }
+                
+                if (foundUniversalMethods === 0) {
+                    return 'No domain-agnostic intelligence methods found';
+                }
+                
+                return true;
+            }
+        );
+        
+        await this.runTest(
+            'CONTEXT_LEARNING_CAPABILITIES',
+            'Verify real-time context learning and adaptation',
+            async () => {
+                const htaCore = this.system.htaCore;
+                const schemaEngine = htaCore.schemaEngine || htaCore;
+                
+                // Check for context learning methods
+                const contextMethods = [
+                    'learnFromUserInteraction',
+                    'refineContextBasedOnLearning',
+                    'evolveTreeStructure'
+                ];
+                
+                let foundContextMethods = 0;
+                for (const method of contextMethods) {
+                    if (typeof schemaEngine[method] === 'function' || 
+                        typeof htaCore[method] === 'function') {
+                        foundContextMethods++;
+                    }
+                }
+                
+                if (foundContextMethods === 0) {
+                    return 'Context learning capabilities missing';
+                }
+                
+                return true;
+            }
+        );
+        
+        await this.runTest(
+            'SCHEMA_DRIVEN_BRANCH_GENERATOR',
+            'Verify Schema-Driven Branch Generator functionality',
+            async () => {
+                // Check if schema-driven branch generator exists
+                const htaCore = this.system.htaCore;
+                
+                // Look for schema-driven branch generation capability
+                const hasSchemaBranchGen = htaCore.generateAdaptiveBranches ||
+                                        htaCore.schemaBranchGenerator ||
+                                        htaCore.deriveStrategicBranches;
+                
+                if (!hasSchemaBranchGen) {
+                    return 'Schema-driven branch generation missing';
+                }
+                
+                return true;
+            }
+        );
+        
+        await this.runTest(
+            'GRANULAR_DECOMPOSER_SYSTEM',
+            'Verify Schema-Driven Granular Decomposer functionality',
+            async () => {
+                const htaCore = this.system.htaCore;
+                const schemaEngine = htaCore.schemaEngine || htaCore;
+                
+                // Check for granular decomposition capabilities
+                const granularMethods = [
+                    'decomposeTask',
+                    'generateMicroTaskDecomposition',
+                    'generateMicroParticles'
+                ];
+                
+                let foundGranularMethods = 0;
+                for (const method of granularMethods) {
+                    if (typeof schemaEngine[method] === 'function' ||
+                        typeof htaCore[method] === 'function') {
+                        foundGranularMethods++;
+                    }
+                }
+                
+                if (foundGranularMethods === 0) {
+                    return 'Schema-driven granular decomposition missing';
+                }
+                
+                return true;
+            }
+        );
+        
+        await this.runTest(
+            'GOAL_ACHIEVEMENT_CONTEXT_ENGINE',
+            'Verify Goal Achievement Context Engine integration',
+            async () => {
+                const htaCore = this.system.htaCore;
+                
+                // Check for goal achievement context capabilities
+                const hasGoalContext = htaCore.goalAchievementContext ||
+                                     htaCore.buildGoalContext ||
+                                     htaCore.assessGoalComplexity;
+                
+                if (!hasGoalContext) {
+                    return 'Goal Achievement Context Engine missing';
+                }
+                
+                return true;
+            }
+        );
+        
+        await this.runTest(
+            'ENHANCED_HTA_CORE_INTEGRATION',
+            'Verify Enhanced HTA Core properly integrates schema intelligence',
+            async () => {
+                const htaCore = this.system.htaCore;
+                
+                // Check if Enhanced HTA Core extends base HTA Core
+                const enhancedMethods = [
+                    'buildHTATree',
+                    'generateTaskDecomposition',
+                    'learnFromUserInteraction',
+                    'assessExplorationRelevance'
+                ];
+                
+                for (const method of enhancedMethods) {
+                    if (typeof htaCore[method] !== 'function') {
+                        return `Enhanced HTA method missing: ${method}`;
+                    }
+                }
+                
+                return true;
+            }
+        );
+    }
+    
+    // ========================================
     // ADVANCED FEATURES COMPLIANCE TESTS
     // ========================================
     
     async testAdvancedFeaturesCompliance() {
-        this.log('🔬 SECTION 5: ADVANCED FEATURES COMPLIANCE', 'SECTION');
+        this.log('🔬 SECTION 6: ADVANCED FEATURES COMPLIANCE', 'SECTION');
         
         await this.runTest(
             'AMBIGUOUS_DESIRES_ARCHITECTURE',
@@ -706,6 +925,7 @@ class ComprehensiveForestComplianceTest {
             await this.testCoreArchitectureCompliance();
             await this.testKeyFeaturesCompliance();
             await this.testAllToolsCompliance();
+            await this.testSuperIntelligentSchemaCompliance();
             await this.testAdvancedFeaturesCompliance();
             await this.testProductionDeploymentCompliance();
             await this.testPerformanceReliability();

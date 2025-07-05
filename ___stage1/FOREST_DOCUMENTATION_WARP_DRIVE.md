@@ -142,7 +142,7 @@ forest-server/___stage1/
 
 1. **Start the Forest Server**
    ```bash
-   cd 7-3forest-main/___stage1
+   cd 7-5forest/___stage1
    node core-server.js
    ```
 

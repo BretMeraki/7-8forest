@@ -166,6 +166,13 @@ export const LOGGING_CONFIG = {
   DEBUG_ENABLED: process.env.NODE_ENV !== 'production',
 };
 
+export const TASK_STRATEGY_CONSTANTS = {
+  STAGNATION_THRESHOLD: 100,
+  EFFICIENCY_THRESHOLD: 200,
+  DIFFICULTY_ADJUSTMENT_FACTOR: 0.7,
+  STRATEGY_IMPROVEMENT_FACTOR: 0.6,
+};
+
 // ===== MEMORY SYNC CLASS =====
 
 export class MemorySync {

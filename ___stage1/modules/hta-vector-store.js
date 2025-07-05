@@ -10,6 +10,7 @@ import os from 'os';
 import * as vectorConfigModule from '../config/vector-config.js';
 import IVectorProvider from './vector-providers/IVectorProvider.js';
 import QdrantProvider from './vector-providers/QdrantProvider.js';
+import ChromaDBProvider from './vector-providers/ChromaDBProvider.js';
 import LocalJSONProvider from './vector-providers/LocalJSONProvider.js';
 import { enrichHTA, buildPrompt } from '../utils/hta-graph-enricher.js';
 import embeddingService from '../utils/embedding-service.js';
@@ -205,14 +206,27 @@ class VectorStore {
 }
 
 function getProviderInstance(config) {
+  // Try to use the configured primary provider
+  if (config.provider === 'chroma') {
+    try {
+      console.error('[HTA-Vector] Initializing ChromaDB as primary provider');
+      return new ChromaDBProvider(config.chroma);
+    } catch (e) {
+      console.error('[HTA-Vector] ChromaDBProvider init failed:', e && e.message ? e.message : e);
+    }
+  }
+  
   if (config.provider === 'qdrant') {
     try {
+      console.error('[HTA-Vector] Initializing Qdrant as primary provider');
       return new QdrantProvider(config.qdrant);
     } catch (e) {
       console.error('[HTA-Vector] QdrantProvider init failed:', e && e.message ? e.message : e);
     }
   }
-  // fallback
+  
+  // Fallback to LocalJSON provider
+  console.error('[HTA-Vector] Using LocalJSON fallback provider');
   return new LocalJSONProvider(config.localjson);
 }
 

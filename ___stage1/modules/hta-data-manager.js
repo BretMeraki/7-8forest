@@ -3,7 +3,7 @@
  * Split from hta-core.js for better modularity
  */
 
-import { FILE_NAMES } from './constants.js';
+import { FILE_SYSTEM } from './constants.js';
 
 export class HTADataManager {
   constructor(dataPersistence, projectManagement, vectorStore) {
@@ -18,7 +18,7 @@ export class HTADataManager {
       const canonicalPath = pathName || (config && config.activePath) || 'general';
       
       // Try to load existing HTA data
-      const htaData = await this.dataPersistence.loadPathData(projectId, canonicalPath, FILE_NAMES.HTA);
+      const htaData = await this.dataPersistence.loadPathData(projectId, canonicalPath, FILE_SYSTEM.HTA_FILENAME);
       
       if (htaData && htaData.version && htaData.strategic_branches) {
         console.log(`✅ Loaded existing HTA data for ${projectId}/${canonicalPath}`);
@@ -49,7 +49,7 @@ export class HTADataManager {
       }
       
       // Save to data persistence
-      await this.dataPersistence.savePathData(projectId, canonicalPath, FILE_NAMES.HTA, htaData);
+      await this.dataPersistence.savePathData(projectId, canonicalPath, FILE_SYSTEM.HTA_FILENAME, htaData);
       
       // Save to vector store if available
       await this.saveToVectorStore(projectId, canonicalPath, htaData);
@@ -110,7 +110,7 @@ export class HTADataManager {
     const config = await this.dataPersistence.loadProjectData(projectId, 'config.json');
     const canonicalPath = pathName || (config && config.activePath) || 'general';
     try {
-      return await this.dataPersistence.loadPathData(projectId, canonicalPath, FILE_NAMES.HTA);
+      return await this.dataPersistence.loadPathData(projectId, canonicalPath, FILE_SYSTEM.HTA_FILENAME);
     } catch (error) {
       return null;
     }
