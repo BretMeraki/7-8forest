@@ -1,11 +1,34 @@
 ## 🏆 Recent Accomplishments
 
+### Revolutionary Gated Onboarding System
+
+- **6-Stage Gated Flow**: Implemented comprehensive onboarding with goal capture → context gathering → dynamic questionnaire → complexity analysis → HTA generation → strategic framework building.
+- **LLM-Driven Intelligence**: Each stage uses advanced AI to validate completeness and guide users through personalized setup.
+- **Intelligent Questionnaire**: Dynamic, context-aware questions that adapt based on goal analysis and user responses.
+- **Quality Gates**: Each stage has validation gates that prevent progression until requirements are met, ensuring high-quality learning plans.
+
+### Next + Pipeline Task Presentation
+
+- **Hybrid Design**: Revolutionary task presentation that combines focused guidance with contextual awareness:
+  - **PRIMARY**: One main "Next Task" prominently displayed (prevents analysis paralysis)
+  - **SECONDARY**: "Coming Up" section showing 2-3 upcoming dependency-ordered tasks (provides context)
+  - **TERTIARY**: "Available Now" section with 1-2 alternative tasks for different energy levels (offers flexibility)
+- **Evolution Integration**: Background evolution system keeps pipeline fresh based on user progress and learning patterns.
+- **Goal-Focused Intelligence**: Leverages existing vector intelligence for optimal task selection and progression.
+
 ### ChromaDB Vector Storage Configuration
 
 - **Implementation**: Integrated ChromaDB as the primary vector storage provider, supporting both embedded and server modes for production-grade performance and reliability.
 - **Project Data Isolation**: Ensured 100% project isolation using namespace prefixing in vector storage and dedicated directories.
 - **Fallback Mechanisms**: Implemented automatic fallback to LocalJSON vector storage if ChromaDB becomes unavailable.
 - **Dynamic Landing Page**: Created an intelligent, LLM-generated landing page that adapts based on user state and existing projects.
+
+### Enhanced User Experience
+
+- **Seamless Onboarding**: Users are guided through a sophisticated setup process that ensures optimal learning plan generation.
+- **Smart Task Presentation**: The Next + Pipeline design provides the perfect balance of focus and flexibility.
+- **Adaptive Learning**: System continuously evolves based on user behavior and progress patterns.
+- **Zero Blank Trees**: Gated onboarding prevents incomplete or generic learning plans.
 
 ### Usage, Testing, and Troubleshooting
 - **Configuration Guide**: Updated vector configuration settings in `config/vector-config.js` to default to ChromaDB.
@@ -54,13 +77,17 @@ Forest is a **super-intelligent learning and project management system** that le
 - Not knowing what to work on next
 - Rigid learning paths that don't adapt to context or constraints
 - Lack of extreme granularity for critical learning scenarios
+- Starting with insufficient context leading to poor learning plans
+- Analysis paralysis when faced with too many task options
 
 **Forest's Solution:**
+- **Gated Onboarding**: Ensures comprehensive context before generating learning plans
 - Analyzes goal complexity like a human strategist with 6-level hierarchical decomposition
 - Creates domain-agnostic, schema-driven learning paths using pure LLM intelligence
 - Adapts in real-time based on your actual progress, context, and constraints
 - Provides atomic, foolproof steps for any learning scenario
-- Always knows exactly what you should work on next with context-aware precision
+- **Next + Pipeline**: Always shows exactly what to work on next with contextual pipeline
+- **Quality Gates**: Validates completeness at each stage for optimal outcomes
 
 ### 🎯 Core Value Proposition
 
@@ -82,7 +109,19 @@ Forest transforms any learning goal into an intelligent, adaptive journey that e
 ### Architecture Overview
 
 ```
-🌲 Forest System Architecture (Enhanced)
+🌲 Forest System Architecture (Enhanced with Gated Onboarding & Pipeline)
+├── 🎯 Gated Onboarding System (6-Stage Quality Gates)
+│   ├── Goal/Dream Capture (LLM Validation)
+│   ├── Context Grabber (Completeness Analysis)
+│   ├── Dynamic Questionnaire (Adaptive Intelligence)
+│   ├── Complexity Analysis (HTA Depth Optimization)
+│   ├── Tree Generation (Schema-Driven)
+│   └── Strategic Framework (Evolution Integration)
+├── 📋 Next + Pipeline Presenter (Hybrid Task Display)
+│   ├── Primary Task Selection (Focus Optimization)
+│   ├── Coming Up Pipeline (Context & Progression)
+│   ├── Available Alternatives (Flexibility & Energy Matching)
+│   └── Evolution Integration (Fresh Recommendations)
 ├── 🧠 HTA Intelligence Core (6-Level Schema-Driven Decomposition)
 │   ├── Pure Schema Engine (Domain-Agnostic LLM Intelligence)
 │   ├── Context Mining System (Real-Time User Pattern Learning)
@@ -98,14 +137,20 @@ Forest transforms any learning goal into an intelligent, adaptive journey that e
 
 ```
 forest-server/___stage1/
-├── core-server.js           # Main server and MCP interface
+├── core-server.js           # Main server and MCP interface (Enhanced with New Tools)
 ├── core-handlers.js         # Tool request handlers
 ├── core-initialization.js   # System initialization
 ├── modules/
+│   ├── gated-onboarding-flow.js     # 6-Stage Gated Onboarding System ✨ NEW
+│   ├── next-pipeline-presenter.js   # Next + Pipeline Task Presentation ✨ NEW
+│   ├── intelligent-onboarding-system.js # LLM-Driven Onboarding Intelligence ✨ NEW
+│   ├── forest-learning-orchestrator.js  # Complete Learning Journey Orchestration
 │   ├── hta-core.js              # HTA Intelligence & Tree Generation
 │   ├── enhanced-hta-core.js     # Enhanced HTA with Context Learning
 │   ├── pure-schema-driven-hta.js # Pure Schema-Driven HTA Engine
 │   ├── task-strategy-core.js    # Strategy Evolution & Adaptation
+│   ├── goal-focused-task-selector.js # Pipeline Task Selection Intelligence
+│   ├── task-formatter.js        # Next + Pipeline Formatting ✨ ENHANCED
 │   ├── core-intelligence.js     # AI Reasoning & Decision Making
 │   ├── mcp-core.js              # Claude Integration & Communication
 │   ├── data-persistence.js      # Data Storage & Retrieval
@@ -122,6 +167,22 @@ forest-server/___stage1/
 ---
 
 ## 🚀 Key Features
+
+### 🎯 Gated Onboarding System (Revolutionary)
+- **6-Stage Quality Gates**: Goal capture → Context gathering → Dynamic questionnaire → Complexity analysis → HTA generation → Strategic framework
+- **LLM-Driven Intelligence**: Each stage uses advanced AI to validate completeness and guide users
+- **Intelligent Questionnaire**: Dynamic, context-aware questions that adapt based on goal analysis and user responses
+- **Quality Assurance**: Validation gates prevent progression until requirements are met
+- **Zero Blank Trees**: Ensures comprehensive context before generating learning plans
+- **Personalized Setup**: Tailors approach based on individual user profile and constraints
+
+### 📋 Next + Pipeline Task Presentation (Hybrid Design)
+- **Primary Task Focus**: One main "Next Task" prominently displayed to prevent analysis paralysis
+- **Coming Up Context**: 2-3 upcoming dependency-ordered tasks provide learning context and progression awareness
+- **Alternative Flexibility**: 1-2 alternative tasks for different energy levels and moods
+- **Pipeline Evolution**: Background system keeps recommendations fresh based on progress patterns
+- **Goal-Focused Selection**: Leverages vector intelligence for optimal task recommendations
+- **Visual Progress**: Clear representation of learning pipeline and progression
 
 ### 🧠 HTA Intelligence (Enhanced)
 - **6-Level Hierarchical Decomposition**: Goal Context → Strategic Branches → Task Decomposition → Micro-Particles → Nano-Actions → Context-Adaptive Primitives
@@ -242,18 +303,125 @@ node forest-mcp-server.js
 
 ### 5-Minute Demo Flow
 
-**Goal**: Show how Forest creates intelligent, adaptive learning plans
+**Goal**: Show the complete Forest learning journey from onboarding to adaptive pipeline
 
-1. **Create Project** (1 min): "Learn photography and build Instagram following"
-2. **Generate Strategy** (1.5 min): Watch strategic phases get created automatically
-3. **Get Next Task** (1 min): See personalized task based on energy/time
-4. **Show Evolution** (1.5 min): Demonstrate real-time adaptation to progress
+1. **Landing Page Experience** (30 sec): Show dynamic LLM-generated landing page
+2. **Gated Onboarding** (2 min): "Learn photography and build Instagram following" - demonstrate the 6-stage process with quality gates
+3. **Next + Pipeline Presentation** (1.5 min): See the hybrid task display with primary focus, coming up tasks, and alternatives
+4. **Task Completion & Evolution** (1 min): Complete a task and watch pipeline refresh with new recommendations
+
+**Enhanced Demo Points**:
+- Quality gates prevent poor learning plans
+- Dynamic questionnaire adapts to user responses
+- Pipeline provides perfect balance of focus and flexibility
+- Real-time evolution keeps recommendations fresh
 
 ---
 
 ## 🔧 Core Components Deep Dive
 
-### 1. HTA Intelligence Core (Enhanced Multi-Engine Architecture)
+### 1. Gated Onboarding System (`gated-onboarding-flow.js`) ✨ NEW
+
+**Purpose**: Ensures comprehensive context gathering before HTA generation through a 6-stage gated process
+
+#### Stage-by-Stage Breakdown:
+
+**Stage 1: Goal/Dream Capture**
+- LLM-powered goal validation and refinement
+- Clarity assessment and suggestion generation
+- Prevents vague or unmeasurable goals from proceeding
+
+**Stage 2: Context Gathering/Summary**
+- Collects user background, constraints, timeline, and resources
+- LLM generates comprehensive context summary
+- Validates completeness before progression
+
+**Stage 3: Dynamic Questionnaire**
+- Intelligent questionnaire system using `IntelligentOnboardingSystem`
+- Adaptive questions based on goal analysis and user responses
+- Real-time follow-up generation for optimal context
+
+**Stage 4: Complexity Analysis**
+- Analyzes goal complexity and determines optimal HTA tree depth
+- Estimates timeline and identifies risk factors
+- Generates strategic approach recommendations
+
+**Stage 5: HTA Tree Generation**
+- Uses all collected context for optimal tree generation
+- Schema-driven approach with rich user profile
+- Quality validation ensures comprehensive learning plan
+
+**Stage 6: Strategic Framework Building**
+- Creates learning phases, milestones, and success metrics
+- Integration with evolution system for adaptive learning
+- Final validation before transitioning to active learning
+
+**Key Methods**:
+- `startNewProject()`: Initiates goal capture with validation
+- `gatherContext()`: Collects and validates comprehensive context
+- `startDynamicQuestionnaire()`: Begins intelligent question flow
+- `performComplexityAnalysis()`: Analyzes goal complexity
+- `generateHTATree()`: Creates comprehensive learning tree
+- `buildStrategicFramework()`: Establishes learning strategy
+
+**Magic**: Eliminates poor learning plans by ensuring comprehensive context at every stage
+
+### 2. Next + Pipeline Presenter (`next-pipeline-presenter.js`) ✨ NEW
+
+**Purpose**: Revolutionary hybrid task presentation that balances focus with contextual awareness
+
+#### Task Presentation Structure:
+
+**PRIMARY Section: Your Next Task**
+- One carefully selected optimal task prominently displayed
+- Energy level and time matching
+- Clear action steps and success criteria
+- Impact description connecting to overall goal
+
+**SECONDARY Section: Coming Up Next**
+- 2-3 upcoming tasks ordered by dependencies
+- Shows learning progression and builds mental context
+- Estimated cumulative time for planning
+
+**TERTIARY Section: Available Now - Alternatives**
+- 1-2 alternative tasks for different energy levels or interests
+- Provides flexibility without overwhelming choice
+- Maintains goal alignment while offering variety
+
+#### Intelligence Features:
+- **Goal-Focused Selection**: Uses `GoalFocusedTaskSelector` for optimal batch generation
+- **Dependency Ordering**: Tasks arranged in logical learning progression
+- **Energy Matching**: Task recommendations based on user's current energy level
+- **Variety Assurance**: Balances easy/medium/hard tasks across different domains
+- **Evolution Integration**: Pipeline refreshes based on completion patterns
+
+**Key Methods**:
+- `generateNextPipeline()`: Creates complete hybrid presentation
+- `structurePipelinePresentation()`: Organizes tasks into three sections
+- `selectOptimalTasksForPipeline()`: Intelligent task selection and scoring
+- `ensureTaskVariety()`: Maintains optimal difficulty and domain distribution
+
+**Magic**: Provides perfect balance of focus and flexibility while preventing analysis paralysis
+
+### 3. Intelligent Onboarding System (`intelligent-onboarding-system.js`) ✨ NEW
+
+**Purpose**: LLM-driven dynamic questionnaire system that adapts to user responses
+
+#### Core Capabilities:
+- **Goal Analysis**: Deep analysis of learning goals to determine optimal question strategy
+- **Adaptive Schema Generation**: Creates custom question schemas based on goal complexity
+- **Dynamic Question Flow**: Generates contextually perfect questions in real-time
+- **Response Analysis**: Extracts deep insights from user responses
+- **User Profile Synthesis**: Creates comprehensive learner profiles
+- **Readiness Assessment**: Determines when sufficient context has been gathered
+
+**Key Classes**:
+- `IntelligentOnboardingSystem`: Main orchestration and LLM integration
+- `OnboardingSessionManager`: Session management and state tracking
+
+**Magic**: Creates personalized questionnaires that adapt to each unique learning goal and user
+
+### 4. HTA Intelligence Core (Enhanced Multi-Engine Architecture)
 
 **Purpose**: The brain of Forest - analyzes goals and creates strategic learning trees with extreme granularity
 
@@ -390,7 +558,7 @@ const llmResponse = await this.coreIntelligence.generateLogicalDeductions({
 
 ## 🛠️ All Available Tools
 
-Forest provides 12 core tools through the MCP interface:
+Forest provides enhanced tools through the MCP interface, including revolutionary new onboarding and pipeline tools:
 
 ### Project Management
 1. **`create_project_forest`** - Create new learning project
@@ -416,9 +584,16 @@ Forest provides 12 core tools through the MCP interface:
 11. **`sync_forest_memory_forest`** - Synchronize learning memory
 12. **`ask_truthful_claude_forest`** - Direct Claude integration
 
+### Gated Onboarding & Pipeline Tools ✨ NEW
+13. **`start_learning_journey_forest`** - Begin 6-stage gated onboarding process
+14. **`continue_onboarding_forest`** - Progress through onboarding stages with quality gates
+15. **`get_onboarding_status_forest`** - View current onboarding progress and next actions
+16. **`get_next_pipeline_forest`** - Get Next + Pipeline task presentation (hybrid design)
+17. **`evolve_pipeline_forest`** - Refresh pipeline based on progress and evolution
+
 ### System Management
-13. **`factory_reset_forest`** - Reset single project or all projects with confirmation
-14. **`get_landing_page_forest`** - Generate dynamic landing page with three action paths
+18. **`factory_reset_forest`** - Reset single project or all projects with confirmation
+19. **`get_landing_page_forest`** - Generate dynamic landing page with three action paths
 
 ### Ambiguous Desires Tools (Advanced)
 - **`assess_goal_clarity_forest`** - Assess if goal needs clarification
@@ -646,6 +821,8 @@ curl http://localhost:3000/health
 6. **ChromaDB Integration**: Enterprise-grade vector storage with fallback mechanisms
 7. **Project Isolation**: 100% verified data sequestration and security
 8. **Dynamic Landing Page**: LLM-generated user onboarding with contextual guidance
+9. **Revolutionary Onboarding**: 6-stage gated flow with quality gates and LLM intelligence
+10. **Next + Pipeline Design**: Hybrid task presentation balancing focus and flexibility
 
 ### Migration Tools
 
@@ -667,22 +844,29 @@ node scripts/validate-vector-integration.js
 
 ## 💡 Usage Examples
 
-### Example 1: Learning Photography
+### Example 1: Complete Learning Journey (NEW Enhanced Workflow)
 
 ```bash
-# Create project
-create_project_forest 
-  --name "Photography Mastery" 
-  --description "Learn portrait photography and build Instagram following"
-
-# Generate strategic plan
-build_hta_tree_forest 
+# Start the gated onboarding journey
+start_learning_journey_forest 
   --goal "Master portrait photography and grow Instagram to 10k followers"
-  --learning_style "hands-on"
-  --focus_areas ["portrait photography", "natural lighting", "social media marketing"]
+  --user_context {"experience": "beginner", "time_available": "10 hours/week"}
 
-# Get first task
-get_next_task_forest 
+# Continue through the 6-stage onboarding process
+continue_onboarding_forest 
+  --stage "context_gathering"
+  --input_data {"background": "hobby photographer", "equipment": "basic DSLR"}
+
+# Progress through dynamic questionnaire
+continue_onboarding_forest 
+  --stage "questionnaire"
+  --input_data {"action": "start"}
+
+# Check onboarding status
+get_onboarding_status_forest
+
+# Once onboarding complete, get Next + Pipeline presentation
+get_next_pipeline_forest 
   --energy_level 4 
   --time_available "45 minutes"
 
@@ -691,12 +875,33 @@ complete_block_forest
   --block_id "foundation_camera_basics_001"
   --learned "Camera manual mode is easier than expected. Ready for more technical challenges."
 
-# Evolve strategy based on progress
-evolve_strategy_forest 
-  --feedback "Making faster progress than expected. Want to explore advanced lighting techniques."
+# Evolve pipeline based on progress
+evolve_pipeline_forest 
+  --triggers {"rapid_progress": true}
+  --context {"focus_shift": "advanced_lighting"}
 ```
 
-### Example 2: Handling Ambiguous Goals
+### Example 2: Traditional Project Workflow (Legacy Support)
+
+```bash
+# Create project (traditional approach)
+create_project_forest 
+  --name "Photography Mastery" 
+  --description "Learn portrait photography and build Instagram following"
+
+# Generate strategic plan (traditional approach)
+build_hta_tree_forest 
+  --goal "Master portrait photography and grow Instagram to 10k followers"
+  --learning_style "hands-on"
+  --focus_areas ["portrait photography", "natural lighting", "social media marketing"]
+
+# Get single task (traditional approach)
+get_next_task_forest 
+  --energy_level 4 
+  --time_available "45 minutes"
+```
+
+### Example 3: Handling Ambiguous Goals
 
 ```bash
 # Start with unclear goal
@@ -721,18 +926,28 @@ smart_evolution_forest
   --feedback "React development is what excites me most"
 ```
 
-### Example 3: Daily Learning Workflow
+### Example 4: Daily Learning Workflow with Pipeline
 
 ```bash
-# Morning: Get daily schedule
-generate_daily_schedule_forest 
-  --available_time "2 hours"
-  --energy_pattern "high_morning"
+# Morning: Get your Next + Pipeline presentation
+get_next_pipeline_forest 
+  --energy_level 5
+  --time_available "2 hours"
+
+# See primary task, coming up tasks, and alternatives
+# Work on the highlighted primary task
 
 # During learning: Complete tasks
 complete_block_forest 
   --block_id "research_react_hooks_002"
   --learned "Hooks pattern clicking. useEffect is powerful for side effects."
+
+# Pipeline automatically refreshes with new recommendations
+
+# Mid-session: Check evolved pipeline
+get_next_pipeline_forest 
+  --energy_level 3
+  --time_available "45 minutes"
 
 # End of session: Sync memory
 sync_forest_memory_forest
@@ -763,17 +978,27 @@ current_status_forest
 - **Solution**: Ensure project has active HTA tree built
 - **Check**: Run `get_hta_status_forest` to verify tree exists
 
-**5. ChromaDB connection issues**
+**5. Onboarding process stuck or unclear**
+- **Solution**: Check onboarding status with `get_onboarding_status_forest`
+- **Reset**: Use `continue_onboarding_forest` with appropriate stage and input data
+- **Check**: Verify all required information provided for current gate
+
+**6. Pipeline not showing tasks**
+- **Solution**: Ensure onboarding is complete before accessing pipeline
+- **Fallback**: Use traditional `get_next_task_forest` if pipeline unavailable
+- **Check**: Run `get_onboarding_status_forest` to verify 100% completion
+
+**7. ChromaDB connection issues**
 - **Solution**: Check if ChromaDB server is running: `curl http://localhost:8000/api/v1/heartbeat`
 - **Fallback**: System automatically uses LocalJSON if ChromaDB unavailable
 - **Check**: Look for `[HTA-Vector] Provider failed, falling back to LocalJSONProvider` in logs
 
-**6. Project isolation concerns**
+**8. Project isolation concerns**
 - **Solution**: Run comprehensive isolation tests: `node test-project-isolation.js`
 - **Verification**: All tests should pass with 100% success rate
 - **Check**: Verify separate project directories in `.forest-data/`
 
-**7. Vector provider switching issues**
+**9. Vector provider switching issues**
 - **Solution**: Set `FOREST_VECTOR_PROVIDER` environment variable and restart server
 - **Available providers**: `chroma`, `qdrant`, `localjson`
 - **Check**: Look for `[HTA-Vector] Initializing [Provider] as primary provider` in logs
@@ -795,6 +1020,15 @@ list_projects_forest
 
 # Test landing page generation
 get_landing_page_forest
+
+# Test gated onboarding flow
+start_learning_journey_forest --goal "test goal"
+
+# Test onboarding status
+get_onboarding_status_forest
+
+# Test pipeline presentation
+get_next_pipeline_forest
 
 # Verify tool availability
 ask_truthful_claude_forest --query "What tools are available?"
@@ -842,13 +1076,17 @@ FOREST_VECTOR_PROVIDER=chroma node forest-mcp-server.js
 
 ## 🎯 Success Metrics
 
-### PRD Compliance: 100% ✅
+### PRD Compliance: 100% ✅ + Enhanced with Revolutionary Features
 
-**All success criteria met**:
+**All success criteria met and exceeded**:
 - ✅ HTA Intelligence: 7/7 tests passing
 - ✅ Strategy Evolution: 1/1 tests passing  
 - ✅ Core Loop Integration: 1/1 tests passing
 - ✅ Magic Preservation: 5/5 functions preserved
+- ✨ **NEW**: Gated Onboarding System - 6 stages with quality gates
+- ✨ **NEW**: Next + Pipeline Presentation - Hybrid task display
+- ✨ **NEW**: LLM-Driven Questionnaire System - Adaptive intelligence
+- ✨ **NEW**: Context Quality Assurance - Zero blank trees guaranteed
 
 ### Performance Metrics
 
