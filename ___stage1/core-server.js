@@ -7,7 +7,7 @@
 
 import { Server } from './local-mcp-server.js';
 import { StdioServerTransport } from './local-stdio-transport.js';
-import { HtaCore } from './modules/hta-core.js';
+import { EnhancedHTACore } from './modules/enhanced-hta-core.js';
 import { BackgroundProcessor } from '../modules/utils/background-processor.js';
 import HTAExpansionAgent from '../modules/utils/hta-expansion-agent.js';
 import { TaskStrategyCore } from './modules/task-strategy-core.js';
@@ -51,8 +51,8 @@ class Stage1CoreServer {
     // Initialize consolidated modules
     this.dataPersistence = new DataPersistence(options.dataDir);
     this.projectManagement = new ProjectManagement(this.dataPersistence);
-    this.htaCore = new HtaCore(this.dataPersistence, this.projectManagement);
     this.coreIntelligence = new CoreIntelligence(this.dataPersistence);
+    this.htaCore = new EnhancedHTACore(this.dataPersistence, this.projectManagement, this.coreIntelligence);
     
     // Initialize Ambiguous Desires Architecture first
     this.ambiguousDesiresManager = new AmbiguousDesiresManager(
@@ -979,11 +979,17 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
 
       const projectId = activeProject.project_id;
       
+      // Determine if this was auto-triggered
+      const isAutoTriggered = args.auto_triggered || false;
+      const evolutionReason = args.evolution_reason || 'Manual evolution requested';
+      
       // Trigger strategy evolution first
       const evolutionResult = await this.taskStrategyCore.evolveStrategy({
         project_id: projectId,
         evolution_triggers: args.triggers || {},
-        context: args.context || {}
+        context: args.context || {},
+        auto_triggered: isAutoTriggered,
+        pipeline_focus: true
       });
 
       // Generate fresh pipeline with evolved strategy
@@ -993,15 +999,19 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
         ...args.context
       });
 
+      const autoIndicator = isAutoTriggered ? '🤖 **Auto-Evolution Triggered**\n\n' : '';
+      const reasonText = isAutoTriggered ? `**Reason**: ${evolutionReason}\n\n` : '';
+
       return {
         content: [{
           type: 'text',
-          text: `**🔄 Pipeline Evolved!**\n\nYour learning pipeline has been updated based on your progress and changing patterns.\n\n**Evolution Summary**: ${evolutionResult.summary || 'Strategy adapted to current context'}\n\n**Fresh Pipeline Generated**: ${pipelineResult.total_pipeline_tasks || 0} tasks ready\n\n---\n\n${pipelineResult.content[0]?.text || 'Pipeline updated successfully'}`
+          text: `${autoIndicator}**🔄 Pipeline Evolved!**\n\n${reasonText}Your learning pipeline has been updated based on your progress and changing patterns.\n\n**Evolution Summary**: ${evolutionResult.summary || 'Strategy adapted to current context'}\n\n**Fresh Pipeline Generated**: ${pipelineResult.total_pipeline_tasks || 0} tasks ready\n\n---\n\n${pipelineResult.content[0]?.text || 'Pipeline updated successfully'}`
         }],
         success: true,
         project_id: projectId,
         evolution_result: evolutionResult,
-        fresh_pipeline: pipelineResult
+        fresh_pipeline: pipelineResult,
+        auto_triggered: isAutoTriggered
       };
 
     } catch (error) {

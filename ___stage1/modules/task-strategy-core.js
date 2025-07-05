@@ -86,6 +86,28 @@ export class TaskStrategyCore {
       // Handle breakthrough context evolution
       await this.handleBreakthroughEvolution(contextFromMemory, projectId, config);
       
+      // AUTO-TRIGGER: Check if pipeline evolution is needed before task selection
+      const shouldEvolvePipeline = await this.checkAutoPipelineEvolutionConditions(projectId, htaData, config);
+      
+      if (shouldEvolvePipeline.needsPipelineEvolution) {
+        console.error('🤖 Auto-triggering pipeline evolution due to:', shouldEvolvePipeline.reason);
+        try {
+          // Trigger pipeline evolution via strategy evolution
+          await this.evolveStrategy({
+            feedback: `AUTO_PIPELINE_EVOLUTION: ${shouldEvolvePipeline.reason}`,
+            project_id: projectId,
+            path_name: config.activePath || 'general',
+            auto_triggered: true,
+            pipeline_focus: true
+          });
+          
+          // Reload HTA data after evolution
+          htaData = await this.loadHtaData(projectId, config.activePath);
+        } catch (evolutionError) {
+          console.error('Auto pipeline evolution failed:', evolutionError.message);
+        }
+      }
+      
       // Select task using vector or traditional methods
       const selectedTask = await this.selectOptimalTask(projectId, htaData, energyLevel, timeAvailable, contextFromMemory, config);
       
@@ -266,10 +288,12 @@ export class TaskStrategyCore {
   }
 
   async selectOptimalTask(projectId, htaData, energyLevel, timeAvailable, contextFromMemory, config) {
+    let selectedTask = null;
+    
     // Try vector-based selection first
     if (this.vectorStoreInitialized && await this.vectorStore.htaExists(projectId)) {
       try {
-        const selectedTask = await this.vectorStore.findNextTask(
+        selectedTask = await this.vectorStore.findNextTask(
           projectId,
           contextFromMemory,
           energyLevel,
@@ -280,27 +304,33 @@ export class TaskStrategyCore {
           selectedTask.selection_method = 'vector';
           selectedTask.context_similarity = selectedTask.similarity;
           console.error(`[TaskStrategy] Selected task via vector intelligence: ${selectedTask.title || selectedTask.id}`);
-          return selectedTask;
         }
       } catch (error) {
         console.error('[TaskStrategy] Vector task selection failed:', error.message);
       }
     }
     
-    // Fallback to traditional selection
-    const selectedTask = TaskSelector.selectOptimalTask(
-      htaData,
-      energyLevel,
-      timeAvailable,
-      contextFromMemory,
-      config,
-      config,
-      null // reasoningAnalysis skipped for Stage1
-    );
+    // Fallback to traditional selection if vector failed
+    if (!selectedTask) {
+      selectedTask = TaskSelector.selectOptimalTask(
+        htaData,
+        energyLevel,
+        timeAvailable,
+        contextFromMemory,
+        config,
+        config,
+        null // reasoningAnalysis skipped for Stage1
+      );
+      
+      if (selectedTask) {
+        selectedTask.selection_method = 'traditional';
+        console.error(`[TaskStrategy] Selected task via traditional selection: ${selectedTask.title}`);
+      }
+    }
     
+    // Track task selection for pipeline evolution analysis
     if (selectedTask) {
-      selectedTask.selection_method = 'traditional';
-      console.error(`[TaskStrategy] Selected task via traditional selection: ${selectedTask.title}`);
+      this.trackTaskSelection(projectId, selectedTask);
     }
     
     return selectedTask;
@@ -347,6 +377,273 @@ export class TaskStrategyCore {
     };
   }
 
+  /**
+   * Check if automatic strategy evolution should be triggered
+   * Implements Forest's documented evolution conditions for intelligent strategy adaptation
+   */
+  async checkAutoEvolutionConditions(block, projectId, config) {
+    try {
+      // Initialize tracking if not exists
+      if (!this.evolutionTracking) {
+        this.evolutionTracking = new Map();
+      }
+      
+      const tracking = this.evolutionTracking.get(projectId) || {
+        completionHistory: [],
+        lastEvolution: null,
+        patterns: {}
+      };
+      
+      // Add current completion to history with enhanced data
+      tracking.completionHistory.push({
+        timestamp: Date.now(),
+        difficulty: block.difficulty,
+        breakthrough: block.breakthrough,
+        learned: !!block.learned,
+        learnedContent: block.learned || '',
+        questions: !!block.nextQuestions,
+        questionContent: block.nextQuestions || '',
+        outcome: block.outcome || ''
+      });
+      
+      // Keep only last 10 completions for pattern analysis
+      if (tracking.completionHistory.length > 10) {
+        tracking.completionHistory = tracking.completionHistory.slice(-10);
+      }
+      
+      this.evolutionTracking.set(projectId, tracking);
+      
+      // CONDITION 1: Breakthrough Detection
+      // Triggers when user reports or system detects significant learning breakthrough
+      if (block.breakthrough) {
+        console.error('🚀 Evolution trigger: Breakthrough detected');
+        return {
+          needsStrategyEvolution: true,
+          reason: 'Breakthrough Detection - Major insight reported, escalating to advanced learning strategies'
+        };
+      }
+      
+      // Check for breakthrough keywords in learned content
+      const learnedLower = (block.learned || '').toLowerCase();
+      const breakthroughKeywords = ['breakthrough', 'major insight', 'significant progress', 'paradigm shift', 'everything clicked'];
+      const hasBreakthroughKeywords = breakthroughKeywords.some(keyword => learnedLower.includes(keyword));
+      
+      if (hasBreakthroughKeywords) {
+        console.error('🚀 Evolution trigger: Breakthrough keywords detected');
+        return {
+          needsStrategyEvolution: true,
+          reason: 'Breakthrough Keywords - Learning content indicates significant breakthrough, upgrading strategy'
+        };
+      }
+      
+      // CONDITION 2: Rapid Progress Indication  
+      // Pattern of 3+ consecutive easy completions with meaningful new learning
+      const recentHistory = tracking.completionHistory.slice(-3);
+      if (recentHistory.length >= 3) {
+        const allEasy = recentHistory.every(h => h.difficulty <= 2);
+        const allHaveMeaningfulLearning = recentHistory.every(h => h.learned && h.learnedContent.length > 50);
+        
+        if (allEasy && allHaveMeaningfulLearning) {
+          console.error('📈 Evolution trigger: Rapid progress pattern detected');
+          return {
+            needsStrategyEvolution: true,
+            reason: 'Rapid Progress - 3+ consecutive easy tasks with substantial learning, upgrading difficulty'
+          };
+        }
+      }
+      
+      // CONDITION 3: Consistent Struggle Pattern
+      // Pattern of 3+ consecutive difficult ratings indicates need for simplification
+      if (recentHistory.length >= 3) {
+        const allHard = recentHistory.every(h => h.difficulty >= 4);
+        
+        if (allHard) {
+          console.error('📉 Evolution trigger: Consistent struggle pattern detected');
+          return {
+            needsStrategyEvolution: true,
+            reason: 'Consistent Struggle - 3+ consecutive difficult tasks, simplifying approach'
+          };
+        }
+      }
+      
+      // CONDITION 4: New Learning Areas Emerging
+      // Multiple substantial "next questions" indicate expanding interests
+      const hasSubstantialQuestions = block.nextQuestions && block.nextQuestions.length > 100;
+      const recentQuestionsPattern = tracking.completionHistory.slice(-5).filter(h => h.questions && h.questionContent.length > 50).length >= 3;
+      
+      if (hasSubstantialQuestions && recentQuestionsPattern) {
+        console.error('🌿 Evolution trigger: New learning areas emerging');
+        return {
+          needsStrategyEvolution: true,
+          reason: 'New Learning Areas - Multiple substantial questions indicate interest expansion, adding branches'
+        };
+      }
+      
+      // CONDITION 5: Periodic Evolution
+      // Ensures strategy evolves periodically even without specific triggers
+      const now = Date.now();
+      const twoWeeks = 14 * 24 * 60 * 60 * 1000;
+      const hasRecentActivity = tracking.completionHistory.some(h => (now - h.timestamp) < twoWeeks);
+      const lastEvolutionTooOld = !tracking.lastEvolution || (now - tracking.lastEvolution) > twoWeeks;
+      
+      if (hasRecentActivity && lastEvolutionTooOld && tracking.completionHistory.length >= 5) {
+        tracking.lastEvolution = now; // Update to prevent immediate re-trigger
+        this.evolutionTracking.set(projectId, tracking);
+        
+        console.error('⏰ Evolution trigger: Periodic evolution due');
+        return {
+          needsStrategyEvolution: true,
+          reason: 'Periodic Evolution - 2+ weeks of activity without evolution, refreshing strategy'
+        };
+      }
+      
+      return { needsStrategyEvolution: false };
+      
+    } catch (error) {
+      console.error('Auto evolution condition check failed:', error.message);
+      return { needsStrategyEvolution: false };
+    }
+  }
+
+  /**
+   * Check if automatic pipeline evolution should be triggered
+   * Implements Forest's documented pipeline evolution conditions for optimal task variety
+   */
+  async checkAutoPipelineEvolutionConditions(projectId, htaData, config) {
+    try {
+      // Initialize pipeline tracking if not exists
+      if (!this.pipelineTracking) {
+        this.pipelineTracking = new Map();
+      }
+      
+      const tracking = this.pipelineTracking.get(projectId) || {
+        taskSelectionHistory: [],
+        lastPipelineEvolution: null,
+        staleTaskWarnings: 0,
+        repetitionCount: 0
+      };
+      
+      const now = Date.now();
+      const availableTasks = htaData.frontierNodes || [];
+      
+      // CONDITION 1: Stale Pipeline Detected
+      // Same tasks being recommended repeatedly (repetition ratio > 2.5x)
+      const recentSelections = tracking.taskSelectionHistory.slice(-5);
+      
+      if (recentSelections.length >= 3) {
+        const uniqueTasks = new Set(recentSelections.map(s => s.taskId));
+        const repetitionRatio = recentSelections.length / uniqueTasks.size;
+        
+        if (repetitionRatio >= 2.5) {
+          console.error('🔄 Pipeline evolution trigger: Stale pipeline detected');
+          return {
+            needsPipelineEvolution: true,
+            reason: 'Stale Pipeline - Same tasks recommended repeatedly (ratio: ' + repetitionRatio.toFixed(1) + 'x)'
+          };
+        }
+      }
+      
+      // CONDITION 2: Task Variety Low
+      // Fewer than 5 available tasks persisting over multiple checks
+      if (availableTasks.length < 5 && availableTasks.length > 0) {
+        tracking.staleTaskWarnings++;
+        
+        if (tracking.staleTaskWarnings >= 3) { // 3 consecutive warnings
+          tracking.staleTaskWarnings = 0; // Reset counter
+          this.pipelineTracking.set(projectId, tracking);
+          
+          console.error('📊 Pipeline evolution trigger: Low task variety persisting');
+          return {
+            needsPipelineEvolution: true,
+            reason: 'Task Variety Low - Only ' + availableTasks.length + ' tasks available after 3 checks'
+          };
+        }
+      } else {
+        tracking.staleTaskWarnings = 0; // Reset if sufficient tasks
+      }
+      
+      // CONDITION 3: Pipeline Aging
+      // Pipeline hasn't been evolved in over a week despite sufficient activity
+      const oneWeek = 7 * 24 * 60 * 60 * 1000;
+      const lastEvolutionTooOld = !tracking.lastPipelineEvolution || 
+                                  (now - tracking.lastPipelineEvolution) > oneWeek;
+      
+      if (lastEvolutionTooOld && tracking.taskSelectionHistory.length >= 5) {
+        tracking.lastPipelineEvolution = now;
+        this.pipelineTracking.set(projectId, tracking);
+        
+        console.error('⏰ Pipeline evolution trigger: Pipeline aging detected');
+        return {
+          needsPipelineEvolution: true,
+          reason: 'Pipeline Aging - Over 1 week without refresh, ensuring freshness'
+        };
+      }
+      
+      // CONDITION 4: All Tasks Too Easy or Too Hard
+      // Available tasks are uniformly inappropriate difficulty
+      if (availableTasks.length > 0) {
+        const taskDifficulties = availableTasks.map(task => task.difficulty || 3);
+        const allEasy = taskDifficulties.every(d => d <= 2);
+        const allHard = taskDifficulties.every(d => d >= 4);
+        const avgDifficulty = taskDifficulties.reduce((sum, d) => sum + d, 0) / taskDifficulties.length;
+        
+        if (allEasy) {
+          console.error('📉 Pipeline evolution trigger: All tasks too easy');
+          return {
+            needsPipelineEvolution: true,
+            reason: 'All Tasks Too Easy - Average difficulty ' + avgDifficulty.toFixed(1) + ', need challenging options'
+          };
+        }
+        
+        if (allHard && availableTasks.length < 8) {
+          console.error('📈 Pipeline evolution trigger: All tasks too difficult');
+          return {
+            needsPipelineEvolution: true,
+            reason: 'All Tasks Too Hard - Average difficulty ' + avgDifficulty.toFixed(1) + ', need easier stepping stones'
+          };
+        }
+      }
+      
+      // Update tracking
+      this.pipelineTracking.set(projectId, tracking);
+      
+      return { needsPipelineEvolution: false };
+      
+    } catch (error) {
+      console.error('Auto pipeline evolution condition check failed:', error.message);
+      return { needsPipelineEvolution: false };
+    }
+  }
+
+  /**
+   * Track task selection for pipeline evolution analysis
+   */
+  trackTaskSelection(projectId, selectedTask) {
+    if (!this.pipelineTracking) {
+      this.pipelineTracking = new Map();
+    }
+    
+    const tracking = this.pipelineTracking.get(projectId) || {
+      taskSelectionHistory: [],
+      lastPipelineEvolution: null,
+      staleTaskWarnings: 0
+    };
+    
+    tracking.taskSelectionHistory.push({
+      timestamp: Date.now(),
+      taskId: selectedTask.id,
+      difficulty: selectedTask.difficulty || 3,
+      selectionMethod: selectedTask.selection_method || 'unknown'
+    });
+    
+    // Keep only last 10 selections
+    if (tracking.taskSelectionHistory.length > 10) {
+      tracking.taskSelectionHistory = tracking.taskSelectionHistory.slice(-10);
+    }
+    
+    this.pipelineTracking.set(projectId, tracking);
+  }
+
   // ===== BLOCK COMPLETION AND EVOLUTION =====
 
   async handleBlockCompletion(data) {
@@ -366,10 +663,12 @@ export class TaskStrategyCore {
       // Get project info if not provided
       let activeProjectId = projectId;
       let activePathName = pathName;
+      let config;
       if (!activeProjectId || !activePathName) {
-        const { projectId: id, config } = await this.getActiveProjectInfo();
-        activeProjectId = id;
-        activePathName = config?.activePath || 'general';
+        const info = await this.getActiveProjectInfo();
+        activeProjectId = info.projectId;
+        activePathName = info.config?.activePath || 'general';
+        config = info.config;
       }
       
       const block = {
@@ -385,8 +684,11 @@ export class TaskStrategyCore {
       
       console.error(`🔄 TaskStrategyCore processing block completion: ${block.title || 'Unknown Block'}`);
       
+      // Check for automatic strategy evolution conditions
+      const shouldAutoEvolve = await this.checkAutoEvolutionConditions(block, activeProjectId, config);
+      
       // Only evolve if there's actual learning content
-      if (!block.learned && !block.nextQuestions && !block.breakthrough) {
+      if (!block.learned && !block.nextQuestions && !block.breakthrough && !shouldAutoEvolve) {
         return {
           success: true,
           content: [{ type: 'text', text: `**Block Completed** ✅\n\nOutcome captured. No new learning items detected, so HTA evolution was skipped.` }]
@@ -395,6 +697,21 @@ export class TaskStrategyCore {
       
       // Evolve HTA based on learning
       await this.taskGenerator.evolveHTABasedOnLearning(activeProjectId, activePathName, block);
+      
+      // AUTO-TRIGGER: Check if strategy evolution is needed
+      if (shouldAutoEvolve.needsStrategyEvolution) {
+        console.error('🤖 Auto-triggering strategy evolution due to:', shouldAutoEvolve.reason);
+        try {
+          await this.evolveStrategy({
+            feedback: `AUTO_EVOLUTION: ${shouldAutoEvolve.reason}. ${block.learned || block.outcome}`,
+            project_id: activeProjectId,
+            path_name: activePathName,
+            auto_triggered: true
+          });
+        } catch (evolutionError) {
+          console.error('Auto strategy evolution failed:', evolutionError.message);
+        }
+      }
       
       // Emit follow-up events
       if (block.breakthrough && this.eventBus) {

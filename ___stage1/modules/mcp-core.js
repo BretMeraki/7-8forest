@@ -606,6 +606,98 @@ export class McpCore {
           required: ['session_id']
         },
       },
+      // NEW: Revolutionary Gated Onboarding & Pipeline Tools
+      {
+        name: 'start_learning_journey_forest',
+        description: 'Begin the 6-stage gated onboarding process for comprehensive project creation',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            initial_goal: {
+              type: 'string',
+              description: 'Optional initial goal or dream to start with'
+            }
+          }
+        },
+      },
+      {
+        name: 'continue_onboarding_forest',
+        description: 'Progress through onboarding stages with quality gates and validation',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            stage_data: {
+              type: 'object',
+              description: 'Data for the current onboarding stage'
+            },
+            session_id: {
+              type: 'string',
+              description: 'Session identifier for tracking progress'
+            }
+          }
+        },
+      },
+      {
+        name: 'get_onboarding_status_forest',
+        description: 'View current onboarding progress and next actions required',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            session_id: {
+              type: 'string',
+              description: 'Optional session identifier'
+            }
+          }
+        },
+      },
+      {
+        name: 'get_next_pipeline_forest',
+        description: 'Get Next + Pipeline task presentation with hybrid design (Primary, Coming Up, Available)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            energy_level: {
+              type: 'number',
+              minimum: 1,
+              maximum: 5,
+              description: 'Current energy level for task matching'
+            },
+            time_available: {
+              type: 'string',
+              description: 'Available time (e.g., "30 minutes", "2 hours")'
+            },
+            context: {
+              type: 'string',
+              description: 'Current context or constraints'
+            }
+          }
+        },
+      },
+      {
+        name: 'evolve_pipeline_forest',
+        description: 'Refresh and evolve the pipeline based on progress patterns and learning',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            feedback: {
+              type: 'string',
+              description: 'Feedback on current pipeline effectiveness'
+            },
+            force_refresh: {
+              type: 'boolean',
+              description: 'Force complete pipeline regeneration'
+            }
+          }
+        },
+      },
+      {
+        name: 'get_landing_page_forest',
+        description: 'Generate dynamic, LLM-powered landing page with three action paths',
+        inputSchema: {
+          type: 'object',
+          properties: {}
+        },
+      },
     ];
   }
 
@@ -613,6 +705,7 @@ export class McpCore {
   
   getAvailableTools() {
     const tools = [
+      // Core 12 tools
       'create_project_forest',
       'switch_project_forest', 
       'list_projects_forest',
@@ -625,10 +718,19 @@ export class McpCore {
       'generate_daily_schedule_forest',
       'sync_forest_memory_forest',
       'ask_truthful_claude_forest',
-      'factory_reset_forest'
-    ];
-    
-    tools.push(
+      
+      // System Management
+      'factory_reset_forest',
+      'get_landing_page_forest',
+      
+      // Gated Onboarding & Pipeline Tools
+      'start_learning_journey_forest',
+      'continue_onboarding_forest',
+      'get_onboarding_status_forest',
+      'get_next_pipeline_forest',
+      'evolve_pipeline_forest',
+      
+      // Ambiguous Desires Tools
       'assess_goal_clarity_forest',
       'start_clarification_dialogue_forest', 
       'continue_clarification_dialogue_forest',
@@ -636,7 +738,7 @@ export class McpCore {
       'smart_evolution_forest',
       'adaptive_evolution_forest',
       'get_ambiguous_desire_status_forest'
-    );
+    ];
     
     return tools;
   }
