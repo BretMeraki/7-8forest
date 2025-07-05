@@ -1,0 +1,30 @@
+{
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:golden-path": "node --experimental-vm-modules node_modules/.bin/jest test/test-golden-path.js",
+    "test:task-scorer": "node --experimental-vm-modules node_modules/.bin/jest modules/task-logic/__tests__/task-scorer.test.js",
+    "test:nan-prevention": "node --experimental-vm-modules node_modules/.bin/jest modules/task-logic/__tests__/task-scorer.test.js --testNamePattern='NaN Prevention'",
+    "generate:blueprint": "node ___stage1/utils/ast-blueprint-extractor.js",
+    "validate:hta": "node ___stage1/utils/hta-validator.js",
+    "start": "node ___stage1/forest-mcp-server.js",
+    "dev": "npm run generate:blueprint && npm run start",
+    "coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "memory:monitor": "node --trace-warnings --max-old-space-size=512 ___stage1/forest-mcp-server.js",
+    "memory:analyze": "node --inspect --max-old-space-size=512 ___stage1/forest-mcp-server.js",
+    "cache:stats": "node -e \"const { embeddingService } = require('./___stage1/utils/embedding-service.js'); console.log('Embedding cache:', embeddingService.getCacheStats());\""
+  },
+  "dependencies": {
+    "@babel/parser": "^7.26.2",
+    "@babel/traverse": "^7.26.2",
+    "@modelcontextprotocol/sdk": "^1.13.3",
+    "chromadb": "^3.0.6",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "jest": "^30.0.4",
+    "mocha": "^11.7.1",
+    "nyc": "^17.1.0"
+  }
+}

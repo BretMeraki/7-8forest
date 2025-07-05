@@ -1,0 +1,108 @@
+# Forest MCP Server - File Exclusion Rules
+# Similar to .gitignore, but for AST parsing and file processing operations
+# Lines starting with # are comments
+# Patterns use glob syntax
+
+# External dependencies and package managers
+node_modules/
+bower_components/
+vendor/
+deps/
+packages/
+third_party/
+external/
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+npm-shrinkwrap.json
+
+# Version control
+.git/
+.svn/
+.hg/
+.bzr/
+
+# Build outputs
+dist/
+build/
+out/
+target/
+lib/
+.next/
+.nuxt/
+.vuepress/
+
+# Development tools
+.webpack/
+.rollup/
+.parcel-cache/
+
+# Testing
+coverage/
+.nyc_output/
+.jest/
+test-results/
+*.test.js
+*.spec.js
+*.mock.js
+
+# Minified and generated files
+*.min.js
+*.min.css
+*.bundle.js
+*.chunk.js
+*.map
+*.d.ts
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.cache
+.cache/
+
+# Environment and configuration
+.env
+.env.*
+.config/
+config/webpack.*
+config/rollup.*
+config/babel.*
+config/jest.*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python (if any Python tools are used)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.tox/
+venv/
+env/
+.env/
+.venv/
+
+# Large files (over 2MB by default)
+# Use size: prefix for file size limits
+# size:2MB
+
+# Hidden files and directories (except specific ones we want)
+.*
+!.forestignore
+!.gitignore
+!.gitkeep

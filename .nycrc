@@ -1,0 +1,21 @@
+{
+  "reporter": ["text", "html", "lcov"],
+  "all": true,
+  "include": ["**/*.js"],
+  "exclude": [
+    "**/node_modules/**",
+    "**/test/**",
+    "**/__tests__/**",
+    "**/scripts/**",
+    "**/utils/ast-blueprint-extractor.js",
+    "**/utils/hta-validator.js",
+    "**/forest-mcp-stderr.log",
+    "**/server_output.log",
+    "**/*.md"
+  ],
+  "check-coverage": true,
+  "statements": 100,
+  "branches": 100,
+  "functions": 100,
+  "lines": 100
+}
