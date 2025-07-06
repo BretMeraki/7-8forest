@@ -139,22 +139,28 @@ class Stage1CoreServer {
       // Ensure vector store is properly initialized
       console.error('📊 Initializing vector intelligence...');
       const htaCore = this.htaCore;
-      if (htaCore && htaCore.vectorStore && typeof htaCore.vectorStore.initialize === 'function') {
+      if (htaCore && typeof htaCore.initializeVectorStore === 'function') {
         try {
-          await htaCore.vectorStore.initialize();
-          console.error('✅ Vector intelligence ready');
-          
-          // Connect vector store to ambiguous desires manager
-          this.ambiguousDesiresManager.vectorStore = htaCore.vectorStore;
-          this.ambiguousDesiresManager.adaptiveEvolution.vectorStore = htaCore.vectorStore;
-          this.ambiguousDesiresManager.clarificationDialogue.vectorStore = htaCore.vectorStore;
-          
-          // Connect vector store to gated onboarding and pipeline presenter
-          this.gatedOnboarding.vectorStore = htaCore.vectorStore;
-          this.pipelinePresenter.vectorStore = htaCore.vectorStore;
+          const vectorStore = await htaCore.initializeVectorStore();
+          if (vectorStore) {
+            console.error('✅ Vector intelligence ready');
+            
+            // Connect vector store to ambiguous desires manager
+            this.ambiguousDesiresManager.vectorStore = vectorStore;
+            this.ambiguousDesiresManager.adaptiveEvolution.vectorStore = vectorStore;
+            this.ambiguousDesiresManager.clarificationDialogue.vectorStore = vectorStore;
+            
+            // Connect vector store to gated onboarding and pipeline presenter
+            this.gatedOnboarding.vectorStore = vectorStore;
+            this.pipelinePresenter.vectorStore = vectorStore;
+          } else {
+            console.error('⚠️ Vector store initialization returned null, continuing without vector support');
+          }
         } catch (vectorError) {
           console.error('⚠️ Vector store initialization failed, continuing without vector support:', vectorError.message);
         }
+      } else {
+        console.error('⚠️ HTA Core does not support vector store initialization');
       }
       
       // Continue with tool router and vector intelligence initialization
@@ -305,6 +311,10 @@ class Stage1CoreServer {
               result = await this.handleFactoryReset(args); break;
             case 'get_landing_page_forest':
               result = await this.generateLandingPage(); break;
+            case 'debug_cache_forest':
+              result = await this.debugCacheState(args); break;
+            case 'emergency_clear_cache_forest':
+              result = await this.emergencyClearCache(args); break;
             
             // Gated Onboarding Flow Tools
             case 'start_learning_journey_forest':
@@ -658,20 +668,9 @@ End with a brief explanation of how the Forest Suite tools work together to brea
 
 Use engaging, inspiring language that matches the motto. Keep it concise but motivational.${projectDetails}`;
       
-      // Use the core intelligence module to generate the landing page
-      let generatedContent;
-      try {
-        const llmResponse = await this.coreIntelligence.generateLogicalDeductions({
-          context: `Landing page generation for Forest Suite`,
-          prompt: landingPagePrompt,
-          userState: userContext
-        });
-        
-        generatedContent = llmResponse.content || llmResponse.text || llmResponse;
-      } catch (llmError) {
-        console.error('[LandingPage] LLM generation failed, using fallback:', llmError.message);
-        generatedContent = await this.generateFallbackLandingPage(userContext);
-      }
+      // Generate landing page content (skip project-specific LLM generation for landing pages)
+      // Landing pages don't need project-specific analysis, so use fallback directly
+      const generatedContent = await this.generateFallbackLandingPage(userContext);
       
       return {
         content: [
@@ -762,9 +761,10 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
 
   async startLearningJourney(args) {
     try {
-      const { goal, user_context = {} } = args;
+      const { initial_goal, goal, user_context = {} } = args;
+      const actualGoal = initial_goal || goal;
       
-      if (!goal) {
+      if (!actualGoal) {
         return {
           content: [{
             type: 'text',
@@ -773,7 +773,7 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
         };
       }
 
-      const result = await this.gatedOnboarding.startNewProject(goal, user_context);
+      const result = await this.gatedOnboarding.startNewProject(actualGoal, user_context);
       
       if (!result.success) {
         return {
@@ -787,7 +787,7 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
       return {
         content: [{
           type: 'text',
-          text: `**🎯 Learning Journey Started!**\n\n${result.message}\n\n**Project ID**: ${result.projectId}\n**Goal**: ${goal}\n\n**Next Step**: ${result.next_action?.description || 'Continue with context gathering'}\n\nUse \`continue_onboarding_forest\` to proceed through the guided setup process.`
+          text: `**🎯 Learning Journey Started!**\n\n${result.message}\n\n**Project ID**: ${result.projectId}\n**Goal**: ${actualGoal}\n\n**Next Step**: ${result.next_action?.description || 'Continue with context gathering'}\n\nUse \`continue_onboarding_forest\` to proceed through the guided setup process.`
         }],
         success: true,
         project_id: result.projectId,
@@ -1161,6 +1161,95 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
           text: `**❌ Factory Reset Failed**\n\nError: ${error.message}\n\nPlease try again or contact support if the issue persists.`
         }],
         success: false,
+        error: error.message
+      };
+    }
+  }
+
+  async debugCacheState(args) {
+    try {
+      const projectId = args.project_id || this.projectManagement.getActiveProjectId();
+      
+      const cacheDebugResult = this.dataPersistence.debugCacheState(projectId);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `**🔍 Cache Debug State Report**\n\n` +
+                `**Timestamp**: ${cacheDebugResult.timestamp}\n` +
+                `**Cache Size**: ${cacheDebugResult.cacheStats.size} entries\n` +
+                `**Hit Rate**: ${(cacheDebugResult.cacheStats.hitRate * 100).toFixed(2)}%\n` +
+                `**Memory Usage**: ${(cacheDebugResult.cacheStats.memoryUsage / 1024).toFixed(2)} KB\n\n` +
+                (projectId ? 
+                  `**Project**: ${projectId}\n` +
+                  `**Project Cache Keys**: ${cacheDebugResult.projectKeyCount || 0}\n` +
+                  `**Project Keys**: ${JSON.stringify(cacheDebugResult.projectKeys || [], null, 2)}\n\n` : '') +
+                `**All Cache Keys**:\n\`\`\`json\n${JSON.stringify(cacheDebugResult.allKeys, null, 2)}\n\`\`\`\n\n` +
+                `*Use \`emergency_clear_cache_forest\` if cache needs to be cleared.*`
+        }],
+        debug_data: cacheDebugResult
+      };
+    } catch (error) {
+      console.error('Stage1CoreServer.debugCacheState failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**❌ Cache Debug Failed**\n\nError: ${error.message}`
+        }],
+        error: error.message
+      };
+    }
+  }
+  
+  async emergencyClearCache(args) {
+    try {
+      const projectId = args.project_id;
+      const clearAll = args.clear_all === true;
+      
+      if (clearAll) {
+        // Clear entire cache
+        await this.dataPersistence.clearCache();
+        return {
+          content: [{
+            type: 'text',
+            text: `**🚨 EMERGENCY CACHE CLEARED**\n\n` +
+                  `**Action**: Full cache clear\n` +
+                  `**Timestamp**: ${new Date().toISOString()}\n\n` +
+                  `All cached data has been cleared. Next data access will reload from disk.`
+          }]
+        };
+      } else if (projectId) {
+        // Clear specific project cache
+        const result = this.dataPersistence.emergencyClearProjectCache(projectId);
+        return {
+          content: [{
+            type: 'text',
+            text: `**🚨 EMERGENCY PROJECT CACHE CLEARED**\n\n` +
+                  `**Project**: ${projectId}\n` +
+                  `**Timestamp**: ${new Date().toISOString()}\n` +
+                  `**Success**: ${result}\n\n` +
+                  `Project cache has been cleared. Next access will reload from disk.`
+          }]
+        };
+      } else {
+        return {
+          content: [{
+            type: 'text',
+            text: `**⚠️ Emergency Cache Clear Usage**\n\n` +
+                  `**Options**:\n` +
+                  `• \`emergency_clear_cache_forest\` with \`{"project_id": "PROJECT_ID"}\` - Clear specific project\n` +
+                  `• \`emergency_clear_cache_forest\` with \`{"clear_all": true}\` - Clear entire cache\n\n` +
+                  `Use \`debug_cache_forest\` first to inspect cache state.`
+          }]
+        };
+      }
+    } catch (error) {
+      console.error('Stage1CoreServer.emergencyClearCache failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**❌ Emergency Cache Clear Failed**\n\nError: ${error.message}`
+        }],
         error: error.message
       };
     }

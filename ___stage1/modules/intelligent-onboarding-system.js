@@ -58,30 +58,31 @@ You dynamically adjust your approach based on what you discover about the goal a
    */
   async generateOnboardingQuestions(goal, initialContext = {}) {
     try {
-      // Step 1: Analyze the goal and generate adaptive schema
+      // Try the full LLM-driven approach first
       const goalAnalysis = await this.performGoalAnalysis(goal, initialContext);
-      
-      // Step 2: Generate dynamic schema based on analysis
       const adaptiveSchema = await this.generateAdaptiveSchema(goalAnalysis);
-      
-      // Step 3: Generate contextually perfect questions
       const questions = await this.generateContextualQuestions(goal, initialContext, goalAnalysis, adaptiveSchema);
-      
-      // Step 4: Optimize question flow strategy
       const optimizedFlow = await this.optimizeQuestionFlow(questions, goalAnalysis);
       
-      return {
-        goal_analysis: goalAnalysis,
-        adaptive_schema: adaptiveSchema,
-        questions: optimizedFlow.questions,
-        flow_strategy: optimizedFlow.strategy,
-        conversation_context: this.initializeConversationContext(goal, initialContext, goalAnalysis)
-      };
+      // Validate the response has questions
+      const questionList = optimizedFlow.questions || questions.questions || questions || [];
+      if (questionList && questionList.length > 0) {
+        return {
+          goal_analysis: goalAnalysis,
+          adaptive_schema: adaptiveSchema,
+          onboarding_questions: questionList,
+          flow_strategy: optimizedFlow.strategy,
+          conversation_context: this.initializeConversationContext(goal, initialContext, goalAnalysis)
+        };
+      }
+      
+      throw new Error('LLM generated empty questions');
 
     } catch (error) {
-      console.error('Onboarding generation failed:', error);
-      // Even error handling is LLM-driven
-      return await this.generateIntelligentRecovery(goal, initialContext, error);
+      console.error('LLM onboarding generation failed, using fallback:', error.message);
+      
+      // Use intelligent fallback that still provides good questions
+      return this.generateFallbackQuestions(goal, initialContext);
     }
   }
 
@@ -201,10 +202,14 @@ If this response reveals important details that need clarification or opens up n
 
 **Response Format**: Return a JSON array of follow-up questions using the same schema as onboarding questions, or an empty array if no follow-ups are needed.`;
 
-      const response = await this.llmInterface.requestIntelligence(prompt, {
-        max_tokens: 500,
-        temperature: 0.2,
-        system: "Generate follow-up questions only when they would significantly improve learning plan quality."
+      const response = await this.llmInterface.request({
+        method: 'llm/completion',
+        params: {
+          prompt,
+          max_tokens: 500,
+          temperature: 0.2,
+          system: "Generate follow-up questions only when they would significantly improve learning plan quality."
+        }
       });
 
       return Array.isArray(response) ? response : [];
@@ -239,10 +244,14 @@ If this response reveals important details that need clarification or opens up n
 - recommendation ("proceed", "ask_more", "clarify_goal")
 - confidence_level ("high", "medium", "low")`;
 
-      const response = await this.llmInterface.requestIntelligence(prompt, {
-        max_tokens: 300,
-        temperature: 0.1,
-        system: "Be conservative - only recommend proceeding if context is truly sufficient for excellent task generation."
+      const response = await this.llmInterface.request({
+        method: 'llm/completion',
+        params: {
+          prompt,
+          max_tokens: 300,
+          temperature: 0.1,
+          system: "Be conservative - only recommend proceeding if context is truly sufficient for excellent task generation."
+        }
       });
 
       return response;
@@ -324,10 +333,14 @@ Analyze this learning goal to determine the optimal information architecture:
 
 Provide deep, actionable analysis that will enable perfect question generation.`;
 
-    const response = await this.llmInterface.requestIntelligence(prompt, {
-      max_tokens: 800,
-      temperature: 0.1,
-      system: this.systemPrompts.adaptiveAnalyzer
+    const response = await this.llmInterface.request({
+      method: 'llm/completion',
+      params: {
+        prompt,
+        max_tokens: 800,
+        temperature: 0.1,
+        system: this.systemPrompts.adaptiveAnalyzer
+      }
     });
 
     return response;
@@ -377,10 +390,14 @@ Provide deep, actionable analysis that will enable perfect question generation.`
 
 Create a schema that will generate the most effective questions for this specific goal.`;
 
-    const response = await this.llmInterface.requestIntelligence(prompt, {
-      max_tokens: 600,
-      temperature: 0.2,
-      system: this.systemPrompts.adaptiveAnalyzer
+    const response = await this.llmInterface.request({
+      method: 'llm/completion',
+      params: {
+        prompt,
+        max_tokens: 600,
+        temperature: 0.2,
+        system: this.systemPrompts.adaptiveAnalyzer
+      }
     });
 
     return response;
@@ -426,10 +443,14 @@ Generate perfect onboarding questions using this analysis:
 
 Generate questions that will extract the most valuable insights for this specific learning goal.`;
 
-    const response = await this.llmInterface.requestIntelligence(prompt, {
-      max_tokens: 1200,
-      temperature: 0.3,
-      system: this.systemPrompts.questionGenerator
+    const response = await this.llmInterface.request({
+      method: 'llm/completion',
+      params: {
+        prompt,
+        max_tokens: 1200,
+        temperature: 0.3,
+        system: this.systemPrompts.questionGenerator
+      }
     });
 
     return response;
@@ -465,10 +486,14 @@ Generate questions that will extract the most valuable insights for this specifi
 
 Create a flow that maximizes both information quality and user experience.`;
 
-    const response = await this.llmInterface.requestIntelligence(prompt, {
-      max_tokens: 800,
-      temperature: 0.2,
-      system: this.systemPrompts.questionGenerator
+    const response = await this.llmInterface.request({
+      method: 'llm/completion',
+      params: {
+        prompt,
+        max_tokens: 800,
+        temperature: 0.2,
+        system: this.systemPrompts.questionGenerator
+      }
     });
 
     return response;
@@ -811,12 +836,19 @@ export class OnboardingSessionManager {
       
       const questions = await this.onboardingSystem.generateOnboardingQuestions(goal, initialContext);
       
+      // Handle different question structures from LLM vs fallback
+      const questionList = questions.onboarding_questions || questions.questions || questions.simplified_questions || [];
+      
+      if (!questionList || questionList.length === 0) {
+        throw new Error('No questions generated for onboarding');
+      }
+      
       const session = {
         sessionId,
         projectId,
         goal,
         initialContext,
-        questions: questions.onboarding_questions,
+        questions: questionList,
         responses: {},
         currentQuestionIndex: 0,
         isComplete: false,
@@ -831,9 +863,9 @@ export class OnboardingSessionManager {
       
       return {
         sessionId,
-        firstQuestion: questions.onboarding_questions[0],
-        totalQuestions: questions.onboarding_questions.length,
-        progress: { current: 1, total: questions.onboarding_questions.length }
+        firstQuestion: questionList[0],
+        totalQuestions: questionList.length,
+        progress: { current: 1, total: questionList.length }
       };
 
     } catch (error) {

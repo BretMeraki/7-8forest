@@ -147,10 +147,14 @@ export class PureSchemaHTASystem {
     const schema = this.schemas[schemaKey];
     const prompt = this.buildUniversalPrompt(inputData, schema);
     
-    const response = await this.llmInterface.requestIntelligence(prompt, {
-      max_tokens: this.getTokenLimitForSchema(schemaKey),
-      temperature: this.getTemperatureForSchema(schemaKey),
-      system: systemMessage
+    const response = await this.llmInterface.request({
+      method: 'llm/completion',
+      params: {
+        prompt: prompt,
+        max_tokens: this.getTokenLimitForSchema(schemaKey),
+        temperature: this.getTemperatureForSchema(schemaKey),
+        system: systemMessage
+      }
     });
 
     return this.validateAndFormatResponse(response, schema, schemaKey);

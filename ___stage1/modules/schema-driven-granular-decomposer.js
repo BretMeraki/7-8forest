@@ -113,10 +113,14 @@ export class SchemaDrivenGranularDecomposer {
       context
     );
 
-    const response = await this.llmInterface.requestIntelligence(prompt, {
-      max_tokens: 2500,
-      temperature: 0.2, // Lower temperature for precise, actionable steps
-      system: "You are an expert learning designer who breaks complex tasks into small, achievable micro-tasks. Focus on creating steps that are so small they cannot fail."
+    const response = await this.llmInterface.request({
+      method: 'llm/completion',
+      params: {
+        prompt,
+        max_tokens: 2500,
+        temperature: 0.2, // Lower temperature for precise, actionable steps
+        system: "You are an expert learning designer who breaks complex tasks into small, achievable micro-tasks. Focus on creating steps that are so small they cannot fail."
+      }
     });
 
     return response;

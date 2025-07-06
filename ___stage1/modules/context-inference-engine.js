@@ -172,10 +172,14 @@ export class ContextInferenceEngine {
 
     try {
       const prompt = this.buildQualitativeAssessmentPrompt(args, signals, patterns);
-      const assessment = await this.llmInterface.requestIntelligence(prompt, {
-        max_tokens: 800,
-        temperature: 0.3,
-        system: "You are an expert learning psychologist analyzing user context for personalized task recommendation. Focus on qualitative insights that complement behavioral data."
+      const assessment = await this.llmInterface.request({
+        method: 'llm/completion',
+        params: {
+          prompt: prompt,
+          max_tokens: 800,
+          temperature: 0.3,
+          system: "You are an expert learning psychologist analyzing user context for personalized task recommendation. Focus on qualitative insights that complement behavioral data."
+        }
       });
 
       // Cache the assessment

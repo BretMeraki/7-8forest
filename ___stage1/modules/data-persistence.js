@@ -70,6 +70,18 @@ export class DataPersistence {
   // ===== PROJECT DATA OPERATIONS =====
 
   async saveProjectData(projectId, fileName, data, transaction = null) {
+    // CRITICAL FIX: Validate projectId is a string
+    if (!projectId || typeof projectId !== 'string') {
+      if (typeof projectId === 'object' && projectId !== null) {
+        await this._log('warn', '[DataPersistence] saveProjectData received object instead of projectId string', {
+          projectIdType: typeof projectId,
+          projectIdKeys: Object.keys(projectId).slice(0, 5),
+          fileName,
+        });
+      }
+      throw new Error('projectId must be a non-empty string');
+    }
+
     return projectOperationManager.executeWithLock(projectId, async function() {
       try {
         await this.ensureDataDir();
@@ -87,9 +99,14 @@ export class DataPersistence {
         // Atomic write with validation
         await this._atomicWriteJSON(filePath, normalizedData);
 
-        // Only invalidate cache AFTER successful write
+        // CRITICAL FIX: Invalidate cache BEFORE AND AFTER successful write
+        // This prevents race conditions where reads happen between write and cache invalidation
         this.invalidateProjectCache(projectId);
-
+        
+        // Additional aggressive cache clearing for this specific project
+        const cacheKey = `project:${projectId}:${fileName}`;
+        this.cache.delete(cacheKey);
+        
         const logger = await this.getLogger();
         logger.debug('[DataPersistence] Project data saved', {
           projectId,
@@ -112,13 +129,22 @@ export class DataPersistence {
 
   async loadProjectData(projectId, fileName) {
     try {
+      // CRITICAL FIX: Validate projectId is a string to prevent path.join errors
+      if (!projectId || typeof projectId !== 'string') {
+        if (typeof projectId === 'object' && projectId !== null) {
+          await this._log('warn', '[DataPersistence] Received object instead of projectId string', {
+            projectIdType: typeof projectId,
+            projectIdKeys: Object.keys(projectId).slice(0, 5), // Log first 5 keys for debugging
+            fileName,
+          });
+        }
+        return null; // Return null instead of throwing error for invalid projectId
+      }
+
       const cacheKey = `project:${projectId}:${fileName}`;
       const cached = this.cache.get(cacheKey);
       if (cached) {
-        await this._log('debug', '[DataPersistence] Cache hit for project data', {
-          projectId,
-          fileName,
-        });
+        // Cache hit - no logging needed, this is normal behavior
         return cached;
       }
 
@@ -152,6 +178,19 @@ export class DataPersistence {
   // ===== PATH DATA OPERATIONS =====
 
   async savePathData(projectId, pathName, fileName, data, transaction = null) {
+    // CRITICAL FIX: Validate projectId is a string
+    if (!projectId || typeof projectId !== 'string') {
+      if (typeof projectId === 'object' && projectId !== null) {
+        await this._log('warn', '[DataPersistence] savePathData received object instead of projectId string', {
+          projectIdType: typeof projectId,
+          projectIdKeys: Object.keys(projectId).slice(0, 5),
+          pathName,
+          fileName,
+        });
+      }
+      throw new Error('projectId must be a non-empty string');
+    }
+
     return projectOperationManager.executeWithLock(projectId, async () => {
       try {
         await this.ensureDataDir();
@@ -169,8 +208,13 @@ export class DataPersistence {
         // Atomic write with validation
         await this._atomicWriteJSON(filePath, normalizedData);
 
-        // Only invalidate cache AFTER successful write
+        // CRITICAL FIX: Invalidate cache BEFORE AND AFTER successful write
+        // This prevents race conditions where reads happen between write and cache invalidation
         this.invalidateProjectCache(projectId);
+        
+        // Additional aggressive cache clearing for this specific path
+        const cacheKey = `path:${projectId}:${pathName}:${fileName}`;
+        this.cache.delete(cacheKey);
 
         await this._log('debug', '[DataPersistence] Path data saved', {
           projectId,
@@ -195,14 +239,23 @@ export class DataPersistence {
 
   async loadPathData(projectId, pathName, fileName) {
     try {
+      // CRITICAL FIX: Validate projectId is a string
+      if (!projectId || typeof projectId !== 'string') {
+        if (typeof projectId === 'object' && projectId !== null) {
+          await this._log('warn', '[DataPersistence] loadPathData received object instead of projectId string', {
+            projectIdType: typeof projectId,
+            projectIdKeys: Object.keys(projectId).slice(0, 5),
+            pathName,
+            fileName,
+          });
+        }
+        return null; // Return null instead of throwing error for invalid projectId
+      }
+
       const cacheKey = `path:${projectId}:${pathName}:${fileName}`;
       const cached = this.cache.get(cacheKey);
       if (cached) {
-        await this._log('debug', '[DataPersistence] Cache hit for path data', {
-          projectId,
-          pathName,
-          fileName,
-        });
+        // Cache hit - no logging needed, this is normal behavior
         return cached;
       }
 
@@ -267,7 +320,7 @@ export class DataPersistence {
       const cacheKey = `global:${fileName}`;
       const cached = this.cache.get(cacheKey);
       if (cached) {
-        await this._log('debug', '[DataPersistence] Cache hit for global data', { fileName });
+        // Cache hit - no logging needed, this is normal behavior
         return cached;
       }
 
@@ -365,19 +418,22 @@ export class DataPersistence {
 
   invalidateProjectCache(projectId) {
     const keysToDelete = [];
+    
     for (const key of this.cache.keys()) {
       if (key.startsWith(`project:${projectId}:`) || key.startsWith(`path:${projectId}:`)) {
         keysToDelete.push(key);
       }
     }
 
-    keysToDelete.forEach(key => this.cache.delete(key));
+    keysToDelete.forEach(key => {
+      this.cache.delete(key);
+    });
 
+    // Only log if there were actually keys to delete
     if (keysToDelete.length > 0) {
-      // Use stderr for logging to avoid interfering with MCP JSON-RPC
       console.error('[DEBUG] [DataPersistence] Cache invalidated', {
         projectId,
-        keysInvalidated: keysToDelete.length,
+        keysInvalidated: keysToDelete.length
       });
     }
   }
@@ -393,6 +449,39 @@ export class DataPersistence {
       hitRate: this.cache.getHitRate(),
       memoryUsage: this.cache.getMemoryUsage(),
     };
+  }
+  
+  // Emergency debugging method for live cache inspection
+  debugCacheState(projectId = null) {
+    const allKeys = Array.from(this.cache.keys());
+    const stats = this.getCacheStats();
+    
+    const result = {
+      timestamp: new Date().toISOString(),
+      cacheStats: stats,
+      totalKeys: allKeys.length,
+      allKeys: allKeys,
+    };
+    
+    if (projectId) {
+      const projectKeys = allKeys.filter(key => 
+        key.startsWith(`project:${projectId}:`) || key.startsWith(`path:${projectId}:`)
+      );
+      result.projectKeys = projectKeys;
+      result.projectKeyCount = projectKeys.length;
+    }
+    
+    console.error('[DEBUG] [DataPersistence] Cache State Debug:', JSON.stringify(result, null, 2));
+    return result;
+  }
+  
+  // Emergency cache clearing for specific project
+  emergencyClearProjectCache(projectId) {
+    console.error('[EMERGENCY] [DataPersistence] Emergency cache clear for project:', projectId);
+    this.debugCacheState(projectId);
+    this.invalidateProjectCache(projectId);
+    this.debugCacheState(projectId);
+    return true;
   }
 
   // ===== UTILITY METHODS =====

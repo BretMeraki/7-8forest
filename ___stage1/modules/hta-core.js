@@ -241,10 +241,14 @@ export class HTACore {
         );
         
         const claudeResponse = await globalCircuitBreaker.execute(async () => {
-          return await this.claudeInterface.requestIntelligence(branchPrompt, {
-            max_tokens: 4000,
-            temperature: 0.7,
-            system: 'You are an expert learning strategist. Generate comprehensive, actionable learning paths.',
+          return await this.claudeInterface.request({
+            method: 'llm/completion',
+            params: {
+              prompt: branchPrompt,
+              max_tokens: 4000,
+              temperature: 0.7,
+              system: 'You are an expert learning strategist. Generate comprehensive, actionable learning paths.',
+            }
           });
         });
         
@@ -374,11 +378,14 @@ export class HTACore {
           );
 
           const claudeResponse = await globalCircuitBreaker.execute(async () => {
-            return await this.claudeInterface.requestIntelligence(branchPrompt, {
-              max_tokens: 4000,
-              temperature: 0.7,
-              system:
-                'You are an expert learning strategist. Generate comprehensive, actionable learning paths.',
+            return await this.claudeInterface.request({
+              method: 'llm/completion',
+              params: {
+                prompt: branchPrompt,
+                max_tokens: 4000,
+                temperature: 0.7,
+                system: 'You are an expert learning strategist. Generate comprehensive, actionable learning paths.'
+              }
             });
           });
 
@@ -942,6 +949,79 @@ Return JSON format:
           `${index + 1}. **${branch.name}**: ${branch.description || 'Strategic learning branch'}`
       )
       .join('\n');
+  }
+
+  /**
+   * Ensure frontier nodes are generated for the HTA tree
+   */
+  ensureFrontierNodes(htaData) {
+    if (!htaData.frontierNodes || htaData.frontierNodes.length === 0) {
+      // Generate initial frontier nodes from strategic branches
+      htaData.frontierNodes = [];
+      
+      if (htaData.strategicBranches && htaData.strategicBranches.length > 0) {
+        // Create initial tasks for the first branch
+        const firstBranch = htaData.strategicBranches[0];
+        const initialTasks = [
+          {
+            id: `${firstBranch.phase || 'foundation'}_intro_001`,
+            title: `Introduction to ${firstBranch.name}`,
+            description: `Get started with ${firstBranch.description}`,
+            phase: firstBranch.phase || 'foundation',
+            branchId: firstBranch.id,
+            difficulty: 2,
+            estimatedDuration: 30,
+            type: 'learning',
+            prerequisites: [],
+            isComplete: false,
+            order: 1
+          },
+          {
+            id: `${firstBranch.phase || 'foundation'}_setup_002`,
+            title: `Set up environment for ${firstBranch.name}`,
+            description: `Configure your development environment and tools`,
+            phase: firstBranch.phase || 'foundation',
+            branchId: firstBranch.id,
+            difficulty: 3,
+            estimatedDuration: 45,
+            type: 'setup',
+            prerequisites: [],
+            isComplete: false,
+            order: 2
+          },
+          {
+            id: `${firstBranch.phase || 'foundation'}_basics_003`,
+            title: `Core concepts of ${firstBranch.name}`,
+            description: `Learn the fundamental concepts and principles`,
+            phase: firstBranch.phase || 'foundation',
+            branchId: firstBranch.id,
+            difficulty: 3,
+            estimatedDuration: 60,
+            type: 'study',
+            prerequisites: [`${firstBranch.phase || 'foundation'}_intro_001`],
+            isComplete: false,
+            order: 3
+          }
+        ];
+        
+        htaData.frontierNodes = initialTasks;
+      }
+    }
+    
+    return htaData;
+  }
+
+  /**
+   * Save HTA data with proper frontierNodes tracking
+   */
+  async saveHTADataWithTracking(projectId, pathName, htaData) {
+    // Ensure frontierNodes are properly counted
+    if (htaData.frontierNodes && htaData.frontierNodes.length > 0) {
+      htaData.taskCount = htaData.frontierNodes.length;
+      htaData.hasTasks = true;
+    }
+    
+    return await this.saveHTAData(projectId, pathName, htaData);
   }
 }
 

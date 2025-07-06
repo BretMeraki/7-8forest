@@ -8,7 +8,7 @@ import { TaskGeneratorEvolution } from './task-generator-evolution.js';
 import { TaskBatchOptimizer } from './task-batch-optimizer.js';
 import { HTAVectorStore } from './hta-vector-store.js';
 import { GoalAchievementContext } from './goal-achievement-context.js';
-import { TaskSelector } from './task-selection-engine.js';
+import { TaskSelector } from '../../modules/task-logic/task-selector.js';
 import { TaskFormatter } from './task-formatter.js';
 import { FILE_NAMES } from './memory-sync.js';
 import { guard } from '../utils/hta-guard.js';
@@ -20,6 +20,9 @@ export class TaskStrategyCore {
     this.llmInterface = llmInterface;
     this.eventBus = eventBus;
     this.ambiguousDesiresManager = ambiguousDesiresManager;
+    
+    // Initialize goal achievement context
+    this.goalAchievementContext = null;
     
     // Initialize specialized engines
     this.goalFocusedSelector = new GoalFocusedTaskSelector(dataPersistence);
@@ -40,6 +43,16 @@ export class TaskStrategyCore {
     
     // Register event listeners
     this.setupEventListeners();
+    // Initialize task formatter
+    this.taskFormatter = new TaskFormatter();
+
+  }
+
+  /**
+   * Get goal achievement context for pipeline generation
+   */
+  getGoalAchievementContext() {
+    return this.goalAchievementContext || null;
   }
 
   setupEventListeners() {

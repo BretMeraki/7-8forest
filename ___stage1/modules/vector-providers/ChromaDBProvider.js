@@ -34,6 +34,15 @@ class ChromaDBProvider extends IVectorProvider {
         this.client = null;
         this.collection = null;
         this.collectionName = (config && typeof config.collection === 'string') ? config.collection : 'forest_vectors';
+        
+        // Connection management
+        this.isConnected = false;
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 5;
+        this.reconnectDelay = 1000; // Start with 1 second
+        this.lastActivity = Date.now();
+        this.keepAliveInterval = null;
+        this.connectionTimeout = 30000; // 30 seconds
     }
 
     /**
@@ -41,25 +50,73 @@ class ChromaDBProvider extends IVectorProvider {
      */
     async initialize(config = {}) {
         this.config = { ...this.config, ...(config || {}) };
-        const ClientClass = await loadChromaClient();
         
-        // Use embedded mode by default for ChromaDB v3.x
-        const useEmbedded = !this.config.url || this.config.url.includes('embedded') || this.config.url === 'embedded://localhost';
-        
-        if (useEmbedded) {
-            // Embedded mode - ChromaDB v3.x uses default constructor for embedded
-            // For embedded mode, just create client without any configuration
-            this.client = new ClientClass();
-        } else {
-            // Server mode
-            this.client = new ClientClass({
-                path: this.config.url
-            });
+        try {
+            await this.connect();
+            return {
+                success: true,
+                provider: 'ChromaDBProvider',
+                collection: this.collectionName,
+                mode: this.isEmbedded ? 'embedded' : 'server',
+                path: this.isEmbedded ? (this.config.path || '.chromadb') : this.config.url,
+                url: this.isEmbedded ? null : this.config.url,
+            };
+        } catch (error) {
+            console.error('[ChromaDBProvider] Initialization failed:', error.message);
+            throw error;
         }
+    }
 
-        this.collectionName = (this.config && typeof this.config.collection === 'string') ? this.config.collection : 'forest_vectors';
-        
-        // Ensure collection exists
+    /**
+     * Establish connection to ChromaDB
+     */
+    async connect() {
+        try {
+            const ClientClass = await loadChromaClient();
+            
+            // Use embedded mode by default for ChromaDB v3.x
+            this.isEmbedded = !this.config.url || this.config.url.includes('embedded') || this.config.url === 'embedded://localhost';
+            
+            if (this.isEmbedded) {
+                // Embedded mode - ChromaDB v3.x uses default constructor for embedded
+                this.client = new ClientClass();
+            } else {
+                // Server mode
+                this.client = new ClientClass({
+                    path: this.config.url
+                });
+            }
+
+            this.collectionName = (this.config && typeof this.config.collection === 'string') ? this.config.collection : 'forest_vectors';
+            
+            // Test connection by listing collections
+            await this.client.listCollections();
+            
+            // Ensure collection exists
+            await this.ensureCollection();
+            
+            this.isConnected = true;
+            this.reconnectAttempts = 0;
+            this.lastActivity = Date.now();
+            
+            // Start keep-alive for server mode
+            if (!this.isEmbedded) {
+                this.startKeepAlive();
+            }
+            
+            console.log(`[ChromaDBProvider] Connected successfully (${this.isEmbedded ? 'embedded' : 'server'} mode)`);
+            
+        } catch (error) {
+            this.isConnected = false;
+            console.error('[ChromaDBProvider] Connection failed:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Ensure collection exists
+     */
+    async ensureCollection() {
         try {
             const collections = await this.client.listCollections();
             const collectionExists = collections.some(c => c.name === this.collectionName);
@@ -80,16 +137,68 @@ class ChromaDBProvider extends IVectorProvider {
         } catch (err) {
             throw new Error('ChromaDBProvider: Failed to initialize collection: ' + (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string' ? err.message : String(err)));
         }
+    }
 
-        // Successful initialization status
-        return {
-            success: true,
-            provider: 'ChromaDBProvider',
-            collection: this.collectionName,
-            mode: useEmbedded ? 'embedded' : 'server',
-            path: useEmbedded ? (this.config.path || '.chromadb') : this.config.url,
-            url: useEmbedded ? null : this.config.url,
-        };
+    /**
+     * Start keep-alive mechanism for server connections
+     */
+    startKeepAlive() {
+        if (this.keepAliveInterval || this.isEmbedded) return;
+        
+        this.keepAliveInterval = setInterval(async () => {
+            try {
+                // Only ping if we haven't had activity recently
+                const timeSinceActivity = Date.now() - this.lastActivity;
+                if (timeSinceActivity > this.connectionTimeout / 2) {
+                    await this.client.listCollections();
+                    this.lastActivity = Date.now();
+                }
+            } catch (error) {
+                console.warn('[ChromaDBProvider] Keep-alive failed, will reconnect on next operation:', error.message);
+                this.isConnected = false;
+            }
+        }, this.connectionTimeout / 3); // Ping every 10 seconds if timeout is 30s
+    }
+
+    /**
+     * Stop keep-alive mechanism
+     */
+    stopKeepAlive() {
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+            this.keepAliveInterval = null;
+        }
+    }
+
+    /**
+     * Ensure connection is active, reconnect if needed
+     */
+    async ensureConnection() {
+        if (this.isConnected && this.client && this.collection) {
+            this.lastActivity = Date.now();
+            return;
+        }
+
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            throw new Error(`ChromaDBProvider: Max reconnection attempts (${this.maxReconnectAttempts}) exceeded`);
+        }
+
+        console.log(`[ChromaDBProvider] Reconnecting (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})...`);
+        
+        try {
+            // Wait before reconnecting (exponential backoff)
+            if (this.reconnectAttempts > 0) {
+                const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            
+            await this.connect();
+            console.log('[ChromaDBProvider] Reconnection successful');
+        } catch (error) {
+            this.reconnectAttempts++;
+            console.error(`[ChromaDBProvider] Reconnection failed (attempt ${this.reconnectAttempts}):`, error.message);
+            throw error;
+        }
     }
 
     /**
@@ -98,7 +207,7 @@ class ChromaDBProvider extends IVectorProvider {
      * @param {any} metadata
      */
     async upsertVector(id, vector, metadata = {}) {
-        if (!this.collection) throw new Error('ChromaDBProvider: collection not initialized');
+        await this.ensureConnection();
         try {
             await this.collection.upsert({
                 ids: [id],
@@ -107,6 +216,9 @@ class ChromaDBProvider extends IVectorProvider {
             });
         } catch (err) {
             console.error('[ChromaDBProvider] upsertVector failed:', err?.message || err);
+            if (err?.message?.includes('channel') || err?.message?.includes('connection')) {
+                this.isConnected = false;
+            }
             throw err;
         }
     }
@@ -117,7 +229,7 @@ class ChromaDBProvider extends IVectorProvider {
      * @returns {Promise<Array<{id: string, similarity: number, metadata: any, vector: number[]}>>}
      */
     async queryVectors(queryVector, options = {}) {
-        if (!this.collection) throw new Error('ChromaDBProvider: collection not initialized');
+        await this.ensureConnection();
         if (!Array.isArray(queryVector)) throw new Error('ChromaDBProvider: queryVector must be an array');
 
         const { limit = 10, threshold = 0.1, filter = {} } = options || {};
@@ -152,6 +264,9 @@ class ChromaDBProvider extends IVectorProvider {
             .sort((a, b) => b.similarity - a.similarity)
             .slice(0, limit);
         } catch (err) {
+            if (err?.message?.includes('channel') || err?.message?.includes('connection')) {
+                this.isConnected = false;
+            }
             throw new Error('ChromaDBProvider: queryVectors failed: ' + (err && err.message ? err.message : String(err)));
         }
     }
@@ -160,29 +275,43 @@ class ChromaDBProvider extends IVectorProvider {
      * @param {string} id
      */
     async deleteVector(id) {
-        if (!this.collection) throw new Error('ChromaDBProvider: collection not initialized');
-        await this.collection.delete({
-            ids: [id],
-        });
+        await this.ensureConnection();
+        try {
+            await this.collection.delete({
+                ids: [id],
+            });
+        } catch (err) {
+            if (err?.message?.includes('channel') || err?.message?.includes('connection')) {
+                this.isConnected = false;
+            }
+            throw err;
+        }
     }
 
     /**
      * @param {string} namespace
      */
     async deleteNamespace(namespace) {
-        if (!this.collection) throw new Error('ChromaDBProvider: collection not initialized');
+        await this.ensureConnection();
         
-        // Get all vectors that start with the namespace prefix
-        const results = await this.collection.get({
-            include: ['metadatas'],
-        });
-        
-        const idsToDelete = results.ids.filter(id => String(id).startsWith(namespace));
-        
-        if (idsToDelete.length > 0) {
-            await this.collection.delete({
-                ids: idsToDelete,
+        try {
+            // Get all vectors that start with the namespace prefix
+            const results = await this.collection.get({
+                include: ['metadatas'],
             });
+            
+            const idsToDelete = results.ids.filter(id => String(id).startsWith(namespace));
+            
+            if (idsToDelete.length > 0) {
+                await this.collection.delete({
+                    ids: idsToDelete,
+                });
+            }
+        } catch (err) {
+            if (err?.message?.includes('channel') || err?.message?.includes('connection')) {
+                this.isConnected = false;
+            }
+            throw err;
         }
     }
 
@@ -192,7 +321,7 @@ class ChromaDBProvider extends IVectorProvider {
      * @returns {Promise<Array<{id: String, vector: Number[], metadata: any}>>}
      */
     async listVectors(prefix = '') {
-        if (!this.collection) throw new Error('ChromaDBProvider: collection not initialized');
+        await this.ensureConnection();
         
         try {
             const results = await this.collection.get({
@@ -211,6 +340,9 @@ class ChromaDBProvider extends IVectorProvider {
                 }))
                 .filter(item => String(item.id).startsWith(prefix));
         } catch (err) {
+            if (err?.message?.includes('channel') || err?.message?.includes('connection')) {
+                this.isConnected = false;
+            }
             throw new Error('ChromaDBProvider: listVectors failed: ' + (err && err.message ? err.message : String(err)));
         }
     }
@@ -230,8 +362,19 @@ class ChromaDBProvider extends IVectorProvider {
     }
 
     async close() {
-        // No explicit close needed for ChromaDB client
-        return;
+        console.log('[ChromaDBProvider] Closing connection...');
+        
+        // Stop keep-alive mechanism
+        this.stopKeepAlive();
+        
+        // Mark as disconnected
+        this.isConnected = false;
+        
+        // Clear references
+        this.collection = null;
+        this.client = null;
+        
+        console.log('[ChromaDBProvider] Connection closed');
     }
 }
 

@@ -146,10 +146,14 @@ export class GoalAchievementContext {
 
     try {
       const alignmentPrompt = this.buildGoalAlignmentPrompt(currentContext, goalDirection, args);
-      const assessment = await this.llmInterface.requestIntelligence(alignmentPrompt, {
-        max_tokens: 400,
-        temperature: 0.2,
-        system: "You are a goal achievement specialist. Assess how well the user's current state aligns with achieving their specific goal. Focus only on goal achievement potential."
+      const assessment = await this.llmInterface.request({
+        method: 'llm/completion',
+        params: {
+          prompt: alignmentPrompt,
+          max_tokens: 400,
+          temperature: 0.2,
+          system: "You are a goal achievement specialist. Assess how well the user's current state aligns with achieving their specific goal. Focus only on goal achievement potential."
+        }
       });
 
       return assessment;

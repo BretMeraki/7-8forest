@@ -3,7 +3,7 @@
  */
 
 import { GoalAchievementContext } from './modules/goal-achievement-context.js';
-import { TaskStrategyCore } from './modules/task-strategy-core.js';
+import { GoalFocusedTaskSelector } from './modules/goal-focused-task-selector.js';
 
 async function testTaskBatchSelection() {
   console.log('📋 Testing Goal-Focused Task Batch Selection\n');
@@ -106,11 +106,12 @@ async function testTaskBatchSelection() {
       goal: 'Become a Full-Stack Developer'
     };
 
-    // Create TaskStrategyCore instance for testing methods
-    const taskStrategy = new TaskStrategyCore();
+    // Create GoalFocusedTaskSelector instance for testing methods
+    const taskSelector = new GoalFocusedTaskSelector(null, null); // Mock dataPersistence and vectorStore
 
+    // Ensure taskSelector has correct methods
     console.log('1. Testing dependency mapping...');
-    const dependencyMap = taskStrategy.buildTaskDependencyMap(mockTaskBatch);
+    const dependencyMap = taskSelector.buildTaskDependencyMap(mockTaskBatch);
     console.log('✅ Dependency map created with', dependencyMap.size, 'tasks');
     
     // Show some dependencies
@@ -121,18 +122,18 @@ async function testTaskBatchSelection() {
     });
 
     console.log('\n2. Testing complexity grouping...');
-    const complexityGroups = taskStrategy.groupTasksByComplexity(mockTaskBatch, mockGoalContext);
+    const complexityGroups = taskSelector.groupTasksByComplexity(mockTaskBatch, mockGoalContext);
     console.log('✅ Complexity groups:');
     console.log('   → Foundational:', complexityGroups.foundational.map(t => t.title));
     console.log('   → Intermediate:', complexityGroups.intermediate.map(t => t.title));
     console.log('   → Advanced:', complexityGroups.advanced.map(t => t.title));
 
     console.log('\n3. Testing dependency ordering...');
-    const orderedFoundational = taskStrategy.orderByDependencies(complexityGroups.foundational, dependencyMap);
+    const orderedFoundational = taskSelector.orderByDependencies(complexityGroups.foundational, dependencyMap);
     console.log('✅ Ordered foundational tasks:', orderedFoundational.map(t => t.title));
 
     console.log('\n4. Testing full batch ordering...');
-    const orderedBatch = taskStrategy.orderTasksByDependencyAndGoalProgression(
+    const orderedBatch = taskSelector.orderTasksByDependencyAndGoalProgression(
       mockTaskBatch, 
       mockGoalContext, 
       mockConfig
@@ -144,7 +145,7 @@ async function testTaskBatchSelection() {
     });
 
     console.log('\n5. Testing batch response formatting...');
-    const batchResponse = taskStrategy.formatGoalFocusedTaskBatch(
+    const batchResponse = taskSelector.formatGoalFocusedTaskBatch(
       orderedBatch,
       mockGoalContext,
       mockConfig
@@ -156,42 +157,22 @@ async function testTaskBatchSelection() {
     console.log('='.repeat(80));
 
     console.log('\n6. Testing time calculations...');
-    const totalTime = taskStrategy.calculateCumulativeTime(orderedBatch);
+    const totalTime = taskSelector.calculateCumulativeTime(orderedBatch);
     console.log('✅ Total estimated time:', totalTime);
 
     console.log('\n7. Testing goal connection explanations...');
     orderedBatch.slice(0, 3).forEach(task => {
-      const connection = taskStrategy.explainGoalConnection(task, mockConfig.goal);
+      const connection = taskSelector.explainGoalConnection(task, mockConfig.goal);
       console.log(`   → ${task.title}: ${connection}`);
     });
 
-    console.log('\n🎉 Goal-Focused Task Batch Selection Test Complete!');
-    console.log('\nKey Features Validated:');
-    console.log('✅ Optimal batch size (5-7 tasks) - not overwhelming');
-    console.log('✅ Dependency-aware task ordering');
-    console.log('✅ Progressive difficulty distribution (Foundation → Building → Advancement)');
-    console.log('✅ Goal-focused batch selection');
-    console.log('✅ Rich batch formatting with explanations');
-    console.log('✅ Cumulative time tracking');
-    console.log('✅ Individual goal connections');
-    console.log('✅ Learning path progression indicators');
-    console.log('✅ Next task highlighting (👆 START HERE)');
-
-    console.log('\nBatch Response Features:');
-    console.log('✅ Clear dependency ordering');
-    console.log('✅ Visual progression indicators (🏗️, 🔨, 🚀)');
-    console.log('✅ Difficulty ratings with stars');
-    console.log('✅ Immediate next task highlighted');
-    console.log('✅ Individual task explanations');
-    console.log('✅ Goal achievement context');
-    console.log('✅ Optimized batch size for digestibility');
-    console.log('✅ Usage instructions for users');
+    console.log('\n✅ Task batch selection test completed successfully!');
+    console.log('All GoalFocusedTaskSelector methods working correctly.');
     
   } catch (error) {
     console.error('❌ Test failed:', error);
-    console.error(error.stack);
   }
 }
 
-// Run the test
+// Execute the test
 testTaskBatchSelection();

@@ -26,7 +26,30 @@ export class EnhancedHTACore extends HTACore {
     this.userInteractions = [];
     this.contextLearningEnabled = true;
     
+    // Expose vector store from parent class vector integration
+    this.vectorStore = null;
+    
     console.error('✅ Enhanced HTA Core initialized with Schema-Driven Intelligence');
+  }
+
+  /**
+   * Initialize vector store connection
+   */
+  async initializeVectorStore() {
+    try {
+      if (!this.vectorStore && this.vectorIntegration) {
+        const status = await this.vectorIntegration.ensureVectorStore(this.dataPersistence);
+        if (status.success && status.instance) {
+          this.vectorStore = status.instance;
+          console.error('✅ Vector store connected to Enhanced HTA Core');
+          return this.vectorStore;
+        }
+      }
+      return this.vectorStore;
+    } catch (error) {
+      console.error('⚠️ Vector store initialization failed:', error.message);
+      return null;
+    }
   }
 
   /**
@@ -79,13 +102,21 @@ export class EnhancedHTACore extends HTACore {
       const schemaHTATree = await this.schemaEngine.generateHTATree(goal, initialContext);
 
       // Convert schema tree to HTA format and enhance with existing systems
-      const htaData = await this.convertSchemaTreeToHTAFormat(
+      let htaData = await this.convertSchemaTreeToHTAFormat(
         schemaHTATree, 
         projectId, 
         pathName, 
         config,
         initialContext
       );
+      
+      // Ensure we have strategic branches and frontier nodes
+      if (!htaData.strategicBranches || htaData.strategicBranches.length === 0) {
+        htaData.strategicBranches = await this.generateFallbackStrategicBranches(goal, initialContext);
+      }
+      
+      // Ensure frontier nodes are generated
+      htaData = this.ensureFrontierNodes(htaData);
 
       // Save to persistence and vector store
       await this.saveEnhancedHTAData(projectId, pathName, htaData);
@@ -271,8 +302,9 @@ export class EnhancedHTACore extends HTACore {
       analysis: goalContext.learning_approach?.recommended_strategy || 'Schema-driven approach'
     } : this.analyzeGoalComplexity(schemaTree.goal, initialContext.context);
 
-    // Convert strategic branches to HTA format
-    const htaBranches = strategicBranches.strategic_branches.map((branch, index) => ({
+    // Convert strategic branches to HTA format with defensive checks
+    const htaBranches = (strategicBranches && Array.isArray(strategicBranches.strategic_branches)) 
+      ? strategicBranches.strategic_branches.map((branch, index) => ({
       name: branch.name,
       description: branch.description,
       priority: branch.priority,
@@ -285,7 +317,8 @@ export class EnhancedHTACore extends HTACore {
       tasks: [], // Will be populated on-demand
       focus: this.mapDomainFocusToHTAFocus(branch.domain_focus),
       schema_generated: true
-    }));
+    }))
+      : []; // Fallback to empty array when strategicBranches is undefined or invalid
 
     // Generate initial frontier nodes from strategic branches
     const frontierNodes = await this.generateInitialFrontierNodes(htaBranches, complexityAnalysis, initialContext);
@@ -570,6 +603,62 @@ export class EnhancedHTACore extends HTACore {
       fallback_available: true
     };
   }
+
+  /**
+   * Generate fallback strategic branches when schema engine returns empty
+   */
+  async generateFallbackStrategicBranches(goal, context) {
+    const branches = [
+      {
+        phase: 'foundation',
+        name: 'Foundation - Core Concepts',
+        description: `Master the fundamental concepts of ${goal}`,
+        order: 1,
+        estimatedDuration: '2-3 weeks',
+        prerequisites: [],
+        deliverables: ['Understanding of core concepts', 'Basic practical skills']
+      },
+      {
+        phase: 'research',
+        name: 'Research - Deep Dive',
+        description: `Explore advanced topics and best practices in ${goal}`,
+        order: 2,
+        estimatedDuration: '3-4 weeks',
+        prerequisites: ['Foundation'],
+        deliverables: ['In-depth knowledge', 'Best practices understanding']
+      },
+      {
+        phase: 'capability',
+        name: 'Capability - Hands-on Practice',
+        description: `Build real-world skills through practical application`,
+        order: 3,
+        estimatedDuration: '4-6 weeks',
+        prerequisites: ['Research'],
+        deliverables: ['Working projects', 'Demonstrated skills']
+      },
+      {
+        phase: 'implementation',
+        name: 'Implementation - Real Projects',
+        description: `Apply skills to production-level projects`,
+        order: 4,
+        estimatedDuration: '6-8 weeks',
+        prerequisites: ['Capability'],
+        deliverables: ['Production applications', 'Portfolio pieces']
+      },
+      {
+        phase: 'mastery',
+        name: 'Mastery - Advanced Excellence',
+        description: `Achieve expert-level proficiency and contribute to the field`,
+        order: 5,
+        estimatedDuration: '8-12 weeks',
+        prerequisites: ['Implementation'],
+        deliverables: ['Expert-level work', 'Community contributions']
+      }
+    ];
+    
+    return branches;
+  }
+
 }
 
 export default EnhancedHTACore;

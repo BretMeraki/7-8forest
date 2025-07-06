@@ -698,6 +698,14 @@ export class McpCore {
           properties: {}
         },
       },
+      {
+        name: 'get_current_config',
+        description: 'Print the current configuration of the agent, including the active and available projects, tools, contexts, and modes.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
     ];
   }
 
@@ -722,6 +730,7 @@ export class McpCore {
       // System Management
       'factory_reset_forest',
       'get_landing_page_forest',
+      'get_current_config',
       
       // Gated Onboarding & Pipeline Tools
       'start_learning_journey_forest',
@@ -757,6 +766,7 @@ export class McpCore {
   sync_forest_memory_forest() { return this.callHandler('sync_forest_memory_forest', arguments); }
   ask_truthful_claude_forest() { return this.callHandler('ask_truthful_claude_forest', arguments); }
   factory_reset_forest() { return this.callHandler('factory_reset_forest', arguments); }
+  get_current_config() { return this.callHandler('get_current_config', arguments); }
   
   // ===== AMBIGUOUS DESIRES TOOLS =====
   
