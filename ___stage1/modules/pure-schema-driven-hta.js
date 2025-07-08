@@ -28,21 +28,37 @@ export class PureSchemaHTASystem {
   }
 
   /**
-   * Generate complete 6-level HTA tree - pure LLM intelligence
+   * Generate complete 6-level HTA tree - pure LLM intelligence with domain focus
    */
   async generateHTATree(goal, initialContext = {}) {
+    // Enhanced context for better domain detection
+    const enhancedContext = {
+      ...initialContext,
+      domainDetection: this.detectDomain(goal),
+      requireDomainSpecific: true,
+      avoidGenericTemplates: true
+    };
+
     // Level 1: Goal Achievement Context Analysis
     const goalContext = await this.generateLevelContent(
       'goalContext',
-      { goal, initialContext },
-      "Analyze this goal to understand domain, context, constraints, and success criteria."
+      { goal, initialContext: enhancedContext },
+      `Analyze this goal to understand the specific domain, user context, constraints, and success criteria. 
+      Focus on domain-specific requirements and avoid generic learning approaches. 
+      Identify the specific field (e.g., AI/ML, cybersecurity, programming, photography) and tailor the analysis accordingly.`
     );
 
-    // Level 2: Strategic Branches
+    // Level 2: Strategic Branches with domain emphasis
     const strategicBranches = await this.generateLevelContent(
       'strategicBranches',
-      { goal, goalContext },
-      "Generate contextually appropriate strategic learning phases for this specific goal and user context."
+      { goal, goalContext, domainContext: enhancedContext.domainDetection },
+      `Generate domain-specific strategic learning phases for "${goal}". 
+      Use domain-appropriate terminology and branch names. For example:
+      - AI/ML: "Mathematical Foundations", "Algorithm Understanding", "Model Implementation"
+      - Cybersecurity: "Security Fundamentals", "Threat Analysis", "Defense Strategies"
+      - Programming: "Language Mastery", "Problem-Solving Patterns", "Project Development"
+      
+      Create 3-5 branches that are specific to this domain and goal, NOT generic phases like "Foundation" or "Research".`
     );
 
     // Initialize context tracking
@@ -54,8 +70,50 @@ export class PureSchemaHTASystem {
       level2_strategicBranches: strategicBranches,
       userContext: this.getContextSnapshot(),
       domainBoundaries: this.getDomainBoundaries(),
-      generated: new Date().toISOString()
+      domainDetection: enhancedContext.domainDetection,
+      generated: new Date().toISOString(),
+      schemaVersion: '2.0-domain-adaptive'
     };
+  }
+
+  /**
+   * Detect domain from goal for better prompting
+   */
+  detectDomain(goal) {
+    if (!goal) return { domain: 'general', confidence: 0.1 };
+    
+    const goalLower = goal.toLowerCase();
+    
+    const domains = [
+      {
+        name: 'ai_ml',
+        keywords: ['artificial intelligence', 'machine learning', 'neural network', 'deep learning', 'ai', 'ml', 'cnn', 'rnn', 'transformer'],
+        confidence: 0.9
+      },
+      {
+        name: 'cybersecurity',
+        keywords: ['cybersecurity', 'security', 'penetration', 'vulnerability', 'hacking', 'encryption', 'firewall'],
+        confidence: 0.9
+      },
+      {
+        name: 'programming',
+        keywords: ['programming', 'coding', 'development', 'software', 'javascript', 'python', 'java', 'react', 'node'],
+        confidence: 0.85
+      },
+      {
+        name: 'photography',
+        keywords: ['photography', 'photo', 'camera', 'lens', 'composition', 'lighting'],
+        confidence: 0.85
+      }
+    ];
+    
+    for (const domain of domains) {
+      if (domain.keywords.some(keyword => goalLower.includes(keyword))) {
+        return { domain: domain.name, confidence: domain.confidence, keywords_matched: domain.keywords.filter(k => goalLower.includes(k)) };
+      }
+    }
+    
+    return { domain: 'general', confidence: 0.3 };
   }
 
   /**
@@ -161,10 +219,16 @@ export class PureSchemaHTASystem {
   }
 
   /**
-   * Build universal prompt - no hardcoded examples or patterns
+   * Build universal prompt - domain-adaptive with explicit instructions
    */
   buildUniversalPrompt(inputData, schema) {
-    return `Analyze the provided data and generate a response following the exact JSON schema structure.
+    const domainGuidance = this.generateDomainGuidance(inputData.goal);
+    
+    return `You are an expert learning system that creates domain-specific, contextually appropriate learning paths. 
+
+IMPORTANT: Generate content that is SPECIFIC to the domain and goal. Avoid generic terms like "Foundation", "Research", "Capability". Instead, use domain-specific terminology.
+
+${domainGuidance}
 
 **Input Data:**
 ${JSON.stringify(inputData, null, 2)}
@@ -172,7 +236,51 @@ ${JSON.stringify(inputData, null, 2)}
 **Required Response Schema:**
 ${JSON.stringify(schema, null, 2)}
 
-Generate intelligent, contextually appropriate content that fits this structure. Use your expertise to provide relevant, practical, and actionable content based on the input data and schema requirements.`;
+**Critical Instructions:**
+1. Use domain-specific branch names (e.g., "Mathematical Foundations" for AI, "Security Fundamentals" for cybersecurity)
+2. Create tasks that are specific to the actual goal (e.g., "master CNNs for medical imaging" not "learn fundamentals")
+3. Focus on the user's specific context and constraints
+4. Provide actionable, practical content
+5. Adapt difficulty and approach to the user's experience level
+
+Generate intelligent, domain-specific content that directly addresses the user's goal with contextual relevance.`;
+  }
+
+  /**
+   * Generate domain-specific guidance for prompting
+   */
+  generateDomainGuidance(goal) {
+    if (!goal) return '';
+    
+    const goalLower = goal.toLowerCase();
+    
+    if (/artificial intelligence|machine learning|neural network|deep learning|ai|ml|cnn|rnn|transformer/i.test(goalLower)) {
+      return `**DOMAIN: AI/Machine Learning**
+Focus on: Mathematical foundations, algorithm understanding, model implementation, practical applications.
+Example branches: "Mathematical Foundations", "Neural Network Architecture", "Model Training & Validation", "Real-World Applications".`;
+    }
+    
+    if (/cybersecurity|security|penetration|vulnerability|hacking|encryption|firewall/i.test(goalLower)) {
+      return `**DOMAIN: Cybersecurity**
+Focus on: Security principles, threat analysis, defense strategies, practical implementation.
+Example branches: "Security Fundamentals", "Threat Analysis & Assessment", "Defense Implementation", "Advanced Security Techniques".`;
+    }
+    
+    if (/programming|coding|development|software|javascript|python|java|react|node/i.test(goalLower)) {
+      return `**DOMAIN: Programming/Software Development**
+Focus on: Language mastery, problem-solving patterns, project development, deployment.
+Example branches: "Language Mastery", "Problem-Solving Patterns", "Project Development", "Production Deployment".`;
+    }
+    
+    if (/photography|photo|camera|lens|composition|lighting/i.test(goalLower)) {
+      return `**DOMAIN: Photography**
+Focus on: Technical skills, artistic composition, lighting, post-processing.
+Example branches: "Camera Fundamentals", "Composition Techniques", "Lighting Mastery", "Post-Processing Skills".`;
+    }
+    
+    return `**DOMAIN: Custom Learning Path**
+Analyze the goal to identify the specific domain and create appropriate domain-specific branches.
+Avoid generic terms - be specific to the actual subject matter.`;
   }
 
   /**
@@ -545,9 +653,9 @@ Generate intelligent, contextually appropriate content that fits this structure.
 
   getTemperatureForSchema(schemaKey) {
     const temperatures = {
-      goalContext: 0.3,
-      strategicBranches: 0.3,
-      taskDecomposition: 0.25,
+      goalContext: 0.2,        // Lower for more consistent domain analysis
+      strategicBranches: 0.1,  // Much lower to ensure domain-specific branches
+      taskDecomposition: 0.15, // Lower for more consistent task naming
       microParticles: 0.2,
       nanoActions: 0.15,
       contextAdaptivePrimitives: 0.1,
@@ -556,7 +664,7 @@ Generate intelligent, contextually appropriate content that fits this structure.
       painPointValidation: 0.2,
       treeEvolution: 0.25
     };
-    return temperatures[schemaKey] || 0.2;
+    return temperatures[schemaKey] || 0.15; // Default lower temperature
   }
 
   validateAndFormatResponse(response, schema, schemaKey) {

@@ -207,11 +207,20 @@ export class HTATaskGeneration {
   }
 
   calculateOptimalTaskCount(branch, userContext) {
+    // Domain-adaptive task counts
     const baseTasks = {
-      foundation: 4,
-      research: 5,
-      capability: 6,
-      implementation: 4,
+      mathematical_foundations: 5,  // More tasks for complex mathematical concepts
+      algorithmic_understanding: 4,
+      security_fundamentals: 4,
+      threat_analysis: 3,
+      language_mastery: 5,         // More practice needed for language learning
+      problem_solving: 4,
+      camera_fundamentals: 3,      // Hands-on practice
+      creative_composition: 3,
+      
+      // Generic fallbacks
+      foundations: 4,
+      application: 4,
       mastery: 3
     };
     
@@ -247,13 +256,15 @@ export class HTATaskGeneration {
   }
 
   extractDomain(goal) {
-    // Simple domain extraction based on keywords
+    // Enhanced domain extraction with more specific keywords
     const domains = {
-      'photography': ['camera', 'lighting', 'composition', 'editing'],
-      'programming': ['code', 'development', 'software', 'app'],
-      'music': ['instrument', 'composition', 'recording', 'performance'],
-      'design': ['visual', 'ui', 'ux', 'graphic', 'layout'],
-      'business': ['marketing', 'sales', 'strategy', 'management']
+      'ai_ml': ['artificial intelligence', 'machine learning', 'neural network', 'deep learning', 'ai', 'ml', 'cnn', 'rnn', 'transformer', 'data science'],
+      'cybersecurity': ['cybersecurity', 'security', 'penetration', 'vulnerability', 'hacking', 'encryption', 'firewall', 'infosec'],
+      'programming': ['programming', 'coding', 'development', 'software', 'app', 'javascript', 'python', 'java', 'react', 'node'],
+      'photography': ['photography', 'camera', 'lighting', 'composition', 'editing', 'portrait', 'landscape'],
+      'music': ['instrument', 'composition', 'recording', 'performance', 'audio', 'production'],
+      'design': ['visual', 'ui', 'ux', 'graphic', 'layout', 'interface', 'user experience'],
+      'business': ['marketing', 'sales', 'strategy', 'management', 'entrepreneurship']
     };
     
     const goalLower = goal.toLowerCase();
@@ -269,8 +280,10 @@ export class HTATaskGeneration {
 
   extractTools(goal) {
     const commonTools = {
-      photography: ['camera', 'Lightroom', 'Photoshop', 'tripod'],
-      programming: ['VS Code', 'Git', 'Node.js', 'database'],
+      ai_ml: ['Python', 'Jupyter Notebook', 'TensorFlow', 'PyTorch', 'scikit-learn', 'pandas'],
+      cybersecurity: ['Wireshark', 'Metasploit', 'Nmap', 'Burp Suite', 'Kali Linux', 'OWASP tools'],
+      photography: ['camera', 'Lightroom', 'Photoshop', 'tripod', 'lighting equipment'],
+      programming: ['VS Code', 'Git', 'Node.js', 'database', 'testing frameworks'],
       music: ['DAW', 'microphone', 'MIDI controller', 'audio interface'],
       design: ['Figma', 'Adobe Creative Suite', 'Sketch', 'InVision'],
       business: ['spreadsheet', 'CRM', 'analytics', 'presentation software']
@@ -281,22 +294,57 @@ export class HTATaskGeneration {
   }
 
   extractConcepts(branch, goal) {
-    const conceptsByPhase = {
-      foundation: ['basics', 'fundamentals', 'principles', 'terminology'],
-      research: ['best practices', 'methodologies', 'case studies', 'industry standards'],
-      capability: ['techniques', 'workflows', 'processes', 'skills'],
-      implementation: ['projects', 'applications', 'solutions', 'deliverables'],
+    const domain = this.extractDomain(goal);
+    
+    // Domain-specific concepts by phase
+    const domainConcepts = {
+      ai_ml: {
+        mathematical_foundations: ['linear algebra', 'calculus', 'statistics', 'probability'],
+        algorithmic_understanding: ['neural networks', 'gradient descent', 'backpropagation', 'optimization'],
+        foundations: ['machine learning basics', 'data preprocessing', 'feature engineering'],
+        application: ['model training', 'validation', 'hyperparameter tuning', 'deployment'],
+        mastery: ['advanced architectures', 'research', 'innovation', 'paper writing']
+      },
+      cybersecurity: {
+        security_fundamentals: ['CIA triad', 'threat modeling', 'risk assessment', 'security policies'],
+        threat_analysis: ['vulnerability assessment', 'penetration testing', 'malware analysis'],
+        foundations: ['network security', 'cryptography', 'access control'],
+        application: ['incident response', 'security monitoring', 'compliance'],
+        mastery: ['advanced threats', 'zero-day research', 'security architecture']
+      },
+      programming: {
+        language_mastery: ['syntax', 'data structures', 'algorithms', 'debugging'],
+        problem_solving: ['design patterns', 'architecture', 'best practices'],
+        foundations: ['programming basics', 'version control', 'testing'],
+        application: ['project development', 'APIs', 'databases', 'deployment'],
+        mastery: ['advanced patterns', 'performance optimization', 'system design']
+      },
+      photography: {
+        camera_fundamentals: ['exposure triangle', 'composition rules', 'camera settings'],
+        creative_composition: ['lighting techniques', 'artistic vision', 'storytelling'],
+        foundations: ['camera operation', 'basic editing', 'equipment'],
+        application: ['portrait photography', 'landscape', 'event photography'],
+        mastery: ['advanced techniques', 'artistic development', 'commercial work']
+      }
+    };
+    
+    // Fallback for generic phases or unknown domains
+    const genericConcepts = {
+      foundations: ['basics', 'fundamentals', 'principles', 'terminology'],
+      application: ['techniques', 'workflows', 'processes', 'skills'],
       mastery: ['advanced techniques', 'innovation', 'leadership', 'expertise']
     };
     
-    return conceptsByPhase[branch.phase] || ['general concepts'];
+    return domainConcepts[domain]?.[branch.phase] || genericConcepts[branch.phase] || ['general concepts'];
   }
 
   generateExamples(branch, goal) {
     const domain = this.extractDomain(goal);
     const examplesByDomain = {
+      ai_ml: ['image classification model', 'NLP sentiment analysis', 'recommendation system', 'time series prediction'],
+      cybersecurity: ['network vulnerability scan', 'phishing detection system', 'incident response plan', 'security audit'],
       photography: ['portrait session', 'landscape shot', 'street photography', 'product photo'],
-      programming: ['web application', 'mobile app', 'API service', 'data analysis'],
+      programming: ['web application', 'mobile app', 'API service', 'data analysis tool'],
       music: ['song composition', 'album recording', 'live performance', 'remix'],
       design: ['website design', 'mobile interface', 'brand identity', 'user journey'],
       business: ['marketing campaign', 'sales process', 'business plan', 'product launch']
@@ -306,27 +354,60 @@ export class HTATaskGeneration {
   }
 
   extractSkills(branch, goal) {
-    const skillsByPhase = {
-      foundation: ['reading', 'note-taking', 'basic operation', 'setup'],
-      research: ['analysis', 'comparison', 'documentation', 'synthesis'],
-      capability: ['practice', 'implementation', 'troubleshooting', 'refinement'],
-      implementation: ['project management', 'integration', 'testing', 'deployment'],
+    const domain = this.extractDomain(goal);
+    
+    const domainSkills = {
+      ai_ml: {
+        mathematical_foundations: ['mathematical modeling', 'statistical analysis', 'equation solving'],
+        algorithmic_understanding: ['algorithm implementation', 'optimization', 'debugging models'],
+        foundations: ['data manipulation', 'visualization', 'basic modeling'],
+        application: ['model training', 'evaluation', 'deployment', 'monitoring'],
+        mastery: ['research methodology', 'paper writing', 'innovation', 'mentoring']
+      },
+      cybersecurity: {
+        security_fundamentals: ['risk assessment', 'policy development', 'compliance checking'],
+        threat_analysis: ['vulnerability scanning', 'penetration testing', 'malware analysis'],
+        foundations: ['network analysis', 'security tool usage', 'incident documentation'],
+        application: ['security implementation', 'monitoring', 'response coordination'],
+        mastery: ['advanced research', 'security architecture', 'team leadership']
+      },
+      programming: {
+        language_mastery: ['coding', 'debugging', 'testing', 'code review'],
+        problem_solving: ['algorithm design', 'architecture planning', 'optimization'],
+        foundations: ['basic programming', 'version control', 'environment setup'],
+        application: ['project development', 'integration', 'deployment', 'maintenance'],
+        mastery: ['system design', 'mentoring', 'technical leadership']
+      }
+    };
+    
+    const genericSkills = {
+      foundations: ['reading', 'note-taking', 'basic operation', 'setup'],
+      application: ['practice', 'implementation', 'troubleshooting', 'refinement'],
       mastery: ['innovation', 'teaching', 'mentoring', 'leadership']
     };
     
-    return skillsByPhase[branch.phase] || ['general skills'];
+    return domainSkills[domain]?.[branch.phase] || genericSkills[branch.phase] || ['general skills'];
   }
 
   selectTaskType(branch, taskIndex, totalTasks, userContext) {
+    // Domain-adaptive task type selection
     const phaseActivities = {
-      foundation: ['research', 'setup', 'orientation'],
-      research: ['study', 'analyze', 'compare'],
-      capability: ['practice', 'build', 'experiment'],
-      implementation: ['create', 'deploy', 'optimize'],
+      mathematical_foundations: ['study', 'practice', 'apply'],
+      algorithmic_understanding: ['analyze', 'implement', 'optimize'],
+      security_fundamentals: ['research', 'analyze', 'practice'],
+      threat_analysis: ['analyze', 'test', 'document'],
+      language_mastery: ['practice', 'code', 'debug'],
+      problem_solving: ['solve', 'pattern-match', 'optimize'],
+      camera_fundamentals: ['practice', 'experiment', 'shoot'],
+      creative_composition: ['compose', 'create', 'refine'],
+      
+      // Generic fallbacks
+      foundations: ['research', 'setup', 'practice'],
+      application: ['practice', 'build', 'experiment'],
       mastery: ['innovate', 'teach', 'mentor']
     };
     
-    const activities = phaseActivities[branch.phase] || ['research'];
+    const activities = phaseActivities[branch.phase] || ['research', 'practice', 'apply'];
     
     // Distribute task types evenly across the phase
     const typeIndex = taskIndex % activities.length;

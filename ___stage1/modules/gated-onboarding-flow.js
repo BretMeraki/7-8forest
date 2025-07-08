@@ -936,20 +936,104 @@ export class GatedOnboardingFlow {
   }
 
   generateStrategicBranches(analyzedData) {
-    const basePhases = ['foundation', 'research', 'capability', 'implementation'];
-    
-    if (analyzedData.difficulty >= 7) {
-      basePhases.push('mastery');
-    }
+    // Use schema-driven approach instead of hardcoded templates
+    return this.generateDomainSpecificBranches(analyzedData);
+  }
 
-    return basePhases.map((phase, index) => ({
-      id: `${phase}-branch`,
-      name: phase.charAt(0).toUpperCase() + phase.slice(1),
-      phase,
-      description: `${phase} phase for ${analyzedData.goal}`,
-      estimatedDuration: this.calculatePhaseDuration(phase, analyzedData.complexity),
-      order: index
+  generateDomainSpecificBranches(analyzedData) {
+    const goal = analyzedData.goal.toLowerCase();
+    const branches = [];
+    
+    // Domain-specific branch generation based on goal analysis
+    if (this.isAIorMLGoal(goal)) {
+      branches.push(
+        { name: 'Mathematical Foundations', phase: 'foundations', description: `Master mathematical concepts for ${analyzedData.goal}` },
+        { name: 'Algorithm Understanding', phase: 'algorithms', description: `Learn key algorithms for ${analyzedData.goal}` },
+        { name: 'Model Implementation', phase: 'implementation', description: `Build and train models for ${analyzedData.goal}` },
+        { name: 'Advanced Applications', phase: 'applications', description: `Apply ${analyzedData.goal} to real problems` }
+      );
+    } else if (this.isCybersecurityGoal(goal)) {
+      branches.push(
+        { name: 'Security Fundamentals', phase: 'fundamentals', description: `Learn core security principles for ${analyzedData.goal}` },
+        { name: 'Threat Analysis', phase: 'analysis', description: `Understand threats in ${analyzedData.goal}` },
+        { name: 'Defense Implementation', phase: 'defense', description: `Implement security measures for ${analyzedData.goal}` },
+        { name: 'Advanced Techniques', phase: 'advanced', description: `Master advanced techniques in ${analyzedData.goal}` }
+      );
+    } else if (this.isProgrammingGoal(goal)) {
+      branches.push(
+        { name: 'Language Mastery', phase: 'language', description: `Master the programming language for ${analyzedData.goal}` },
+        { name: 'Problem-Solving Patterns', phase: 'patterns', description: `Learn patterns and practices for ${analyzedData.goal}` },
+        { name: 'Project Development', phase: 'projects', description: `Build complete projects using ${analyzedData.goal}` },
+        { name: 'Production Deployment', phase: 'deployment', description: `Deploy and scale ${analyzedData.goal} applications` }
+      );
+    } else if (this.isPhotographyGoal(goal)) {
+      branches.push(
+        { name: 'Camera Fundamentals', phase: 'camera', description: `Master camera basics for ${analyzedData.goal}` },
+        { name: 'Composition Techniques', phase: 'composition', description: `Learn composition for ${analyzedData.goal}` },
+        { name: 'Lighting Mastery', phase: 'lighting', description: `Master lighting techniques for ${analyzedData.goal}` },
+        { name: 'Post-Processing', phase: 'processing', description: `Learn editing and processing for ${analyzedData.goal}` }
+      );
+    } else {
+      // Domain-adaptive generic approach
+      const mainTopic = this.extractMainTopic(analyzedData.goal);
+      branches.push(
+        { name: `${mainTopic} Foundations`, phase: 'foundations', description: `Build strong foundations in ${analyzedData.goal}` },
+        { name: `${mainTopic} Skills`, phase: 'skills', description: `Develop practical skills in ${analyzedData.goal}` },
+        { name: `${mainTopic} Application`, phase: 'application', description: `Apply ${analyzedData.goal} in real scenarios` },
+        { name: `${mainTopic} Mastery`, phase: 'mastery', description: `Achieve mastery in ${analyzedData.goal}` }
+      );
+    }
+    
+    // Add mastery phase for high difficulty
+    if (analyzedData.difficulty >= 7 && branches.length === 4) {
+      const mainTopic = this.extractMainTopic(analyzedData.goal);
+      branches.push({
+        name: `${mainTopic} Innovation`,
+        phase: 'innovation',
+        description: `Innovate and contribute to ${analyzedData.goal}`
+      });
+    }
+    
+    return branches.map((branch, index) => ({
+      id: `${branch.phase}-branch`,
+      name: branch.name,
+      phase: branch.phase,
+      description: branch.description,
+      estimatedDuration: this.calculatePhaseDuration(branch.phase, analyzedData.complexity),
+      order: index,
+      domain_specific: true
     }));
+  }
+
+  isAIorMLGoal(goal) {
+    return /artificial intelligence|machine learning|neural network|deep learning|ai|ml|cnn|rnn|transformer|data science/i.test(goal);
+  }
+
+  isCybersecurityGoal(goal) {
+    return /cybersecurity|security|penetration|vulnerability|hacking|encryption|firewall|infosec/i.test(goal);
+  }
+
+  isProgrammingGoal(goal) {
+    return /programming|coding|development|software|javascript|python|java|react|node|web development/i.test(goal);
+  }
+
+  isPhotographyGoal(goal) {
+    return /photography|photo|camera|lens|composition|lighting|portrait|landscape/i.test(goal);
+  }
+
+  extractMainTopic(goal) {
+    // Extract the main topic from the goal
+    const words = goal.split(' ');
+    const importantWords = words.filter(word => 
+      word.length > 3 && 
+      !['learn', 'master', 'understand', 'study', 'with', 'using', 'through'].includes(word.toLowerCase())
+    );
+    
+    if (importantWords.length > 0) {
+      return importantWords[0].charAt(0).toUpperCase() + importantWords[0].slice(1);
+    }
+    
+    return 'Skill';
   }
 
   calculatePhaseDuration(phase, complexity) {
@@ -1027,36 +1111,105 @@ export class GatedOnboardingFlow {
   }
 
   generateTasksForBranch(branch, goal, userResponses) {
-    const taskCount = branch.phase === 'foundation' ? 3 : 2;
+    const taskCount = this.calculateTaskCountForBranch(branch.phase);
     const tasks = [];
 
     for (let i = 0; i < taskCount; i++) {
+      const taskTitle = this.generateDomainSpecificTaskTitle(branch, i, goal);
+      const taskDescription = this.generateDomainSpecificTaskDescription(branch, i, goal);
+      
       tasks.push({
         id: `${branch.phase}_task_${i + 1}`,
-        title: `${branch.name} Task ${i + 1}`,
-        description: `Learn ${branch.phase} concepts for ${goal}`,
+        title: taskTitle,
+        description: taskDescription,
         difficulty: this.calculateTaskDifficulty(branch.phase, i),
         dependencies: i > 0 ? [`${branch.phase}_task_${i}`] : [],
         branch_id: branch.id,
         phase: branch.phase,
         estimated_duration: 30 + (i * 15),
-        priority: i === 0 ? 'high' : 'medium'
+        priority: i === 0 ? 'high' : 'medium',
+        domain_specific: true
       });
     }
 
     return tasks;
   }
 
+  calculateTaskCountForBranch(phase) {
+    const taskCounts = {
+      'foundations': 3,
+      'fundamentals': 3,
+      'camera': 2,
+      'language': 3,
+      'algorithms': 2,
+      'analysis': 2,
+      'composition': 2,
+      'patterns': 2,
+      'skills': 2,
+      'implementation': 2,
+      'application': 2,
+      'advanced': 2,
+      'mastery': 1,
+      'innovation': 1
+    };
+    
+    return taskCounts[phase] || 2;
+  }
+
+  generateDomainSpecificTaskTitle(branch, taskIndex, goal) {
+    const progressiveTerms = ['Introduction to', 'Understanding', 'Mastering', 'Advanced'];
+    const termIndex = Math.min(taskIndex, progressiveTerms.length - 1);
+    const progressiveTerm = progressiveTerms[termIndex];
+    
+    // Extract key domain terms from branch name and goal
+    const branchTopic = branch.name.replace(/^(Mathematical|Algorithm|Model|Security|Threat|Defense|Language|Problem-Solving|Project|Camera|Composition|Lighting|Post-Processing)/, '');
+    
+    return `${progressiveTerm} ${branchTopic || branch.name}`;
+  }
+
+  generateDomainSpecificTaskDescription(branch, taskIndex, goal) {
+    const goal_lower = goal.toLowerCase();
+    
+    // Generate contextual descriptions based on branch and domain
+    if (branch.phase === 'foundations' || branch.phase === 'fundamentals') {
+      return `Build essential knowledge and skills in ${branch.name.toLowerCase()} for ${goal}`;
+    } else if (branch.phase === 'algorithms' || branch.phase === 'patterns') {
+      return `Learn and practice key ${branch.name.toLowerCase()} relevant to ${goal}`;
+    } else if (branch.phase === 'implementation' || branch.phase === 'projects') {
+      return `Build practical projects using ${branch.name.toLowerCase()} for ${goal}`;
+    } else if (branch.phase === 'application') {
+      return `Apply ${branch.name.toLowerCase()} to real-world scenarios in ${goal}`;
+    } else if (branch.phase === 'advanced' || branch.phase === 'mastery') {
+      return `Master advanced techniques in ${branch.name.toLowerCase()} for ${goal}`;
+    } else {
+      return `Develop skills in ${branch.name.toLowerCase()} as part of ${goal}`;
+    }
+  }
+
   calculateTaskDifficulty(phase, taskIndex) {
     const baseDifficulties = {
-      foundation: 2,
-      research: 3,
-      capability: 4,
-      implementation: 5,
-      mastery: 7
+      foundations: 2,
+      fundamentals: 2,
+      camera: 2,
+      language: 3,
+      algorithms: 4,
+      analysis: 3,
+      composition: 3,
+      patterns: 4,
+      skills: 3,
+      implementation: 4,
+      projects: 4,
+      application: 4,
+      defense: 5,
+      advanced: 6,
+      mastery: 7,
+      innovation: 8,
+      deployment: 5,
+      processing: 3,
+      lighting: 3
     };
 
-    return baseDifficulties[phase] + taskIndex;
+    return (baseDifficulties[phase] || 3) + taskIndex;
   }
 
   async orderTasksByDependency(tasks) {

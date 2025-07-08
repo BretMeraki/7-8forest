@@ -112,7 +112,14 @@ export class EnhancedHTACore extends HTACore {
       
       // Ensure we have strategic branches and frontier nodes
       if (!htaData.strategicBranches || htaData.strategicBranches.length === 0) {
-        htaData.strategicBranches = await this.generateFallbackStrategicBranches(goal, initialContext);
+        // If schema engine failed, try again with more explicit context
+        const retryResult = await this.retrySchemaGeneration(goal, initialContext);
+        if (retryResult && retryResult.strategicBranches && retryResult.strategicBranches.length > 0) {
+          htaData.strategicBranches = retryResult.strategicBranches;
+        } else {
+          // Only as absolute last resort, use domain-adaptive fallback
+          htaData.strategicBranches = await this.generateDomainAdaptiveBranches(goal, initialContext);
+        }
       }
       
       // Ensure frontier nodes are generated
@@ -614,58 +621,140 @@ export class EnhancedHTACore extends HTACore {
   }
 
   /**
-   * Generate fallback strategic branches when schema engine returns empty
+   * Retry schema generation with more explicit context
    */
-  async generateFallbackStrategicBranches(goal, context) {
-    const branches = [
-      {
-        phase: 'foundation',
-        name: 'Foundation - Core Concepts',
-        description: `Master the fundamental concepts of ${goal}`,
-        order: 1,
-        estimatedDuration: '2-3 weeks',
-        prerequisites: [],
-        deliverables: ['Understanding of core concepts', 'Basic practical skills']
-      },
-      {
-        phase: 'research',
-        name: 'Research - Deep Dive',
-        description: `Explore advanced topics and best practices in ${goal}`,
-        order: 2,
-        estimatedDuration: '3-4 weeks',
-        prerequisites: ['Foundation'],
-        deliverables: ['In-depth knowledge', 'Best practices understanding']
-      },
-      {
-        phase: 'capability',
-        name: 'Capability - Hands-on Practice',
-        description: `Build real-world skills through practical application`,
-        order: 3,
-        estimatedDuration: '4-6 weeks',
-        prerequisites: ['Research'],
-        deliverables: ['Working projects', 'Demonstrated skills']
-      },
-      {
-        phase: 'implementation',
-        name: 'Implementation - Real Projects',
-        description: `Apply skills to production-level projects`,
-        order: 4,
-        estimatedDuration: '6-8 weeks',
-        prerequisites: ['Capability'],
-        deliverables: ['Production applications', 'Portfolio pieces']
-      },
-      {
-        phase: 'mastery',
-        name: 'Mastery - Advanced Excellence',
-        description: `Achieve expert-level proficiency and contribute to the field`,
-        order: 5,
-        estimatedDuration: '8-12 weeks',
-        prerequisites: ['Implementation'],
-        deliverables: ['Expert-level work', 'Community contributions']
+  async retrySchemaGeneration(goal, context) {
+    try {
+      console.error('[EnhancedHTA] Retrying schema generation with enhanced context');
+      
+      // Build more explicit context for retry
+      const enhancedContext = {
+        ...context,
+        explicitDomainRequest: true,
+        failedAttempt: true,
+        requireDomainSpecificBranches: true,
+        avoidGenericTemplates: true,
+        examples: {
+          AI: ['Mathematical Foundations', 'Neural Network Architecture', 'Model Training & Validation'],
+          cybersecurity: ['Security Fundamentals', 'Threat Analysis', 'Penetration Testing'],
+          photography: ['Camera Fundamentals', 'Composition Techniques', 'Post-Processing Mastery'],
+          programming: ['Language Syntax', 'Problem-Solving Patterns', 'Real-World Applications']
+        }
+      };
+      
+      const retryResult = await this.schemaEngine.generateHTATree(goal, enhancedContext);
+      
+      if (retryResult && retryResult.level2_strategicBranches && 
+          retryResult.level2_strategicBranches.strategic_branches && 
+          retryResult.level2_strategicBranches.strategic_branches.length > 0) {
+        
+        return {
+          strategicBranches: retryResult.level2_strategicBranches.strategic_branches.map(branch => ({
+            name: branch.name,
+            description: branch.description,
+            priority: branch.priority,
+            domain_focus: branch.domain_focus,
+            rationale: branch.rationale,
+            expected_outcomes: branch.expected_outcomes || [],
+            context_adaptations: branch.context_adaptations || [],
+            pain_point_mitigations: branch.pain_point_mitigations || [],
+            exploration_opportunities: branch.exploration_opportunities || [],
+            tasks: [],
+            focus: this.mapDomainFocusToHTAFocus(branch.domain_focus),
+            schema_generated: true,
+            retry_generated: true
+          }))
+        };
       }
-    ];
+      
+      return null;
+    } catch (error) {
+      console.error('[EnhancedHTA] Schema retry failed:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Generate domain-adaptive branches as absolute last resort
+   */
+  async generateDomainAdaptiveBranches(goal, context) {
+    console.error('[EnhancedHTA] Using domain-adaptive fallback generation');
     
-    return branches;
+    // Extract domain hints from goal
+    const domainHints = this.extractDomainHints(goal);
+    const branches = [];
+    
+    // Generate domain-specific branches based on goal analysis
+    if (domainHints.isAI || domainHints.isMachineLearning) {
+      branches.push(
+        { name: 'Mathematical Foundations', description: `Master the mathematical concepts underlying ${goal}`, priority: 1 },
+        { name: 'Algorithmic Understanding', description: `Understand key algorithms and techniques for ${goal}`, priority: 2 },
+        { name: 'Practical Implementation', description: `Build and train models for ${goal}`, priority: 3 },
+        { name: 'Advanced Applications', description: `Apply ${goal} to real-world problems`, priority: 4 }
+      );
+    } else if (domainHints.isCybersecurity) {
+      branches.push(
+        { name: 'Security Fundamentals', description: `Learn core security principles for ${goal}`, priority: 1 },
+        { name: 'Threat Analysis', description: `Understand threats and vulnerabilities in ${goal}`, priority: 2 },
+        { name: 'Defense Strategies', description: `Implement security measures for ${goal}`, priority: 3 },
+        { name: 'Advanced Techniques', description: `Master advanced security techniques for ${goal}`, priority: 4 }
+      );
+    } else if (domainHints.isProgramming) {
+      branches.push(
+        { name: 'Language Mastery', description: `Master the programming language for ${goal}`, priority: 1 },
+        { name: 'Problem-Solving Patterns', description: `Learn common patterns and best practices for ${goal}`, priority: 2 },
+        { name: 'Project Development', description: `Build complete projects using ${goal}`, priority: 3 },
+        { name: 'Advanced Optimization', description: `Optimize and scale ${goal} applications`, priority: 4 }
+      );
+    } else {
+      // Generic domain-adaptive approach
+      const goalWords = goal.toLowerCase().split(' ');
+      const mainTopic = goalWords[goalWords.length - 1] || 'this skill';
+      
+      branches.push(
+        { name: `${this.capitalize(mainTopic)} Foundations`, description: `Build strong foundations in ${goal}`, priority: 1 },
+        { name: `${this.capitalize(mainTopic)} Application`, description: `Apply ${goal} in practical scenarios`, priority: 2 },
+        { name: `${this.capitalize(mainTopic)} Mastery`, description: `Achieve proficiency in ${goal}`, priority: 3 },
+        { name: `${this.capitalize(mainTopic)} Innovation`, description: `Innovate and extend ${goal}`, priority: 4 }
+      );
+    }
+    
+    return branches.map(branch => ({
+      ...branch,
+      phase: branch.name.toLowerCase().replace(/\s+/g, '_'),
+      description: branch.description,
+      order: branch.priority,
+      estimatedDuration: '2-4 weeks',
+      prerequisites: branch.priority > 1 ? [branches[branch.priority - 2].name] : [],
+      deliverables: [`Progress in ${branch.name}`, 'Practical skills'],
+      tasks: [],
+      focus: 'balanced',
+      schema_generated: false,
+      domain_adaptive: true,
+      fallback_generated: true
+    }));
+  }
+
+  /**
+   * Extract domain hints from goal text
+   */
+  extractDomainHints(goal) {
+    const lowerGoal = goal.toLowerCase();
+    return {
+      isAI: /artificial intelligence|machine learning|neural network|deep learning|ai|ml|cnn|rnn|transformer/i.test(lowerGoal),
+      isMachineLearning: /machine learning|ml|data science|predictive|classification|regression|clustering/i.test(lowerGoal),
+      isCybersecurity: /cybersecurity|security|penetration|vulnerability|hacking|encryption|firewall/i.test(lowerGoal),
+      isProgramming: /programming|coding|development|software|javascript|python|java|react|node/i.test(lowerGoal),
+      isPhotography: /photography|photo|camera|lens|composition|lighting/i.test(lowerGoal),
+      isDesign: /design|ui|ux|graphic|visual|interface/i.test(lowerGoal)
+    };
+  }
+
+  /**
+   * Capitalize first letter of string
+   */
+  capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
 }

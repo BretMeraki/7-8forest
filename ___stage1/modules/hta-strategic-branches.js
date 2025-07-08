@@ -11,102 +11,235 @@ export class HTAStrategicBranches {
   }
 
   initializePhaseDefinitions() {
+    // Domain-adaptive phase definitions - no hardcoded names
     return {
-      foundation: {
-        name: 'Foundation',
-        description: 'Establish core understanding and fundamental skills',
-        focus: 'Understanding basics, setting up environment, learning prerequisites',
+      // AI/ML Domain
+      mathematical_foundations: {
+        name: 'Mathematical Foundations',
+        description: 'Master mathematical concepts underlying AI/ML',
+        focus: 'Linear algebra, calculus, statistics, probability',
         prerequisites: [],
-        estimatedDuration: 0.2, // 20% of total time
-        keyActivities: ['research', 'setup', 'fundamentals', 'orientation'],
-        successCriteria: 'Can articulate basic concepts and have proper tools setup'
+        estimatedDuration: 0.25,
+        keyActivities: ['study', 'practice', 'apply', 'verify'],
+        successCriteria: 'Can work with mathematical concepts confidently'
       },
-      research: {
-        name: 'Research',
-        description: 'Deep dive into domain knowledge and best practices',
-        focus: 'Gathering information, understanding ecosystem, studying examples',
-        prerequisites: ['foundation'],
-        estimatedDuration: 0.25, // 25% of total time
-        keyActivities: ['study', 'analyze', 'compare', 'document'],
-        successCriteria: 'Has comprehensive understanding of domain and approaches'
+      algorithmic_understanding: {
+        name: 'Algorithmic Understanding',
+        description: 'Learn key algorithms and their applications',
+        focus: 'Algorithm selection, implementation, optimization',
+        prerequisites: ['mathematical_foundations'],
+        estimatedDuration: 0.3,
+        keyActivities: ['analyze', 'implement', 'compare', 'optimize'],
+        successCriteria: 'Can select and implement appropriate algorithms'
       },
-      capability: {
-        name: 'Capability',
-        description: 'Build practical skills through hands-on practice',
-        focus: 'Skills development, practice exercises, building competency',
-        prerequisites: ['foundation', 'research'],
-        estimatedDuration: 0.3, // 30% of total time
-        keyActivities: ['practice', 'build', 'experiment', 'refine'],
-        successCriteria: 'Can execute core skills with confidence'
+      
+      // Cybersecurity Domain
+      security_fundamentals: {
+        name: 'Security Fundamentals',
+        description: 'Learn core security principles and concepts',
+        focus: 'Security principles, threat models, basic defense',
+        prerequisites: [],
+        estimatedDuration: 0.2,
+        keyActivities: ['study', 'analyze', 'practice', 'assess'],
+        successCriteria: 'Understands core security concepts and principles'
       },
-      implementation: {
-        name: 'Implementation',
-        description: 'Apply skills to real-world projects and challenges',
-        focus: 'Building actual projects, solving real problems',
-        prerequisites: ['foundation', 'research', 'capability'],
-        estimatedDuration: 0.2, // 20% of total time
-        keyActivities: ['create', 'deploy', 'iterate', 'optimize'],
-        successCriteria: 'Has completed meaningful projects demonstrating skill'
+      threat_analysis: {
+        name: 'Threat Analysis',
+        description: 'Understand and identify security threats',
+        focus: 'Threat identification, vulnerability assessment, risk analysis',
+        prerequisites: ['security_fundamentals'],
+        estimatedDuration: 0.25,
+        keyActivities: ['assess', 'analyze', 'document', 'prioritize'],
+        successCriteria: 'Can identify and analyze security threats effectively'
+      },
+      
+      // Programming Domain
+      language_mastery: {
+        name: 'Language Mastery',
+        description: 'Master programming language syntax and concepts',
+        focus: 'Syntax, idioms, best practices, tooling',
+        prerequisites: [],
+        estimatedDuration: 0.25,
+        keyActivities: ['practice', 'code', 'review', 'refactor'],
+        successCriteria: 'Can write clean, idiomatic code confidently'
+      },
+      problem_solving: {
+        name: 'Problem-Solving Patterns',
+        description: 'Learn common patterns and problem-solving approaches',
+        focus: 'Design patterns, algorithms, debugging, optimization',
+        prerequisites: ['language_mastery'],
+        estimatedDuration: 0.3,
+        keyActivities: ['solve', 'pattern-match', 'optimize', 'debug'],
+        successCriteria: 'Can solve complex problems using appropriate patterns'
+      },
+      
+      // Photography Domain
+      camera_fundamentals: {
+        name: 'Camera Fundamentals',
+        description: 'Master camera settings and technical aspects',
+        focus: 'Exposure, composition rules, camera operation',
+        prerequisites: [],
+        estimatedDuration: 0.2,
+        keyActivities: ['practice', 'experiment', 'shoot', 'review'],
+        successCriteria: 'Can operate camera confidently in various conditions'
+      },
+      creative_composition: {
+        name: 'Creative Composition',
+        description: 'Develop artistic eye and composition skills',
+        focus: 'Composition techniques, visual storytelling, artistic vision',
+        prerequisites: ['camera_fundamentals'],
+        estimatedDuration: 0.25,
+        keyActivities: ['compose', 'create', 'critique', 'refine'],
+        successCriteria: 'Can create compelling, well-composed images'
+      },
+      
+      // Generic adaptive phases
+      foundations: {
+        name: 'Foundations',
+        description: 'Build essential knowledge and skills',
+        focus: 'Core concepts, basic skills, fundamental understanding',
+        prerequisites: [],
+        estimatedDuration: 0.2,
+        keyActivities: ['learn', 'practice', 'understand', 'apply'],
+        successCriteria: 'Has solid foundation in core concepts'
+      },
+      application: {
+        name: 'Application',
+        description: 'Apply knowledge to practical scenarios',
+        focus: 'Real-world application, problem solving, skill development',
+        prerequisites: ['foundations'],
+        estimatedDuration: 0.3,
+        keyActivities: ['apply', 'solve', 'build', 'iterate'],
+        successCriteria: 'Can apply knowledge to solve real problems'
       },
       mastery: {
         name: 'Mastery',
-        description: 'Advanced techniques and continuous improvement',
-        focus: 'Advanced concepts, optimization, teaching others',
-        prerequisites: ['foundation', 'research', 'capability', 'implementation'],
-        estimatedDuration: 0.05, // 5% of total time (ongoing)
+        description: 'Achieve advanced proficiency and innovation',
+        focus: 'Advanced techniques, innovation, teaching others',
+        prerequisites: ['application'],
+        estimatedDuration: 0.2,
         keyActivities: ['innovate', 'teach', 'mentor', 'advance'],
-        successCriteria: 'Can teach others and innovate within the domain'
+        successCriteria: 'Can innovate and contribute to the field'
       }
     };
   }
 
   generateStrategicBranches(goal, complexity, userPreferences = {}) {
     const branches = {};
-    const totalComplexity = complexity;
     
-    // Adjust phase selection based on complexity
-    const phasesToInclude = this.selectPhasesForComplexity(complexity, userPreferences);
+    // Select domain-specific phases based on goal analysis
+    const phasesToInclude = this.selectDomainSpecificPhases(goal, complexity, userPreferences);
     
     for (const phaseKey of phasesToInclude) {
       const phaseDefinition = this.phaseDefinitions[phaseKey];
       
-      branches[phaseKey] = {
-        id: `${phaseKey}_${Date.now()}`,
-        name: phaseDefinition.name,
-        description: phaseDefinition.description,
-        focus: phaseDefinition.focus,
-        phase: phaseKey,
-        prerequisites: phaseDefinition.prerequisites,
-        estimatedDuration: this.calculatePhaseDuration(phaseKey, complexity, userPreferences),
-        keyActivities: phaseDefinition.keyActivities,
-        successCriteria: phaseDefinition.successCriteria,
-        status: 'not_started',
-        progress: 0,
-        tasks: [],
-        adaptations: [],
-        created: new Date().toISOString(),
-        lastModified: new Date().toISOString()
-      };
+      if (phaseDefinition) {
+        branches[phaseKey] = {
+          id: `${phaseKey}_${Date.now()}`,
+          name: this.customizePhaseNameForGoal(phaseDefinition.name, goal),
+          description: this.customizePhaseDescriptionForGoal(phaseDefinition.description, goal),
+          focus: this.customizePhaseFocus(phaseDefinition.focus, goal),
+          phase: phaseKey,
+          prerequisites: phaseDefinition.prerequisites,
+          estimatedDuration: this.calculatePhaseDuration(phaseKey, complexity, userPreferences),
+          keyActivities: phaseDefinition.keyActivities,
+          successCriteria: this.customizeSuccessCriteria(phaseDefinition.successCriteria, goal),
+          status: 'not_started',
+          progress: 0,
+          tasks: [],
+          adaptations: [],
+          created: new Date().toISOString(),
+          lastModified: new Date().toISOString(),
+          domain_adaptive: true
+        };
+      }
     }
 
     return this.optimizeBranchSequence(branches, goal, userPreferences);
   }
 
+  selectDomainSpecificPhases(goal, complexity, userPreferences = {}) {
+    const goalLower = goal.toLowerCase();
+    
+    // AI/ML domain detection
+    if (/artificial intelligence|machine learning|neural network|deep learning|ai|ml|cnn|rnn|transformer/i.test(goalLower)) {
+      return complexity <= 3 
+        ? ['mathematical_foundations', 'algorithmic_understanding', 'application']
+        : ['mathematical_foundations', 'algorithmic_understanding', 'application', 'mastery'];
+    }
+    
+    // Cybersecurity domain detection
+    if (/cybersecurity|security|penetration|vulnerability|hacking|encryption|firewall/i.test(goalLower)) {
+      return complexity <= 3
+        ? ['security_fundamentals', 'threat_analysis', 'application']
+        : ['security_fundamentals', 'threat_analysis', 'application', 'mastery'];
+    }
+    
+    // Programming domain detection
+    if (/programming|coding|development|software|javascript|python|java|react|node/i.test(goalLower)) {
+      return complexity <= 3
+        ? ['language_mastery', 'problem_solving', 'application']
+        : ['language_mastery', 'problem_solving', 'application', 'mastery'];
+    }
+    
+    // Photography domain detection
+    if (/photography|photo|camera|lens|composition|lighting/i.test(goalLower)) {
+      return complexity <= 3
+        ? ['camera_fundamentals', 'creative_composition', 'application']
+        : ['camera_fundamentals', 'creative_composition', 'application', 'mastery'];
+    }
+    
+    // Default adaptive approach for other domains
+    return complexity <= 3
+      ? ['foundations', 'application']
+      : ['foundations', 'application', 'mastery'];
+  }
+
+  customizePhaseNameForGoal(baseName, goal) {
+    // Keep domain-specific names but make them more contextual
+    const goalContext = this.extractMainContext(goal);
+    
+    if (baseName === 'Foundations') {
+      return `${goalContext} Foundations`;
+    } else if (baseName === 'Application') {
+      return `${goalContext} Application`;
+    } else if (baseName === 'Mastery') {
+      return `${goalContext} Mastery`;
+    }
+    
+    return baseName; // Keep domain-specific names as-is
+  }
+
+  customizePhaseDescriptionForGoal(baseDescription, goal) {
+    return baseDescription.replace(/domain/g, goal).replace(/field/g, goal);
+  }
+
+  customizePhaseFocus(baseFocus, goal) {
+    return baseFocus.replace(/domain/g, goal);
+  }
+
+  customizeSuccessCriteria(baseCriteria, goal) {
+    return baseCriteria.replace(/domain/g, goal).replace(/field/g, goal);
+  }
+
+  extractMainContext(goal) {
+    const words = goal.split(' ');
+    const importantWords = words.filter(word => 
+      word.length > 3 && 
+      !['learn', 'master', 'understand', 'study', 'with', 'using', 'through'].includes(word.toLowerCase())
+    );
+    
+    if (importantWords.length > 0) {
+      return importantWords[0].charAt(0).toUpperCase() + importantWords[0].slice(1);
+    }
+    
+    return 'Skill';
+  }
+
   selectPhasesForComplexity(complexity, userPreferences = {}) {
-    const allPhases = ['foundation', 'research', 'capability', 'implementation', 'mastery'];
-    
-    // For very simple goals (complexity 1-2), might skip research
-    if (complexity <= 2 && userPreferences.skipResearch) {
-      return ['foundation', 'capability', 'implementation'];
-    }
-    
-    // For very complex goals (complexity 8+), ensure all phases
-    if (complexity >= 8) {
-      return allPhases;
-    }
-    
-    // Standard flow for most goals
-    return allPhases;
+    // This method is deprecated - use selectDomainSpecificPhases instead
+    console.warn('selectPhasesForComplexity is deprecated. Use selectDomainSpecificPhases for domain-adaptive phase selection.');
+    return this.selectDomainSpecificPhases('general skill', complexity, userPreferences);
   }
 
   calculatePhaseDuration(phase, complexity, userPreferences = {}) {
