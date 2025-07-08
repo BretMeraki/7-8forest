@@ -28,7 +28,8 @@ export default {
   },
   chroma: {
     // Use embedded mode by default (no server required)
-    url: process.env.CHROMA_URL || 'http://localhost:8000',
+    // Use embedded mode by default; if CHROMA_URL is provided we switch to server mode.
+    url: process.env.CHROMA_URL || '',
     path: process.env.CHROMA_PATH || '.chromadb',
     collection: process.env.CHROMA_COLLECTION || 'forest_vectors',
     dimension: parseInt(process.env.CHROMA_DIMENSION, 10) || 1536

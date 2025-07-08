@@ -23,6 +23,7 @@ import { GatedOnboardingFlow } from './modules/gated-onboarding-flow.js';
 import { NextPipelinePresenter } from './modules/next-pipeline-presenter.js';
 import { ForestDataVectorization } from './modules/forest-data-vectorization.js';
 import { ChromaDBLifecycleManager } from './modules/ChromaDBLifecycleManager.js';
+import { ClaudeDiagnosticHelper } from './utils/claude-diagnostic-helper.js';
 import path from 'path';
 
 // Replaced pino with simple stderr console logger to avoid JSON log leakage
@@ -91,6 +92,9 @@ class Stage1CoreServer {
     this.memorySync = new MemorySync(this.dataPersistence);
     this.mcpCore = new McpCore(this.server);
     
+    // Initialize diagnostic helper for preventing false positives
+    this.diagnosticHelper = new ClaudeDiagnosticHelper();
+    
     // Connect TaskStrategyCore to AmbiguousDesiresManager
     this.ambiguousDesiresManager.taskStrategyCore = this.taskStrategyCore;
 
@@ -158,7 +162,8 @@ class Stage1CoreServer {
       // Connect MCP core to tool router and register JSON-RPC handlers
       await this.mcpCore.setupHandlers();
       this.mcpCore.setToolRouter(this.toolRouter);
-      console.error(`✅ MCP handlers configured with ${this.mcpCore.getToolDefinitions().length} tools`);
+      const toolDefinitions = await this.mcpCore.getToolDefinitions();
+      console.error(`✅ MCP handlers configured with ${toolDefinitions.length} tools`);
       
       // Ensure vector store is properly initialized
       console.error('📊 Initializing vector intelligence...');
@@ -245,7 +250,7 @@ class Stage1CoreServer {
         console.error(`[ToolRouter] Received tool call for: ${toolName}`);
         
         // FIRST INTERACTION: Always show landing page first, unless explicitly requesting it
-        if (!this.hasShownLandingPage && toolName !== 'get_landing_page_forest') {
+        if (!this.hasShownLandingPage && !['get_landing_page_forest', 'start_learning_journey_forest', 'list_projects_forest'].includes(toolName)) {
           this.hasShownLandingPage = true;
           console.error('[ToolRouter] First interaction detected - showing landing page first');
           const landingPageResult = await this.generateLandingPage();
@@ -387,6 +392,14 @@ class Stage1CoreServer {
               result = await this.getChromaDBStatus(args); break;
             case 'restart_chromadb_forest':
               result = await this.restartChromaDB(args); break;
+            
+            // Diagnostic Tools
+            case 'verify_system_health_forest':
+              result = await this.verifySystemHealth(args); break;
+            case 'verify_function_exists_forest':
+              result = await this.verifyFunctionExists(args); break;
+            case 'run_diagnostic_verification_forest':
+              result = await this.runDiagnosticVerification(args); break;
             
             default:
               throw new Error(`Unknown tool: ${toolName}`);
@@ -1337,9 +1350,16 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
       }
 
       const projectId = activeProject.project_id;
-      const { stage, input_data = {} } = args;
+      const { stage, input_data, inputData, context, ...rest } = args;
+      // Support both camelCase and snake_case plus direct context field
+      let mergedInput = input_data || inputData || {};
+      if (context && !mergedInput.context) {
+        mergedInput.context = context;
+      }
+      // Merge any additional top-level props into mergedInput for maximum flexibility
+      mergedInput = { ...mergedInput, ...rest };
 
-      const result = await this.gatedOnboarding.continueOnboarding(projectId, stage, input_data);
+      const result = await this.gatedOnboarding.continueOnboarding(projectId, stage, mergedInput);
       
       let responseText = `**🚀 Onboarding Progress**\n\n${result.message}\n\n`;
       
@@ -1914,6 +1934,160 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
     }
   }
 
+  // ========== DIAGNOSTIC METHODS ==========
+
+  /**
+   * Verify overall system health to prevent false positive diagnostics
+   */
+  async verifySystemHealth(args = {}) {
+    try {
+      const includeTests = args.include_tests !== false;
+      const verification = await this.diagnosticHelper.verifier.runComprehensiveVerification();
+      
+      // Add test results if requested
+      if (includeTests) {
+        const testsPass = await this.diagnosticHelper.verifier.verifyCodeExecution('npm test', 'Full test suite');
+        verification.verifications.tests_pass = testsPass;
+      }
+      
+      const successCount = Object.values(verification.verifications).filter(v => v).length;
+      const totalCount = Object.values(verification.verifications).length;
+      const successRate = successCount / totalCount;
+      
+      let healthStatus = 'HEALTHY';
+      let statusEmoji = '✅';
+      
+      if (successRate < 0.5) {
+        healthStatus = 'UNHEALTHY';
+        statusEmoji = '🔴';
+      } else if (successRate < 0.8) {
+        healthStatus = 'DEGRADED';
+        statusEmoji = '🟡';
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `**System Health Verification** ${statusEmoji}\n\n` +
+                `**Overall Status**: ${healthStatus}\n` +
+                `**Success Rate**: ${Math.round(successRate * 100)}% (${successCount}/${totalCount})\n\n` +
+                `**Verification Results**:\n` +
+                Object.entries(verification.verifications)
+                  .map(([key, value]) => `- ${key}: ${value ? '✅' : '❌'}`)
+                  .join('\n') +
+                `\n\n**Recommendations**:\n` +
+                verification.recommendations.join('\n')
+        }],
+        health_status: healthStatus,
+        success_rate: successRate,
+        verifications: verification.verifications
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `**System Health Verification Failed** ❌\n\nError: ${error.message}\n\nThis may indicate a genuine system issue.`
+        }],
+        error: error.message,
+        health_status: 'ERROR'
+      };
+    }
+  }
+
+  /**
+   * Verify if a specific function exists before reporting it as missing
+   */
+  async verifyFunctionExists(args) {
+    try {
+      const { function_name, file_path } = args;
+      
+      if (!function_name || !file_path) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**Function Verification Error** ❌\n\nBoth function_name and file_path are required.'
+          }],
+          error: 'Missing required parameters'
+        };
+      }
+      
+      const verification = await this.diagnosticHelper.verifyFunctionIssue(
+        function_name,
+        file_path,
+        `Function ${function_name} existence check`
+      );
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `**Function Verification: ${function_name}** 📋\n\n` +
+                `**File**: ${file_path}\n` +
+                `**Status**: ${verification.severity === 'LOW' ? '✅ EXISTS' : verification.severity === 'HIGH' ? '❌ MISSING' : '🟡 INVESTIGATE'}\n\n` +
+                `**Verification Results**:\n` +
+                Object.entries(verification.verificationResults)
+                  .map(([key, value]) => `- ${key}: ${typeof value === 'boolean' ? (value ? '✅' : '❌') : value}`)
+                  .join('\n') +
+                `\n\n**Recommendation**: ${verification.recommendation}`
+        }],
+        function_exists: verification.verificationResults.functionExists,
+        severity: verification.severity,
+        verification_results: verification.verificationResults
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `**Function Verification Failed** ❌\n\nError: ${error.message}`
+        }],
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Run comprehensive diagnostic verification for reported issues
+   */
+  async runDiagnosticVerification(args) {
+    try {
+      const { reported_issues = [] } = args;
+      
+      const report = await this.diagnosticHelper.generateDiagnosticReport(reported_issues);
+      
+      const summary = report.summary;
+      const verificationText = report.issue_verifications.map(v => {
+        const statusEmoji = v.severity === 'LOW' ? '✅' : v.severity === 'HIGH' ? '❌' : '🟡';
+        return `${statusEmoji} **${v.issue}**\n   ${v.recommendation}`;
+      }).join('\n\n');
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `**Diagnostic Verification Report** 📊\n\n` +
+                `**Summary**:\n` +
+                `- Total Issues Reported: ${summary.total_issues_reported}\n` +
+                `- False Positives: ${summary.false_positives}\n` +
+                `- Verified Issues: ${summary.verified_issues}\n` +
+                `- Needs Investigation: ${summary.needs_investigation}\n\n` +
+                `**Issue Verifications**:\n${verificationText}\n\n` +
+                `**System Health**: ${report.system_health?.verifications ? 
+                  Object.values(report.system_health.verifications).filter(v => v).length + '/' + 
+                  Object.values(report.system_health.verifications).length + ' checks passing' : 'Unknown'}\n\n` +
+                `**Recommendations**:\n${report.recommendations.join('\n')}`
+        }],
+        report,
+        false_positive_rate: summary.false_positives / Math.max(1, summary.total_issues_reported)
+      };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: `**Diagnostic Verification Failed** ❌\n\nError: ${error.message}`
+        }],
+        error: error.message
+      };
+    }
+  }
+
   async cleanup() {
     try {
       this.logger.info?.('[Stage1CoreServer] Starting cleanup...');
@@ -1956,8 +2130,8 @@ export const stage1CoreServer = Stage1CoreServer;
 export { Stage1CoreServer };
 
 // Re-export existing server for backward compatibility during transition
-// import { CleanForestServer } from '../server-modular.js';
-// export { CleanForestServer };
+
+
 
 // Note: MCP server startup is handled by dedicated entry points:
 // - forest-mcp-server.js (direct entry point)  

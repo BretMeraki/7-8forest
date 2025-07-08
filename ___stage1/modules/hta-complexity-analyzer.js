@@ -7,7 +7,12 @@ class HTAComplexityAnalyzer {
   constructor() {
     // Goal complexity analysis constants
     this.COMPLEXITY_INDICATORS = {
-      TECHNICAL_TERMS: ['programming', 'coding', 'algorithm', 'database', 'machine learning', 'AI', 'framework', 'library', 'API', 'cloud', 'security'],
+      TECHNICAL_TERMS: [
+        'programming', 'coding', 'algorithm', 'database', 'machine learning', 'ai', 'framework', 'library', 'api', 'cloud', 'security',
+        // Engineering & energy related
+        'engineering', 'energy', 'renewable', 'solar', 'battery', 'storage', 'electronics', 'hardware', 'materials', 'photovoltaic',
+        'mechanical', 'electrical', 'power', 'grid', 'thermal'
+      ],
       CREATIVE_TERMS: ['design', 'art', 'music', 'writing', 'photography', 'video', 'creative', 'visual', 'aesthetic'],
       BUSINESS_TERMS: ['marketing', 'sales', 'business', 'entrepreneurship', 'finance', 'economics', 'management', 'strategy'],
       PHYSICAL_TERMS: ['fitness', 'exercise', 'sport', 'physical', 'health', 'training', 'martial arts'],
@@ -19,17 +24,19 @@ class HTAComplexityAnalyzer {
       TIME_CONSTRAINTS: 1.3,
       RESOURCE_CONSTRAINTS: 1.2,
       VAGUE_GOALS: 1.4,
-      SPECIFIC_OUTCOMES: 0.8
+      // Specific outcomes shouldn't drastically reduce complexity – slight adjustment only
+      SPECIFIC_OUTCOMES: 0.95
     };
   }
 
   analyzeGoalComplexity(goal, focusAreas = [], constraints = {}) {
-    let complexityScore = 1;
+    // Start with a baseline complexity of 2 to avoid chronic under-estimation
+    let complexityScore = 2;
     const analysis = {
-      baseComplexity: 1,
+      baseComplexity: 2,
       domainFactors: [],
       constraintFactors: [],
-      totalScore: 1,
+      totalScore: 2,
       reasoning: []
     };
 
@@ -79,7 +86,7 @@ class HTAComplexityAnalyzer {
       analysis.reasoning.push('Specific outcomes allow focused learning paths');
     }
 
-    analysis.totalScore = Math.min(Math.max(complexityScore, 1), 10);
+    analysis.totalScore = Math.round(Math.min(Math.max(complexityScore, 1), 10));
     
     return analysis;
   }

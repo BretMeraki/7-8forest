@@ -9,17 +9,17 @@ export const FOREST_TOOLS = {
   // ========== PROJECT MANAGEMENT (Tools 1-3) ==========
   create_project_forest: {
     name: 'create_project_forest',
-    description: 'Create new learning project with automatic HTA generation',
+    description: 'Create new learning project with automatic HTA generation. REQUIRED: goal parameter. Auto-generates project_id if not provided.',
     inputSchema: {
       type: 'object',
       properties: {
         goal: {
           type: 'string',
-          description: 'Your learning goal or what you want to achieve (required)'
+          description: '**REQUIRED** Your learning goal or what you want to achieve (e.g., "learn to play guitar")'
         },
         project_id: {
           type: 'string',
-          description: 'Optional: Custom project ID (auto-generated if not provided)'
+          description: 'Optional: Custom project ID (auto-generated from goal if not provided)'
         },
         context: {
           type: 'string',
@@ -37,13 +37,13 @@ export const FOREST_TOOLS = {
 
   switch_project_forest: {
     name: 'switch_project_forest',
-    description: 'Switch between existing projects',
+    description: 'Switch between existing projects. REQUIRED: project_id parameter.',
     inputSchema: {
       type: 'object',
       properties: {
         project_id: {
           type: 'string',
-          description: 'ID of the project to switch to'
+          description: '**REQUIRED** ID of the project to switch to (use list_projects_forest to see available IDs)'
         }
       },
       required: ['project_id']
@@ -103,7 +103,7 @@ export const FOREST_TOOLS = {
   // ========== TASK MANAGEMENT (Tools 6-7) ==========
   get_next_task_forest: {
     name: 'get_next_task_forest',
-    description: 'Get the single most logical next task based on current progress and context',
+    description: 'Get the single most logical next task based on current progress and context. No required parameters.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -111,15 +111,15 @@ export const FOREST_TOOLS = {
           type: 'number',
           minimum: 1,
           maximum: 5,
-          description: 'Current energy level to match appropriate task difficulty'
+          description: 'Optional: Current energy level to match appropriate task difficulty (1-5)'
         },
         time_available: {
           type: 'string',
-          description: 'Time available for the task (e.g. "30 minutes", "1 hour")'
+          description: 'Optional: Time available for the task (e.g. "30 minutes", "1 hour")'
         },
         context_from_memory: {
           type: 'string',
-          description: 'Optional context retrieved from Memory MCP about recent progress/insights'
+          description: 'Optional: Context retrieved from Memory MCP about recent progress/insights'
         }
       }
     }
@@ -127,26 +127,27 @@ export const FOREST_TOOLS = {
 
   complete_block_forest: {
     name: 'complete_block_forest',
-    description: 'Complete time block and capture insights for active project',
+    description: 'Complete time block and capture insights for active project. REQUIRED: block_id parameter.',
     inputSchema: {
       type: 'object',
       properties: {
         block_id: {
-          type: 'string'
+          type: 'string',
+          description: '**REQUIRED** ID of the task block to complete'
         },
         outcome: {
           type: 'string',
-          description: 'What happened? Key insights?'
+          description: 'Optional: What happened? Key insights?'
         },
         energy_level: {
           type: 'number',
           minimum: 1,
           maximum: 5,
-          description: 'Energy after completion'
+          description: 'Optional: Energy after completion (1-5)'
         },
         learned: {
           type: 'string',
-          description: 'What specific knowledge or skills did you gain?'
+          description: 'Optional: What specific knowledge or skills did you gain?'
         },
         next_questions: {
           type: 'string',
@@ -170,15 +171,16 @@ export const FOREST_TOOLS = {
   // ========== STRATEGY EVOLUTION (Tool 8) ==========
   evolve_strategy_forest: {
     name: 'evolve_strategy_forest',
-    description: 'Analyze patterns and evolve the approach for active project',
+    description: 'Analyze patterns and evolve the approach for active project. REQUIRED: hint parameter.',
     inputSchema: {
       type: 'object',
       properties: {
-        feedback: {
+        hint: {
           type: 'string',
-          description: "What's working? What's not? What needs to change?"
+          description: "**REQUIRED** What's working? What's not? What needs to change? (your feedback/hint for evolution)"
         }
-      }
+      },
+      required: ['hint']
     }
   },
 
@@ -237,22 +239,22 @@ export const FOREST_TOOLS = {
 
   ask_truthful_claude_forest: {
     name: 'ask_truthful_claude_forest',
-    description: 'Query truthful Claude with structured prompts and context',
+    description: 'Query truthful Claude with structured prompts and context. REQUIRED: prompt parameter.',
     inputSchema: {
       type: 'object',
       properties: {
         prompt: {
           type: 'string',
-          description: 'Your question or request for Claude'
+          description: '**REQUIRED** Your question or request for Claude'
         },
         context: {
           type: 'object',
-          description: 'Additional context for the query'
+          description: 'Optional: Additional context for the query'
         },
         response_format: {
           type: 'string',
           enum: ['text', 'json', 'markdown'],
-          description: 'Desired response format'
+          description: 'Optional: Desired response format (default: text)'
         }
       },
       required: ['prompt']
@@ -308,6 +310,79 @@ export const FOREST_TOOLS = {
     inputSchema: {
       type: 'object',
       properties: {}
+    }
+  },
+
+  // ========== DIAGNOSTIC TOOLS ==========
+  verify_system_health_forest: {
+    name: 'verify_system_health_forest',
+    description: 'Verify overall system health and identify any real issues before reporting diagnostics',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        include_tests: {
+          type: 'boolean',
+          description: 'Whether to run full test suite (default: true)'
+        }
+      }
+    }
+  },
+
+  verify_function_exists_forest: {
+    name: 'verify_function_exists_forest',
+    description: 'Verify if a specific function exists before reporting it as missing',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        function_name: {
+          type: 'string',
+          description: 'Name of the function to verify'
+        },
+        file_path: {
+          type: 'string',
+          description: 'Path to the file where the function should exist'
+        }
+      },
+      required: ['function_name', 'file_path']
+    }
+  },
+
+  run_diagnostic_verification_forest: {
+    name: 'run_diagnostic_verification_forest',
+    description: 'Run comprehensive diagnostic verification to prevent false positives',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        reported_issues: {
+          type: 'array',
+          description: 'Array of issues to verify',
+          items: {
+            type: 'object',
+            properties: {
+              type: {
+                type: 'string',
+                enum: ['function', 'import', 'export', 'file', 'system']
+              },
+              description: {
+                type: 'string',
+                description: 'Description of the issue'
+              },
+              function_name: {
+                type: 'string',
+                description: 'Function name (for function issues)'
+              },
+              file_path: {
+                type: 'string',
+                description: 'File path (for function/import/export issues)'
+              },
+              item_name: {
+                type: 'string',
+                description: 'Item name (for import/export issues)'
+              }
+            }
+          }
+        }
+      }
     }
   }
 };
@@ -369,6 +444,11 @@ export const TOOL_CATEGORIES = {
     'factory_reset_forest',
     'get_landing_page_forest',
     'get_current_config'
+  ],
+  'Diagnostic Tools': [
+    'verify_system_health_forest',
+    'verify_function_exists_forest',
+    'run_diagnostic_verification_forest'
   ]
 };
 

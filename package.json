@@ -12,7 +12,9 @@
     "coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
     "memory:monitor": "node --trace-warnings --max-old-space-size=512 ___stage1/forest-mcp-server.js",
     "memory:analyze": "node --inspect --max-old-space-size=512 ___stage1/forest-mcp-server.js",
-    "cache:stats": "node -e \"const { embeddingService } = require('./___stage1/utils/embedding-service.js'); console.log('Embedding cache:', embeddingService.getCacheStats());\""
+    "cache:stats": "node -e \"const { embeddingService } = require('./___stage1/utils/embedding-service.js'); console.log('Embedding cache:', embeddingService.getCacheStats());\"",
+    "verify:diagnostics": "node ___stage1/utils/diagnostic-verifier.js",
+    "test:diagnostics": "node ___stage1/test-diagnostic-tools.js"
   },
   "dependencies": {
     "@babel/parser": "^7.26.2",

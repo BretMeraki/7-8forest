@@ -169,7 +169,7 @@ export class StdioServerTransport {
       try {
         if (request.method === 'initialize') {
           // Standard MCP initialize response - include tools list for compatibility
-          const tools = this.server?.mcpCore?.getToolDefinitions?.() || [];
+          const tools = this.server?.mcpCore?.getToolDefinitions ? await this.server.mcpCore.getToolDefinitions() : [];
           responsePayload = {
             serverInfo: this.server?.getServerInfo?.() || { name: 'forest-mcp-server', version: '1.0.0' },
             capabilities: { tools: {} },
@@ -178,7 +178,7 @@ export class StdioServerTransport {
           };
         } else if (request.method === 'tools/list') {
           // Return tools list when specifically requested
-          const tools = this.server.mcpCore?.getToolDefinitions?.() || [];
+          const tools = this.server?.mcpCore?.getToolDefinitions ? await this.server.mcpCore.getToolDefinitions() : [];
           console.error(`[StdioTransport] Returning ${tools.length} tools to client`);
           responsePayload = {
             tools
@@ -206,11 +206,13 @@ export class StdioServerTransport {
         } else if (request.method === 'tools/call') {
           // Standard MCP tools/call request
           const { name, arguments: args } = request.params || {};
+          console.error(`[StdioTransport] Tool call: ${name}`);
           const result = await this.server.mcpCore.handleToolCall(name, args || {});
           responsePayload = result;
         } else if (request.method && request.method.startsWith('tool/')) {
           // Backwards compatibility: method is 'tool/<name>'
           const toolName = request.method.slice('tool/'.length);
+          console.error(`[StdioTransport] Legacy tool call: ${toolName}`);
           const result = await this.server.mcpCore.handleToolCall(toolName, request.params || {});
           responsePayload = result;
         } else {

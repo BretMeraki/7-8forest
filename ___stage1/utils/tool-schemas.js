@@ -2,9 +2,9 @@
 // Each entry lists required argument keys. Optional keys are allowed implicitly.
 
 export const toolSchemas = {
-  // Updated: require project_id and goal for project creation
+  // Updated: goal is required, project_id is auto-generated if not provided
   create_project_forest: {
-    required: ['project_id', 'goal'],
+    required: ['goal'],
   },
   switch_project_forest: {
     required: ['project_id'],
@@ -26,7 +26,7 @@ export const toolSchemas = {
     required: [], // no required fields - energy_level and time_available are optional
   },
   complete_block_forest: {
-    required: ['block_id'],
+    required: ['block_id', 'outcome', 'energy_level'],
   },
   evolve_strategy_forest: {
     required: ['hint'],

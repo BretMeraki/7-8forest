@@ -213,7 +213,7 @@ export class HTACore {
   }
 
   async createFallbackHTA(config, pathName) {
-    const complexityAnalysis = this.analyzeGoalComplexity(config.goal, config.context || '');
+    const complexityAnalysis = await this.analyzeGoalComplexityAsync(config.goal, config.context || '');
     const skeletonTasks = await this.generateSkeletonTasks(
       complexityAnalysis,
       config,
@@ -247,7 +247,7 @@ export class HTACore {
   async generateHTAData(goal, context = '', options = {}) {
     // PRD-required function for Claude integration
     try {
-      const complexityAnalysis = this.analyzeGoalComplexity(goal, context);
+      const complexityAnalysis = await this.analyzeGoalComplexityAsync(goal, context);
       
       if (this.claudeInterface && globalCircuitBreaker.canExecute()) {
         const branchPrompt = this.buildBranchGenerationPrompt(
@@ -346,7 +346,7 @@ export class HTACore {
         throw new Error('Goal must be provided either in project configuration or as a parameter. Use create_project_forest to set a project goal, or provide goal parameter in your tool call.');
       }
       const context = contextOverride || config.context || '';
-      const complexityAnalysis = this.analyzeGoalComplexity(goal, context);
+      const complexityAnalysis = await this.analyzeGoalComplexityAsync(goal, context);
 
       const htaData = {
         projectId,
@@ -661,6 +661,20 @@ export class HTACore {
       factors: analysis.reasoning,
       analysis: `Goal complexity: ${analysis.totalScore}/10. ${analysis.reasoning.join(', ')}.`,
     };
+  }
+
+  /**
+   * Legacy async alias maintained for backwards compatibility.
+   * Several older code paths call `analyzeGoalComplexityAsync` and expect a
+   * promise. This thin wrapper simply delegates to the synchronous
+   * `analyzeGoalComplexity` implementation.
+   *
+   * @param {string} goal - The learning goal to analyse.
+   * @param {string} [context=''] - Optional context string.
+   * @returns {Promise<Object>} Resolved complexity analysis object.
+   */
+  async analyzeGoalComplexityAsync(goal, context = '') {
+    return this.analyzeGoalComplexity(goal, context);
   }
 
   calculateTreeStructure(complexityAnalysis, learningStyle, focusAreas) {

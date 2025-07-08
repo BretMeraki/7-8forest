@@ -186,7 +186,11 @@ export class ProjectManagement {
       } catch (error) {
         // Rollback transaction on error
         await this.dataPersistence.rollbackTransaction(transaction);
-        throw error;
+        return {
+        success: false,
+        message: 'Failed during project data initialization',
+        error: error.message
+      };
       }
     } catch (error) {
       const logger = await this.getLogger();

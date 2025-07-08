@@ -307,7 +307,7 @@ export class EnhancedHTACore extends HTACore {
       factors: goalContext.goal_analysis.complexity_factors || [],
       recommended_depth: this.calculateRecommendedDepth(goalContext.goal_analysis.goal_complexity),
       analysis: goalContext.learning_approach?.recommended_strategy || 'Schema-driven approach'
-    } : this.analyzeGoalComplexity(schemaTree.goal, initialContext.context);
+    } : await this.analyzeGoalComplexityAsync(schemaTree.goal, initialContext.context);
 
     // Convert strategic branches to HTA format with defensive checks
     const htaBranches = (strategicBranches && Array.isArray(strategicBranches.strategic_branches)) 

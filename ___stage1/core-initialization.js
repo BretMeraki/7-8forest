@@ -200,7 +200,7 @@ export class CoreInitialization {
       }
 
       // Check tool definitions
-      const toolDefinitions = this.server.mcpCore.getToolDefinitions();
+      const toolDefinitions = await this.server.mcpCore.getToolDefinitions();
       if (toolDefinitions && toolDefinitions.length >= 12) {
         healthChecks.push({
           check: 'tool_definitions',
@@ -324,5 +324,5 @@ export class CoreInitialization {
   }
 }
 
-// import { CleanForestServer } from '../server-modular.js';
-// export { CleanForestServer };
+
+

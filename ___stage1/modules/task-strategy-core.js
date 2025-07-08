@@ -247,7 +247,7 @@ export class TaskStrategyCore {
     return {
       content: [{
         type: 'text',
-        text: 'ℹ️ Roadmap is in place but no actionable tasks were found. Use `generate_hta_tasks` to populate tasks from the roadmap, or run `evolve_strategy` to let the system suggest next steps.'
+        text: 'ℹ️ Roadmap is in place but no actionable tasks were found. Use `build_hta_tree_forest` to generate tasks from the roadmap, or run `evolve_strategy_forest` to let the system suggest next steps.'
       }]
     };
   }

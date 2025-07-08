@@ -29,6 +29,50 @@ export class GatedOnboardingFlow {
     ];
   }
 
+  /**
+   * Deep merge helper that unions arrays and recursively merges objects.
+   * Combines aggregate context patches without losing prior data.
+   */
+  mergeAggregate(target = {}, patch = {}) {
+    if (!patch || typeof patch !== 'object') return target;
+    for (const key of Object.keys(patch)) {
+      const srcVal = patch[key];
+      const dstVal = target[key];
+      if (Array.isArray(srcVal)) {
+        target[key] = Array.isArray(dstVal)
+          ? Array.from(new Set([...dstVal, ...srcVal]))
+          : [...srcVal];
+      } else if (srcVal && typeof srcVal === 'object') {
+        target[key] = this.mergeAggregate(
+          dstVal && typeof dstVal === 'object' ? dstVal : {},
+          srcVal
+        );
+      } else {
+        target[key] = srcVal;
+      }
+    }
+    return target;
+  }
+
+  /**
+   * Retrieve aggregate_context for a project (empty object if none yet).
+   */
+  async getAggregate(projectId) {
+    const state = await this.dataPersistence.loadProjectData(projectId, 'onboarding_state.json');
+    return state?.aggregate_context || {};
+  }
+
+  /**
+   * Persist a patch into a project's aggregate_context using deep merge.
+   */
+  async updateAggregate(projectId, patch = {}) {
+    const state = await this.dataPersistence.loadProjectData(projectId, 'onboarding_state.json');
+    if (!state) return null;
+    state.aggregate_context = this.mergeAggregate(state.aggregate_context || {}, patch);
+    await this.dataPersistence.saveProjectData(projectId, 'onboarding_state.json', state);
+    return state.aggregate_context;
+  }
+
   // ===== MAIN ENTRY POINT =====
   
   async startNewProject(goal, userContext = {}) {
@@ -70,7 +114,8 @@ export class GatedOnboardingFlow {
         user_context: userContext,
         current_stage: 'context_gathering',
         started_at: new Date().toISOString(),
-        gates_completed: ['goal_collection']
+        gates_completed: ['goal_collection'],
+      aggregate_context: { goal, context: userContext.context || '' }
       };
       
       // Save onboarding state
@@ -297,6 +342,8 @@ export class GatedOnboardingFlow {
       onboardingState.gates_completed.push('context_gathering');
     }
     onboardingState.context = context;
+  // Update aggregate context
+  await this.updateAggregate(projectId, { context });
     
     await this.dataPersistence.saveProjectData(projectId, 'onboarding_state.json', onboardingState);
     
@@ -326,6 +373,8 @@ export class GatedOnboardingFlow {
     onboardingState.current_stage = 'hta_tree_building';
     onboardingState.gates_completed.push('complexity_analysis');
     onboardingState.complexity_analysis = analysis;
+  // Update aggregate context
+  await this.updateAggregate(projectId, { complexity: analysis });
     
     await this.dataPersistence.saveProjectData(projectId, 'onboarding_state.json', onboardingState);
     
@@ -350,7 +399,11 @@ export class GatedOnboardingFlow {
       difficulty: onboardingState.complexity_analysis?.difficulty || 5
     };
     
-    const htaResult = await this.buildHtaTree(analyzedData);
+    const htaResult = await this.htaCore.buildHTATree({ 
+    projectId: projectId,
+    goal: analyzedData.goal,
+    context: analyzedData.context
+  });
     if (!htaResult.built_successfully) {
       return {
         success: false,
@@ -365,6 +418,8 @@ export class GatedOnboardingFlow {
     onboardingState.current_stage = 'task_generation';
     onboardingState.gates_completed.push('hta_tree_building');
     onboardingState.hta_tree = htaResult;
+  // Update aggregate context
+  await this.updateAggregate(projectId, { hta_tree: htaResult });
     
     await this.dataPersistence.saveProjectData(projectId, 'onboarding_state.json', onboardingState);
     
@@ -401,6 +456,8 @@ export class GatedOnboardingFlow {
     onboardingState.current_stage = 'completed';
     onboardingState.gates_completed.push('task_generation');
     onboardingState.task_batch = taskBatch;
+  // Update aggregate context
+  await this.updateAggregate(projectId, { tasks: taskBatch });
     onboardingState.completed_at = new Date().toISOString();
     
     await this.dataPersistence.saveProjectData(projectId, 'onboarding_state.json', onboardingState);
@@ -845,9 +902,15 @@ export class GatedOnboardingFlow {
           complexity,
           difficulty,
           estimatedDuration,
-          confidence: 0.7
+          confidence: 0.7,
+          goal,
+          context
         };
       }
+
+      // Ensure goal and context are always included in the analysis result
+      if (!analysis.goal) analysis.goal = completeUserData.goal || goal;
+      if (!analysis.context) analysis.context = completeUserData.context || context;
 
       // Persist analysis in gate data
       this.currentGateData.complexity_analysis = {
@@ -902,7 +965,7 @@ export class GatedOnboardingFlow {
       // Build HTA structure
       const htaTree = {
         goal: analyzedData.goal,
-        strategicBranches: this.generateStrategicBranches(analyzedData),
+        strategicBranches: await this.generateStrategicBranches(analyzedData),
         frontierNodes: [],
         hierarchyMetadata: {
           total_tasks: 0,
@@ -935,11 +998,22 @@ export class GatedOnboardingFlow {
     }
   }
 
-  generateStrategicBranches(analyzedData) {
-    // Use schema-driven approach instead of hardcoded templates
-    return this.generateDomainSpecificBranches(analyzedData);
+  async generateStrategicBranches(analyzedData) {
+    // Pure schema-driven branch generation via HTACore (LLM-powered, domain-agnostic)
+    try {
+      const branches = await this.htaCore.generateStrategicBranches(
+        analyzedData.goal,
+        { complexity: analyzedData.complexity, difficulty: analyzedData.difficulty },
+        analyzedData.focus_areas || []
+      );
+      return branches;
+    } catch (err) {
+      console.warn('[GatedOnboardingFlow] Schema-driven branch generation failed, falling back:', err.message);
+      return this.generateDomainSpecificBranches(analyzedData);
+    }
   }
-
+  
+  // Legacy fallback – will be used only if LLM branch generation fails
   generateDomainSpecificBranches(analyzedData) {
     const goal = analyzedData.goal.toLowerCase();
     const branches = [];

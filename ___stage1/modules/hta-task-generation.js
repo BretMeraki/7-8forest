@@ -219,7 +219,8 @@ export class HTATaskGeneration {
       creative_composition: 3,
       
       // Generic fallbacks
-      foundations: 4,
+      foundation: 4,
+      capability: 4,
       application: 4,
       mastery: 3
     };
@@ -402,7 +403,8 @@ export class HTATaskGeneration {
       creative_composition: ['compose', 'create', 'refine'],
       
       // Generic fallbacks
-      foundations: ['research', 'setup', 'practice'],
+      foundation: ['research', 'setup', 'orientation'],
+      capability: ['practice', 'build', 'experiment'],
       application: ['practice', 'build', 'experiment'],
       mastery: ['innovate', 'teach', 'mentor']
     };

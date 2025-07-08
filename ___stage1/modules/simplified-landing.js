@@ -39,14 +39,28 @@ Forest Suite helps you achieve any goal through intelligent task breakdown and a
 
 **Just one command to begin:**
 \`\`\`
-create_project_forest "your goal here"
+create_project_forest {"goal": "your goal here"}
 \`\`\`
 
 ### Examples:
-- \`create_project_forest "learn to play guitar"\`
-- \`create_project_forest "start an online business"\`
-- \`create_project_forest "become a data scientist"\`
-- \`create_project_forest "write a novel"\`
+- \`create_project_forest {"goal": "learn to play guitar"}\`
+- \`create_project_forest {"goal": "start an online business"}\`
+- \`create_project_forest {"goal": "become a data scientist"}\`
+- \`create_project_forest {"goal": "write a novel"}\`
+
+### Optional Parameters:
+- \`project_id\` - Custom project ID (auto-generated if not provided)
+- \`context\` - Additional context about why this matters
+- \`learning_style\` - Your preferred style: visual, auditory, kinesthetic, reading, or mixed
+
+**Full example:**
+\`\`\`
+create_project_forest {
+  "goal": "learn to play guitar",
+  "context": "I want to play for friends at gatherings",
+  "learning_style": "visual"
+}
+\`\`\`
 
 ### What Happens Next?
 
@@ -99,7 +113,7 @@ create_project_forest "your goal here"
       }
       
       if (!isActive) {
-        content += `**Activate:** \`switch_project_forest "${project.id || project.name}"\`
+        content += `**Activate:** \`switch_project_forest {"project_id": "${project.id || project.name}"}\`
 `;
       }
       
@@ -115,13 +129,13 @@ create_project_forest "your goal here"
 - **Full schedule:** \`generate_daily_schedule_forest\`
 
 ### Manage Projects
-- **New project:** \`create_project_forest "your new goal"\`
-- **Switch focus:** \`switch_project_forest "project_name"\`
+- **New project:** \`create_project_forest {"goal": "your new goal"}\`
+- **Switch focus:** \`switch_project_forest {"project_id": "project_name"}\`
 - **View strategy:** \`get_hta_status_forest\`
 
 ### Track Progress
-- **Complete task:** \`complete_block_forest <task_id>\`
-- **Evolve strategy:** \`evolve_strategy_forest\`
+- **Complete task:** \`complete_block_forest {"block_id": "task_id"}\`
+- **Evolve strategy:** \`evolve_strategy_forest {"hint": "feedback about what's working"}\`
 
 ---
 
@@ -151,7 +165,7 @@ ${error.message || 'An unexpected error occurred'}
 
 ### If you're new here:
 \`\`\`
-create_project_forest "your goal"
+create_project_forest {"goal": "your goal"}
 \`\`\`
 
 ### If you're returning:
