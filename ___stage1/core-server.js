@@ -506,7 +506,11 @@ class Stage1CoreServer {
       
       // Check if we need to vectorize the project data
       try {
-        const htaData = await this.dataPersistence.loadProjectData(projectId, 'hta.json');
+        // Get the active path from config
+        const activePath = config.activePath || 'general';
+        
+        // Load HTA data from the correct path
+        const htaData = await this.dataPersistence.loadPathData(projectId, activePath, 'hta.json');
         if (htaData) {
           console.error('[VectorizedHTA] Vectorizing project goal and HTA structure...');
           
@@ -530,6 +534,18 @@ class Stage1CoreServer {
           }
           
           console.error('[VectorizedHTA] ✅ Project data successfully vectorized for semantic operations');
+        } else {
+          console.error(`[VectorizedHTA] No HTA data found in path '${activePath}' yet (normal for new HTA trees)`);
+          
+          // Still vectorize the project goal even if no HTA data exists yet
+          await this.forestDataVectorization.vectorizeProjectGoal(projectId, {
+            goal: config.goal,
+            complexity: this.assessGoalComplexity(config.goal, config.context),
+            domain: this.extractDomain(config.goal),
+            estimatedDuration: config.estimated_duration || '3 months',
+            created_at: config.created_at || new Date().toISOString()
+          });
+          console.error('[VectorizedHTA] ✅ Project goal vectorized for semantic operations');
         }
       } catch (vectorError) {
         console.error('[VectorizedHTA] ⚠️ Vectorization failed, continuing with traditional HTA:', vectorError.message);

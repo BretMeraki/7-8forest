@@ -855,12 +855,12 @@ class HTAVectorStore {
   matchesOptimalFocus(task, optimalFocusArea) {
     if (!optimalFocusArea) return false;
     
-    const taskText = (task.title + ' ' + task.description + ' ' + task.branch).toLowerCase();
+    const taskText = (task.title + ' ' + task.description + ' ' + (task.branch || 'General')).toLowerCase();
     const focusArea = optimalFocusArea.toLowerCase();
     
     // Check for direct matches or related terms
     return taskText.includes(focusArea) || 
-           task.branch.toLowerCase().includes(focusArea) ||
+           (task.branch || 'General').toLowerCase().includes(focusArea) ||
            this.areConceptsRelated(taskText, focusArea);
   }
   

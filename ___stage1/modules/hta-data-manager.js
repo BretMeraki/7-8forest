@@ -105,7 +105,7 @@ export class HTADataManager {
           await vectorStore.storeHTA(projectId, pathName, task.id, taskText, {
             type: 'frontier_node',
             task_id: task.id,
-            branch: task.branch,
+            branch: task.branch || 'General',
             difficulty: task.difficulty,
             duration: task.duration,
             completed: task.completed || false

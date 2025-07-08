@@ -95,7 +95,9 @@ export class NextPipelinePresenter {
       );
 
       if (batchResult && batchResult.task_batch) {
-        return batchResult.task_batch;
+        // Ensure tasks have proper branch names
+        const enhancedBatch = this.ensureTaskBranchNames(batchResult.task_batch, htaData);
+        return enhancedBatch;
       }
 
       // Fallback: Get tasks from frontier nodes
@@ -104,8 +106,11 @@ export class NextPipelinePresenter {
         return [];
       }
 
+      // Ensure frontier tasks have proper branch names
+      const enhancedFrontierTasks = this.ensureTaskBranchNames(frontierTasks, htaData);
+
       // Select and order the best 6-8 tasks for pipeline
-      const selectedTasks = this.selectOptimalTasksForPipeline(frontierTasks, userContext, 8);
+      const selectedTasks = this.selectOptimalTasksForPipeline(enhancedFrontierTasks, userContext, 8);
       
       return selectedTasks;
 
@@ -187,7 +192,7 @@ export class NextPipelinePresenter {
       else if (difficulty <= 4) varieties.medium.push(task);
       else varieties.hard.push(task);
       
-      varieties.branches.add(task.branch || 'general');
+      varieties.branches.add(task.branch);
     });
 
     // Build varied selection
@@ -500,6 +505,75 @@ export class NextPipelinePresenter {
       default:
         return 'Complete when ready';
     }
+  }
+
+  /**
+   * Ensure all tasks have proper branch names to fix undefined branch display
+   */
+  ensureTaskBranchNames(tasks, htaData) {
+    if (!tasks || !Array.isArray(tasks)) {
+      return tasks;
+    }
+
+    // Get strategic branches for fallback mapping
+    const strategicBranches = htaData?.strategicBranches || [];
+    
+    return tasks.map((task, index) => {
+      // If task already has a valid branch name, keep it
+      if (task.branch && typeof task.branch === 'string' && task.branch.trim() !== '') {
+        return task;
+      }
+
+      // Try to determine branch from task properties
+      let branchName = 'General';
+
+      // Method 1: Check if task has phase property that matches strategic branches
+      if (task.phase) {
+        const matchingBranch = strategicBranches.find(branch => 
+          branch.phase === task.phase || 
+          branch.name?.toLowerCase().includes(task.phase.toLowerCase())
+        );
+        if (matchingBranch) {
+          branchName = matchingBranch.name;
+        } else {
+          // Capitalize phase as branch name
+          branchName = task.phase.charAt(0).toUpperCase() + task.phase.slice(1).toLowerCase();
+        }
+      }
+      // Method 2: Check if task title/description contains keywords from strategic branches
+      else if (task.title || task.description) {
+        const taskText = `${task.title || ''} ${task.description || ''}`.toLowerCase();
+        
+        const matchingBranch = strategicBranches.find(branch => {
+          const branchText = `${branch.name} ${branch.description || ''}`.toLowerCase();
+          return taskText.includes(branch.name.toLowerCase()) ||
+                 branchText.split(' ').some(word => word.length > 3 && taskText.includes(word));
+        });
+        
+        if (matchingBranch) {
+          branchName = matchingBranch.name;
+        }
+      }
+      // Method 3: Map based on task position and strategic branches
+      else if (strategicBranches.length > 0) {
+        const branchIndex = index % strategicBranches.length;
+        branchName = strategicBranches[branchIndex].name;
+      }
+      // Method 4: Generate meaningful branch names based on task characteristics
+      else if (task.title) {
+        // Extract first meaningful word from title as branch
+        const words = task.title.split(/\s+/).filter(word => word.length > 3);
+        if (words.length > 0) {
+          branchName = words[0].charAt(0).toUpperCase() + words[0].slice(1).toLowerCase();
+        }
+      }
+
+      // Return task with ensured branch name
+      return {
+        ...task,
+        branch: branchName
+      };
+    });
   }
 
   generateNoPipelineResponse(projectConfig) {

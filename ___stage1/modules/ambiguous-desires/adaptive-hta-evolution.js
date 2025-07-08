@@ -480,7 +480,7 @@ export class AdaptiveHTAEvolution {
     
     // Remove tasks from pruned branches
     const remainingTasks = htaData.frontierNodes.filter(task => 
-      !branchesToPrune.some(branch => task.branch === branch.name)
+      !branchesToPrune.some(branch => (task.branch || 'General') === branch.name)
     );
     
     // Remove pruned branches
@@ -541,7 +541,7 @@ export class AdaptiveHTAEvolution {
           const relatedTasks = await this.queryExistingTasksForArea(projectId, areaQuery);
           const relevantTasks = relatedTasks.filter(task =>
             !task.completed &&
-            (task.branch === 'Discovery' || task.discoveryTask ||
+            ((task.branch || 'General') === 'Discovery' || task.discoveryTask ||
              task.description?.toLowerCase().includes(area.toLowerCase()) ||
              task.title?.toLowerCase().includes(area.toLowerCase()))
           );
@@ -865,7 +865,7 @@ export class AdaptiveHTAEvolution {
    * Check if task is relevant to convergent themes
    */
   isTaskRelevantToThemes(task, themes) {
-    const taskText = (task.title + ' ' + task.description + ' ' + task.branch).toLowerCase();
+    const taskText = (task.title + ' ' + task.description + ' ' + (task.branch || 'General')).toLowerCase();
     
     return themes.some(theme => taskText.includes(theme.toLowerCase()));
   }

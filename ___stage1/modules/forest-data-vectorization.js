@@ -197,7 +197,7 @@ class ForestDataVectorization {
           prereq_count: task.prerequisites?.length || 0,
           child_count: 0,
           raw: `${task.title}: ${task.description || ''}`,
-          branch: task.branch
+          branch: task.branch || 'General'
         }),
         VECTORIZATION_TYPES.TASK_CONTENT.dimension
       );
@@ -214,7 +214,7 @@ class ForestDataVectorization {
           task_id: task.id,
           title: task.title,
           description: task.description,
-          branch: task.branch,
+          branch: task.branch || 'General',
           learning_objective: task.learningObjective,
           skill_tags: task.skillTags || [],
           vectorization_type: 'TASK_CONTENT'
@@ -413,9 +413,23 @@ class ForestDataVectorization {
       // FIX: Ensure context vector is numpy-compatible for ChromaDB
       const contextVector = this.ensureNumpyCompatible(contextVectorRaw);
       
-      // Get task metadata for filtering
-      const taskMetadata = await this.dataPersistence.loadProjectData(projectId, 'task_metadata.json');
-      if (!taskMetadata) return [];
+      // Get project config to find active path
+      const config = await this.dataPersistence.loadProjectData(projectId, 'config.json');
+      if (!config) return [];
+      
+      const activePath = config.activePath || 'general';
+      
+      // Get task metadata for filtering - first try metadata file, then HTA data
+      let taskMetadata = await this.dataPersistence.loadProjectData(projectId, 'task_metadata.json');
+      if (!taskMetadata) {
+        // Fallback: load directly from HTA data
+        const htaData = await this.dataPersistence.loadPathData(projectId, activePath, 'hta.json');
+        if (htaData && htaData.frontierNodes) {
+          taskMetadata = { tasks: htaData.frontierNodes };
+        }
+      }
+      
+      if (!taskMetadata || !taskMetadata.tasks) return [];
 
       // Filter tasks by energy/time constraints first (JSON-based)
       const viableTasks = taskMetadata.tasks.filter(task => {
@@ -464,6 +478,30 @@ class ForestDataVectorization {
 
   // ===== UTILITY METHODS =====
   
+  assessGoalComplexity(goal, context) {
+    const goalLength = goal.length;
+    const contextLength = (context || '').length;
+    const complexWords = (goal.toLowerCase().match(/\b(advanced|complex|sophisticated|comprehensive|integrate|analyze|synthesize|optimize)\b/g) || []).length;
+    
+    if (complexWords >= 3 || goalLength > 200) return 'high';
+    if (complexWords >= 1 || goalLength > 100 || contextLength > 200) return 'medium';
+    return 'low';
+  }
+  
+  extractDomain(goal) {
+    const goalLower = goal.toLowerCase();
+    
+    if (goalLower.includes('programming') || goalLower.includes('coding') || goalLower.includes('software')) return 'software_development';
+    if (goalLower.includes('machine learning') || goalLower.includes('ai') || goalLower.includes('data science')) return 'ai_ml';
+    if (goalLower.includes('business') || goalLower.includes('marketing') || goalLower.includes('finance')) return 'business';
+    if (goalLower.includes('design') || goalLower.includes('creative') || goalLower.includes('art')) return 'creative';
+    if (goalLower.includes('science') || goalLower.includes('research') || goalLower.includes('academic')) return 'academic';
+    if (goalLower.includes('language') || goalLower.includes('spanish') || goalLower.includes('french')) return 'language_learning';
+    if (goalLower.includes('health') || goalLower.includes('fitness') || goalLower.includes('wellness')) return 'health_wellness';
+    
+    return 'general';
+  }
+  
   async enrichWithMetadata(vectorResults, type) {
     const enriched = [];
     
@@ -474,7 +512,19 @@ class ForestDataVectorization {
       try {
         switch (type) {
           case 'task':
-            const taskMetadata = await this.dataPersistence.loadProjectData(projectId, 'task_metadata.json');
+            // Try metadata file first, then fallback to HTA data
+            let taskMetadata = await this.dataPersistence.loadProjectData(projectId, 'task_metadata.json');
+            if (!taskMetadata) {
+              // Fallback: load from HTA data
+              const config = await this.dataPersistence.loadProjectData(projectId, 'config.json');
+              if (config) {
+                const activePath = config.activePath || 'general';
+                const htaData = await this.dataPersistence.loadPathData(projectId, activePath, 'hta.json');
+                if (htaData && htaData.frontierNodes) {
+                  taskMetadata = { tasks: htaData.frontierNodes };
+                }
+              }
+            }
             const task = taskMetadata?.tasks?.find(t => t.id === result.metadata.task_id);
             metadata = task || {};
             break;
@@ -598,29 +648,52 @@ class ForestDataVectorization {
     const results = { vectorized: 0, errors: 0, types: {} };
 
     try {
-      // Load project HTA data
-      const htaData = await this.dataPersistence.loadProjectData(projectId, 'hta.json');
-      if (!htaData) {
-        throw new Error('No HTA data found for project');
+      // Load project configuration to get active path and goal
+      const config = await this.dataPersistence.loadProjectData(projectId, 'config.json');
+      if (!config) {
+        throw new Error('No project configuration found');
       }
 
-      // Vectorize goal
-      await this.vectorizeProjectGoal(projectId, htaData);
+      const activePath = config.activePath || 'general';
+      const projectGoal = config.goal;
+
+      if (!projectGoal) {
+        throw new Error('No goal found in project configuration');
+      }
+
+      // Vectorize project goal from config
+      const goalData = {
+        goal: projectGoal,
+        complexity: this.assessGoalComplexity(projectGoal, config.context || ''),
+        domain: this.extractDomain(projectGoal),
+        estimatedDuration: config.estimated_duration || '3 months',
+        created_at: config.created_at || new Date().toISOString()
+      };
+
+      await this.vectorizeProjectGoal(projectId, goalData);
       results.vectorized++;
       results.types.goals = 1;
 
-      // Vectorize branches
-      if (htaData.strategicBranches?.length > 0) {
-        const branchResults = await this.vectorizeHTABranches(projectId, htaData.strategicBranches);
-        results.vectorized += branchResults.length;
-        results.types.branches = branchResults.length;
-      }
+      // Load HTA data from the active path
+      const htaData = await this.dataPersistence.loadPathData(projectId, activePath, 'hta.json');
+      if (htaData) {
+        console.error(`[ForestDataVectorization] Found HTA data in path: ${activePath}`);
 
-      // Vectorize tasks
-      if (htaData.frontierNodes?.length > 0) {
-        const taskResults = await this.vectorizeTaskContent(projectId, htaData.frontierNodes);
-        results.vectorized += taskResults.length;
-        results.types.tasks = taskResults.length;
+        // Vectorize branches
+        if (htaData.strategicBranches?.length > 0) {
+          const branchResults = await this.vectorizeHTABranches(projectId, htaData.strategicBranches);
+          results.vectorized += branchResults.length;
+          results.types.branches = branchResults.length;
+        }
+
+        // Vectorize tasks
+        if (htaData.frontierNodes?.length > 0) {
+          const taskResults = await this.vectorizeTaskContent(projectId, htaData.frontierNodes);
+          results.vectorized += taskResults.length;
+          results.types.tasks = taskResults.length;
+        }
+      } else {
+        console.error(`[ForestDataVectorization] No HTA data found in path: ${activePath} (this is normal for new projects)`);
       }
 
       // Load and vectorize learning history if available

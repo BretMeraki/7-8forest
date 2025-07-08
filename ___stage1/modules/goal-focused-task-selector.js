@@ -319,7 +319,7 @@ export class GoalFocusedTaskSelector {
       const taskNumber = isNext ? `**${position}.** ` : `${position}. `;
       
       response += `### ${taskNumber}${titlePrefix}${progressIcon} ${task.title}\n`;
-      response += `**Branch**: ${task.branch} | **Difficulty**: ${difficultyStars} | **Duration**: ${task.duration || '30 minutes'}\n`;
+      response += `**Branch**: ${task.branch || 'General'} | **Difficulty**: ${difficultyStars} | **Duration**: ${task.duration || '30 minutes'}\n`;
       response += `${task.description}\n`;
       
       // Show specific action if available (granular tasks)
