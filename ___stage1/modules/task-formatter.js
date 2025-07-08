@@ -173,4 +173,66 @@ export class TaskFormatter {
     
     return `${unique[0]} to ${unique[unique.length - 1]}`;
   }
+
+  /**
+   * Static method for compatibility with task-strategy-core.js
+   * Format a task into a user-friendly response
+   * @param {Object} task - Task to format
+   * @param {number} energyLevel - User's current energy level
+   * @param {string} timeAvailable - Available time string
+   * @returns {string} Formatted task response
+   */
+  static formatTaskResponse(task, energyLevel, timeAvailable) {
+    if (!task) {
+      return '**No Task Available**\n\nNo suitable task found for your current context.';
+    }
+    const title = task.title || 'Next Learning Task';
+    const description = task.description || task.content || 'Complete this learning task to advance your goals.';
+    const duration = task.duration || timeAvailable || '30 minutes';
+    const difficulty = task.difficulty || 3;
+    
+    let response = `**🎯 Your Next Task**\n\n`;
+    response += `**${title}**\n\n`;
+    response += `${description}\n\n`;
+    
+    // Add context information
+    if (task.reasoning) {
+      response += `**Why this task now?**\n${task.reasoning}\n\n`;
+    }
+    
+    // Add practical details
+    response += `**Details:**\n`;
+    response += `• ⚡ Energy Level: ${energyLevel}/5 (${TaskFormatter.getEnergyLabel(energyLevel)})\n`;
+    response += `• ⏱️ Time Available: ${timeAvailable}\n`;
+    response += `• 📊 Difficulty: ${difficulty}/5\n`;
+    
+    if (task.phase) {
+      response += `• 🌱 Learning Phase: ${task.phase}\n`;
+    }
+    
+    if (task.branch) {
+      response += `• 🌳 Branch: ${task.branch}\n`;
+    }
+    
+    // Add completion guidance
+    response += `\n**When complete, use:** \`complete_block_forest\` with block_id: "${task.id || task.title?.toLowerCase().replace(/\s+/g, '_')}" to log your progress and insights.`;
+    
+    return response;
+  }
+
+  /**
+   * Static helper for energy level labels
+   * @param {number} level - Energy level (1-5)
+   * @returns {string} Energy label
+   */
+  static getEnergyLabel(level) {
+    const labels = {
+      1: 'Very Low',
+      2: 'Low', 
+      3: 'Moderate',
+      4: 'High',
+      5: 'Very High'
+    };
+    return labels[level] || 'Moderate';
+  }
 }

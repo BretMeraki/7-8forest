@@ -1,940 +1,1399 @@
 /**
- * Gated Onboarding Flow - Complete multi-stage onboarding with gates
- * 
- * Implements the full onboarding pipeline:
- * 1. Landing page → Start new project
- * 2. Goal/Dream capture (gated)
- * 3. Context grabber/summary (gated)
- * 4. Dynamic questionnaire (gated)
- * 5. Complexity analysis & HTA tree generation
- * 6. Strategic framework building
- * 7. "Next + Pipeline" task presentation
+ * Gated Onboarding Flow - Manages the complete user journey through validation gates
+ * Implements the comprehensive onboarding system with progressive validation
  */
 
-import { IntelligentOnboardingSystem, OnboardingSessionManager } from './intelligent-onboarding-system.js';
-
 export class GatedOnboardingFlow {
-  constructor(dataPersistence, projectManagement, htaCore, coreIntelligence, vectorStore) {
+  constructor(dataPersistence, projectManagement, htaCore, coreIntelligence, vectorStore = null) {
     this.dataPersistence = dataPersistence;
     this.projectManagement = projectManagement;
-    this.htaCore = htaCore;
-    this.coreIntelligence = coreIntelligence;
+    this.htaCore = htaCore; // Was llmInterface, now using htaCore for LLM operations
+    this.coreIntelligence = coreIntelligence; // Was eventBus, now using coreIntelligence
     this.vectorStore = vectorStore;
     
-    // Initialize intelligent onboarding system
-    this.onboardingSystem = new IntelligentOnboardingSystem(coreIntelligence);
-    this.sessionManager = new OnboardingSessionManager(this.onboardingSystem, dataPersistence);
+    // Track current gate data and session state
+    this.currentGateData = {};
+    this.sessionStates = new Map();
     
-    // Track onboarding state
-    this.activeOnboardingSessions = new Map();
-    this.onboardingStates = new Map();
+    // Define gate progression order
+    this.gateOrder = [
+      'landing_page',
+      'goal_collection', 
+      'context_gathering',
+      'schema_analysis',
+      'questionnaire_generation',
+      'complexity_analysis',
+      'hta_tree_building',
+      'task_generation',
+      'first_task_recommendation'
+    ];
   }
 
-  /**
-   * STAGE 1: Start New Project - Goal/Dream Capture (Gated)
-   */
-  async startNewProject(initialGoal, userContext = {}) {
+  // ===== MAIN ENTRY POINT =====
+  
+  async startNewProject(goal, userContext = {}) {
     try {
-      // Generate project ID
-      const generatedProjectId = this.generateProjectId(initialGoal);
+      // Reset current gate data for new project
+      this.currentGateData = {};
       
-      // Create project first
-      const projectResult = await this.projectManagement.createProject({
-        project_id: generatedProjectId,
-        goal: initialGoal,
-        context: `Learning journey: ${initialGoal}. User context: ${JSON.stringify(userContext)}`
+      // Start with goal validation
+      const goalValidation = await this.validateGoal(goal);
+      if (!goalValidation.valid) {
+        return {
+          success: false,
+          message: 'Goal validation failed',
+          suggestions: goalValidation.suggestions || ['Please provide a clearer, more specific goal'],
+          stage: 'goal_collection'
+        };
+      }
+      
+      // Create project using project management
+      const projectData = await this.projectManagement.createProject({
+        name: `${goal} - Learning Journey`,
+        goal: goal,
+        context: userContext.context || '',
+        description: `AI-guided learning journey for: ${goal}`
       });
-
-      if (!projectResult.success) {
-        throw new Error(`Project creation failed: ${projectResult.error}`);
-      }
-
-      const projectId = projectResult.project_id || generatedProjectId;
       
-      // Initialize onboarding state
+      if (!projectData.success) {
+        return {
+          success: false,
+          message: 'Failed to create project',
+          error: projectData.error
+        };
+      }
+      
+      // Set up initial onboarding state
       const onboardingState = {
-        projectId,
-        stage: 'goal_capture',
-        goal: initialGoal,
-        userContext,
-        gates: {
-          goal_captured: false,
-          context_gathered: false,
-          questionnaire_complete: false,
-          complexity_analyzed: false,
-          tree_generated: false,
-          framework_built: false
-        },
-        capturedData: {},
-        startTime: new Date().toISOString()
+        project_id: projectData.project_id,
+        goal: goal,
+        user_context: userContext,
+        current_stage: 'context_gathering',
+        started_at: new Date().toISOString(),
+        gates_completed: ['goal_collection']
       };
-
-      this.onboardingStates.set(projectId, onboardingState);
-
-      // GATE 1: Goal/Dream Validation
-      const goalValidation = await this.validateGoalClarity(initialGoal);
       
-      if (!goalValidation.isValid) {
-        return {
-          success: false,
-          stage: 'goal_capture',
-          projectId,
-          gate_status: 'blocked',
-          message: goalValidation.message,
-          suggestions: goalValidation.suggestions,
-          action_required: 'refine_goal'
-        };
-      }
-
-      // Goal is valid, proceed to next stage
-      onboardingState.gates.goal_captured = true;
-      onboardingState.capturedData.validatedGoal = goalValidation.refinedGoal;
+      // Save onboarding state
+      await this.dataPersistence.saveProjectData(projectData.project_id, 'onboarding_state.json', onboardingState);
       
       return {
         success: true,
-        stage: 'goal_capture',
-        projectId,
-        gate_status: 'passed',
-        message: '🎯 Goal captured successfully! Moving to context gathering...',
-        next_stage: 'context_gathering',
-        validated_goal: goalValidation.refinedGoal
-      };
-
-    } catch (error) {
-      console.error('GatedOnboardingFlow.startNewProject failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        stage: 'goal_capture',
-        gate_status: 'error'
-      };
-    }
-  }
-
-  /**
-   * STAGE 2: Context Gathering/Summary (Gated)
-   */
-  async gatherContext(projectId, contextData = {}) {
-    try {
-      const onboardingState = this.onboardingStates.get(projectId);
-      if (!onboardingState) {
-        throw new Error('Onboarding state not found');
-      }
-
-      if (!onboardingState.gates.goal_captured) {
-        return {
-          success: false,
-          stage: 'context_gathering',
-          gate_status: 'blocked',
-          message: 'Goal must be captured first',
-          action_required: 'complete_goal_capture'
-        };
-      }
-
-      // Generate context summary using LLM
-      const contextSummary = await this.generateContextSummary(
-        onboardingState.capturedData.validatedGoal,
-        contextData
-      );
-
-      // GATE 2: Context Completeness Check
-      const contextValidation = await this.validateContextCompleteness(contextSummary);
-      
-      if (!contextValidation.isComplete) {
-        return {
-          success: false,
-          stage: 'context_gathering',
-          gate_status: 'blocked',
-          message: contextValidation.message,
-          missing_info: contextValidation.missingInfo,
-          action_required: 'provide_additional_context'
-        };
-      }
-
-      // Context is complete, proceed to questionnaire
-      onboardingState.stage = 'questionnaire';
-      onboardingState.gates.context_gathered = true;
-      onboardingState.capturedData.contextSummary = contextSummary;
-      
-      return {
-        success: true,
+        projectId: projectData.project_id,
+        message: `Learning journey started for: ${goal}`,
         stage: 'context_gathering',
-        gate_status: 'passed',
-        message: '📝 Context gathered successfully! Starting dynamic questionnaire...',
-        next_stage: 'questionnaire',
-        context_summary: contextSummary
+        next_action: {
+          description: 'Provide context about your current situation and experience level',
+          command: 'continue_onboarding_forest'
+        }
       };
-
-    } catch (error) {
-      console.error('GatedOnboardingFlow.gatherContext failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        stage: 'context_gathering',
-        gate_status: 'error'
-      };
-    }
-  }
-
-  /**
-   * STAGE 3: Dynamic Questionnaire (Gated)
-   */
-  async startDynamicQuestionnaire(projectId) {
-    try {
-      const onboardingState = this.onboardingStates.get(projectId);
-      if (!onboardingState) {
-        throw new Error('Onboarding state not found');
-      }
-
-      if (!onboardingState.gates.context_gathered) {
-        return {
-          success: false,
-          stage: 'questionnaire',
-          gate_status: 'blocked',
-          message: 'Context must be gathered first',
-          action_required: 'complete_context_gathering'
-        };
-      }
-
-      // Start intelligent onboarding session
-      const sessionResult = await this.sessionManager.startOnboardingSession(
-        projectId,
-        onboardingState.capturedData.validatedGoal,
-        onboardingState.capturedData.contextSummary
-      );
-
-      onboardingState.onboardingSessionId = sessionResult.sessionId;
-      this.activeOnboardingSessions.set(projectId, sessionResult.sessionId);
-
-      return {
-        success: true,
-        stage: 'questionnaire',
-        gate_status: 'in_progress',
-        message: '❓ Dynamic questionnaire generated! Please answer the following questions...',
-        session_id: sessionResult.sessionId,
-        first_question: sessionResult.firstQuestion,
-        progress: sessionResult.progress
-      };
-
-    } catch (error) {
-      console.error('GatedOnboardingFlow.startDynamicQuestionnaire failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        stage: 'questionnaire',
-        gate_status: 'error'
-      };
-    }
-  }
-
-  /**
-   * Process dynamic questionnaire responses
-   */
-  async processDynamicQuestionnaire(projectId, responses) {
-    try {
-      const onboardingState = this.onboardingStates.get(projectId);
-      if (!onboardingState) {
-        throw new Error('Onboarding state not found');
-      }
-
-      if (!onboardingState.gates.context_gathered) {
-        return {
-          success: false,
-          stage: 'questionnaire',
-          gate_status: 'blocked',
-          message: 'Context must be gathered before questionnaire',
-          action_required: 'complete_context_gathering'
-        };
-      }
-
-      // Store questionnaire responses
-      onboardingState.capturedData.questionnaireResults = responses;
       
-      // GATE 3: Questionnaire Completeness Check
-      const questionnaireValidation = await this.validateQuestionnaireCompleteness(responses);
-      
-      if (!questionnaireValidation.isComplete) {
-        return {
-          success: false,
-          stage: 'questionnaire', 
-          gate_status: 'blocked',
-          message: questionnaireValidation.message,
-          missing_responses: questionnaireValidation.missingResponses,
-          action_required: 'provide_additional_responses'
-        };
-      }
-
-      // Questionnaire is complete, proceed to complexity analysis
-      onboardingState.stage = 'complexity_analysis';
-      onboardingState.gates.questionnaire_complete = true;
-      
-      return {
-        success: true,
-        stage: 'questionnaire',
-        gate_status: 'passed',
-        message: '❓ Questionnaire completed successfully! Analyzing goal complexity...',
-        next_stage: 'complexity_analysis',
-        questionnaire_results: responses
-      };
-
     } catch (error) {
-      console.error('GatedOnboardingFlow.processDynamicQuestionnaire failed:', error);
       return {
         success: false,
-        error: error.message,
-        stage: 'questionnaire',
-        gate_status: 'error'
-      };
-    }
-  }
-
-  /**
-   * Process questionnaire response and check for completion
-   */
-  async processQuestionnaireResponse(projectId, questionId, response) {
-    try {
-      const onboardingState = this.onboardingStates.get(projectId);
-      if (!onboardingState) {
-        throw new Error('Onboarding state not found');
-      }
-
-      const sessionId = onboardingState.onboardingSessionId;
-      const result = await this.sessionManager.processResponseAndGetNext(sessionId, questionId, response);
-
-      if (result.isComplete) {
-        // GATE 3: Questionnaire Completion
-        onboardingState.gates.questionnaire_complete = true;
-        onboardingState.capturedData.questionnaireResults = result.enhancedContext;
-        
-        return {
-          success: true,
-          stage: 'questionnaire',
-          gate_status: 'passed',
-          message: '✅ Questionnaire completed! Starting complexity analysis...',
-          next_stage: 'complexity_analysis',
-          enhanced_context: result.enhancedContext
-        };
-      }
-
-      return {
-        success: true,
-        stage: 'questionnaire',
-        gate_status: 'in_progress',
-        next_question: result.nextQuestion,
-        progress: result.progress
-      };
-
-    } catch (error) {
-      console.error('GatedOnboardingFlow.processQuestionnaireResponse failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        stage: 'questionnaire',
-        gate_status: 'error'
-      };
-    }
-  }
-
-  /**
-   * STAGE 4: Complexity Analysis (Gated)
-   */
-  async performComplexityAnalysis(projectId) {
-    try {
-      const onboardingState = this.onboardingStates.get(projectId);
-      if (!onboardingState) {
-        throw new Error('Onboarding state not found');
-      }
-
-      if (!onboardingState.gates.questionnaire_complete) {
-        return {
-          success: false,
-          stage: 'complexity_analysis',
-          gate_status: 'blocked',
-          message: 'Questionnaire must be completed first',
-          action_required: 'complete_questionnaire'
-        };
-      }
-
-      // Perform complexity analysis
-      const complexityAnalysis = await this.analyzeGoalComplexity(
-        onboardingState.capturedData.validatedGoal,
-        onboardingState.capturedData.contextSummary,
-        onboardingState.capturedData.questionnaireResults
-      );
-
-      // GATE 4: Complexity Analysis Validation
-      const analysisValidation = await this.validateComplexityAnalysis(complexityAnalysis);
-      
-      if (!analysisValidation.isValid) {
-        return {
-          success: false,
-          stage: 'complexity_analysis',
-          gate_status: 'blocked',
-          message: analysisValidation.message,
-          action_required: 'refine_analysis'
-        };
-      }
-
-      // Analysis is valid, proceed to HTA generation
-      onboardingState.stage = 'hta_generation';
-      onboardingState.gates.complexity_analyzed = true;
-      onboardingState.capturedData.complexityAnalysis = complexityAnalysis;
-      
-      return {
-        success: true,
-        stage: 'complexity_analysis',
-        gate_status: 'passed',
-        message: '🧠 Complexity analysis completed! Generating HTA tree...',
-        next_stage: 'hta_generation',
-        complexity_analysis: complexityAnalysis
-      };
-
-    } catch (error) {
-      console.error('GatedOnboardingFlow.performComplexityAnalysis failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        stage: 'complexity_analysis',
-        gate_status: 'error'
-      };
-    }
-  }
-
-  /**
-   * STAGE 5: HTA Tree Generation (Gated)
-   */
-  async generateHTATree(projectId) {
-    try {
-      const onboardingState = this.onboardingStates.get(projectId);
-      if (!onboardingState) {
-        throw new Error('Onboarding state not found');
-      }
-
-      if (!onboardingState.gates.complexity_analyzed) {
-        return {
-          success: false,
-          stage: 'hta_generation',
-          gate_status: 'blocked',
-          message: 'Complexity analysis must be completed first',
-          action_required: 'complete_complexity_analysis'
-        };
-      }
-
-      // Generate HTA tree with all collected context
-      const htaArgs = {
-        goal: onboardingState.capturedData.validatedGoal,
-        context: onboardingState.capturedData.contextSummary,
-        enhanced_context: onboardingState.capturedData.questionnaireResults,
-        complexity_analysis: onboardingState.capturedData.complexityAnalysis,
-        project_id: projectId
-      };
-
-      const htaResult = await this.htaCore.buildHTATree(htaArgs);
-
-      if (!htaResult.success) {
-        return {
-          success: false,
-          stage: 'hta_generation',
-          gate_status: 'blocked',
-          message: 'HTA tree generation failed',
-          error: htaResult.error,
-          action_required: 'retry_hta_generation'
-        };
-      }
-
-      // HTA generated successfully, complete onboarding (HTA tree serves as strategic framework)
-      onboardingState.stage = 'completed';
-      onboardingState.gates.tree_generated = true;
-      onboardingState.capturedData.htaTree = htaResult;
-      onboardingState.completedAt = new Date().toISOString();
-      
-      return {
-        success: true,
-        stage: 'hta_generation',
-        gate_status: 'passed',
-        message: '🌳 HTA tree generated successfully! Onboarding complete - HTA tree serves as your strategic framework!',
-        next_stage: 'task_presentation',
-        hta_tree: htaResult,
-        onboarding_complete: true
-      };
-
-    } catch (error) {
-      console.error('GatedOnboardingFlow.generateHTATree failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        stage: 'hta_generation',
-        gate_status: 'error'
-      };
-    }
-  }
-
-  /**
-   * STAGE 6: Strategic Framework Building (Gated)
-   */
-  async buildStrategicFramework(projectId) {
-    try {
-      const onboardingState = this.onboardingStates.get(projectId);
-      if (!onboardingState) {
-        throw new Error('Onboarding state not found');
-      }
-
-      if (!onboardingState.gates.tree_generated) {
-        return {
-          success: false,
-          stage: 'strategic_framework',
-          gate_status: 'blocked',
-          message: 'HTA tree must be generated first',
-          action_required: 'complete_hta_generation'
-        };
-      }
-
-      // Build strategic framework
-      const strategicFramework = await this.generateStrategicFramework(
-        onboardingState.capturedData.htaTree,
-        onboardingState.capturedData.complexityAnalysis,
-        onboardingState.capturedData.questionnaireResults
-      );
-
-      // GATE 6: Framework Validation
-      const frameworkValidation = await this.validateStrategicFramework(strategicFramework);
-      
-      if (!frameworkValidation.isValid) {
-        return {
-          success: false,
-          stage: 'strategic_framework',
-          gate_status: 'blocked',
-          message: frameworkValidation.message,
-          action_required: 'refine_framework'
-        };
-      }
-
-      // Framework is valid, complete onboarding
-      onboardingState.stage = 'completed';
-      onboardingState.gates.framework_built = true;
-      onboardingState.capturedData.strategicFramework = strategicFramework;
-      onboardingState.completedAt = new Date().toISOString();
-      
-      return {
-        success: true,
-        stage: 'strategic_framework',
-        gate_status: 'passed',
-        message: '🏗️ Strategic framework built successfully! Onboarding complete!',
-        next_stage: 'task_presentation',
-        strategic_framework: strategicFramework,
-        onboarding_complete: true
-      };
-
-    } catch (error) {
-      console.error('GatedOnboardingFlow.buildStrategicFramework failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        stage: 'strategic_framework',
-        gate_status: 'error'
-      };
-    }
-  }
-
-  /**
-   * Continue onboarding from current stage
-   */
-  async continueOnboarding(projectId, stage, inputData = {}) {
-    try {
-      const onboardingState = this.onboardingStates.get(projectId);
-      if (!onboardingState) {
-        return {
-          success: false,
-          message: 'No onboarding in progress for this project',
-          action_required: 'start_learning_journey'
-        };
-      }
-
-      // Determine which stage to proceed with
-      let result;
-      switch (stage || onboardingState.stage) {
-        case 'context_gathering':
-          result = await this.gatherContext(projectId, inputData.context || inputData);
-          break;
-          
-        case 'questionnaire':
-          if (inputData.action === 'start') {
-            result = await this.startDynamicQuestionnaire(projectId);
-          } else if (inputData.responses) {
-            result = await this.processDynamicQuestionnaire(projectId, inputData.responses);
-          } else {
-            result = {
-              success: false,
-              message: 'Invalid questionnaire action. Use "start" or provide "responses"',
-              stage: 'questionnaire'
-            };
-          }
-          break;
-          
-        case 'complexity_analysis':
-          result = await this.performComplexityAnalysis(projectId);
-          break;
-          
-        case 'hta_generation':
-          result = await this.generateHTATree(projectId);
-          break;
-          
-        default:
-          result = {
-            success: false,
-            message: `Unknown stage: ${stage}. Current stage is: ${onboardingState.stage}`,
-            current_stage: onboardingState.stage
-          };
-      }
-
-      // Add next action guidance
-      if (result.success && !result.onboarding_complete) {
-        result.next_action = this.getNextAction(result.next_stage || onboardingState.stage);
-      }
-
-      return result;
-
-    } catch (error) {
-      console.error('GatedOnboardingFlow.continueOnboarding failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        stage: stage || 'unknown'
-      };
-    }
-  }
-
-  /**
-   * Get next action based on current stage
-   */
-  getNextAction(stage) {
-    const actions = {
-      'context_gathering': {
-        description: 'Provide your background and learning context',
-        command: 'continue_onboarding_forest --stage "context_gathering" --context {...}'
-      },
-      'questionnaire': {
-        description: 'Start the dynamic questionnaire',
-        command: 'continue_onboarding_forest --stage "questionnaire" --action "start"'
-      },
-      'complexity_analysis': {
-        description: 'Analyze goal complexity',
-        command: 'continue_onboarding_forest --stage "complexity_analysis"'
-      },
-      'hta_generation': {
-        description: 'Generate HTA tree',
-        command: 'continue_onboarding_forest --stage "hta_generation"'
-      },
-      'task_presentation': {
-        description: 'View your learning pipeline',
-        command: 'get_next_pipeline_forest'
-      }
-    };
-
-    return actions[stage] || {
-      description: 'Check onboarding status',
-      command: 'get_onboarding_status_forest'
-    };
-  }
-
-  /**
-   * Get current onboarding status
-   */
-  async getOnboardingStatus(projectId) {
-    try {
-      const onboardingState = this.onboardingStates.get(projectId);
-      if (!onboardingState) {
-        return {
-          success: false,
-          message: 'No onboarding in progress for this project'
-        };
-      }
-
-      const progress = this.calculateOnboardingProgress(onboardingState.gates);
-      const gatesProgress = this.formatGatesProgress(onboardingState.gates);
-      const nextAction = this.getNextAction(onboardingState.stage);
-
-      return {
-        success: true,
-        projectId,
-        onboarding_status: {
-          current_stage: onboardingState.stage,
-          progress: progress
-        },
-        gates_progress: gatesProgress,
-        next_action: nextAction,
-        started_at: onboardingState.startTime,
-        completed_at: onboardingState.completedAt
-      };
-
-    } catch (error) {
-      console.error('GatedOnboardingFlow.getOnboardingStatus failed:', error);
-      return {
-        success: false,
+        message: 'Failed to start new project',
         error: error.message
       };
     }
   }
 
-  /**
-   * Helper Methods
-   */
-
-  generateProjectName(goal) {
-    const words = goal.split(' ').slice(0, 3);
-    return words.join(' ') + ' Journey';
-  }
-
-  generateProjectId(goal) {
-    const words = goal.toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .split(/\s+/)
-      .filter(w => w.length > 2)
-      .slice(0, 3);
-    
-    const baseId = words.join('_') || 'project';
-    const timestamp = Date.now().toString().slice(-6); // Last 6 digits for uniqueness
-    return `${baseId}_${timestamp}`;
-  }
-
-  async validateGoalClarity(goal) {
+  // ===== ONBOARDING FLOW CONTROL =====
+  
+  async continueOnboarding(projectId, stage, inputData = {}) {
     try {
-      const prompt = `Analyze this learning goal for clarity and actionability:
-
-Goal: "${goal}"
-
-Assessment criteria:
-1. Is the goal specific and measurable?
-2. Is it achievable with structured learning?
-3. Are there clear success indicators?
-4. Is the domain well-defined?
-
-Response format:
-{
-  "isValid": boolean,
-  "clarity_score": 1-10,
-  "refinedGoal": "improved version if needed",
-  "message": "explanation",
-  "suggestions": ["array of suggestions if invalid"]
-}`;
-
-      const response = await this.coreIntelligence.generateLogicalDeductions({
-        context: 'Goal validation for onboarding',
-        prompt
-      });
-
-      return response.isValid ? response : {
-        isValid: false,
-        message: 'Goal needs refinement for optimal learning path generation',
-        suggestions: ['Make the goal more specific', 'Add measurable outcomes', 'Define success criteria']
-      };
-
-    } catch (error) {
-      console.error('Goal validation failed:', error);
-      return {
-        isValid: false,
-        message: 'Goal validation failed - please refine your goal',
-        suggestions: ['Try a more specific goal', 'Include what you want to achieve']
-      };
-    }
-  }
-
-  async generateContextSummary(goal, contextData) {
-    try {
-      const prompt = `Generate a comprehensive context summary for this learning goal:
-
-Goal: "${goal}"
-Context Data: ${JSON.stringify(contextData, null, 2)}
-
-Create a summary that includes:
-1. User background and experience
-2. Learning environment and constraints
-3. Motivation and timeline
-4. Available resources
-5. Success criteria and measurements
-
-Format as a structured summary suitable for HTA generation.`;
-
-      const response = await this.coreIntelligence.generateLogicalDeductions({
-        context: 'Context summary generation',
-        prompt
-      });
-
-      // The LLM response should already have the right format from core intelligence
-      // But let's make sure we have the required fields
-      const contextSummary = response.content || response;
-      
-      // If the LLM response doesn't have the right structure, map the input data
-      if (!contextSummary.background && contextData) {
+      // Load current onboarding state
+      const onboardingState = await this.dataPersistence.loadProjectData(projectId, 'onboarding_state.json');
+      if (!onboardingState) {
         return {
-          background: contextData.background || 'Learner with basic understanding',
-          constraints: contextData.constraints ? [contextData.constraints] : ['Limited time on weekends'],
-          motivation: contextData.goals || contextData.motivation || 'Personal and professional development',
-          timeline: contextData.timeline || '3-6 months for substantial progress',
-          resources: contextData.equipment || contextData.budget || 'Online learning materials and practice opportunities'
+          success: false,
+          message: 'No onboarding process found for this project',
+          stage: 'not_started'
         };
       }
       
-      return contextSummary;
-
+      // Determine current stage if not provided, with fallbacks
+      let currentStage = stage || onboardingState.current_stage;
+      
+      // Handle undefined or invalid stages
+      if (!currentStage) {
+        // Default to context gathering if no stage specified and goal collection is completed
+        if (onboardingState.gates_completed && onboardingState.gates_completed.includes('goal_collection')) {
+          currentStage = 'context_gathering';
+        } else {
+          currentStage = 'context_gathering'; // Safe default
+        }
+      }
+      
+      // Validate stage against known stages
+      const validStages = ['context_gathering', 'complexity_analysis', 'hta_tree_building', 'task_generation'];
+      if (!validStages.includes(currentStage)) {
+        // If invalid stage, determine the correct next stage based on completed gates
+        currentStage = this.determineCorrectStage(onboardingState);
+      }
+      
+      // Process based on stage
+      switch (currentStage) {
+        case 'context_gathering':
+          return await this.processContextGathering(projectId, inputData, onboardingState);
+        
+        case 'complexity_analysis':
+          return await this.processComplexityAnalysis(projectId, inputData, onboardingState);
+        
+        case 'hta_tree_building':
+          return await this.processHtaTreeBuilding(projectId, inputData, onboardingState);
+        
+        case 'task_generation':
+          return await this.processTaskGeneration(projectId, inputData, onboardingState);
+        
+        default:
+          // Final fallback - should not reach here with the validation above
+          return {
+            success: false,
+            message: `Cannot process stage: ${currentStage}. Please check onboarding status and try again.`,
+            stage: currentStage,
+            next_action: {
+              description: 'Check your current onboarding status',
+              command: 'get_onboarding_status_forest'
+            }
+          };
+      }
+      
     } catch (error) {
-      console.error('Context summary generation failed:', error);
       return {
-        background: 'Unknown',
-        constraints: ['Time constraints'],
-        motivation: 'Personal development',
-        timeline: 'Flexible',
-        resources: 'Standard'
+        success: false,
+        message: 'Failed to continue onboarding',
+        stage: 'error',
+        error: error.message,
+        next_action: {
+          description: 'Check your current onboarding status',
+          command: 'get_onboarding_status_forest'
+        }
+      };
+    }
+  }
+  
+  async getOnboardingStatus(projectId) {
+    try {
+      const onboardingState = await this.dataPersistence.loadProjectData(projectId, 'onboarding_state.json');
+      if (!onboardingState) {
+        return {
+          success: false,
+          message: 'No onboarding process found for this project'
+        };
+      }
+      
+      const progress = Math.round((onboardingState.gates_completed.length / this.gateOrder.length) * 100);
+      
+      return {
+        success: true,
+        onboarding_status: {
+          project_id: projectId,
+          current_stage: onboardingState.current_stage,
+          progress: progress,
+          started_at: onboardingState.started_at,
+          gates_completed: onboardingState.gates_completed
+        },
+        gates_progress: this.gateOrder.map(gate => ({
+          name: gate,
+          status: onboardingState.gates_completed.includes(gate) ? '✅' : '⏳'
+        })),
+        next_action: {
+          description: `Continue with ${onboardingState.current_stage} stage`,
+          command: 'continue_onboarding_forest'
+        }
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to get onboarding status',
+        error: error.message
+      };
+    }
+  }
+  
+  // ===== STAGE DETERMINATION =====
+  
+  determineCorrectStage(onboardingState) {
+    // Determine the correct stage based on completed gates
+    const completedGates = onboardingState.gates_completed || [];
+    
+    // Define stage progression order
+    const stageProgression = [
+      { stage: 'context_gathering', requiredGates: ['goal_collection'] },
+      { stage: 'complexity_analysis', requiredGates: ['goal_collection', 'context_gathering'] },
+      { stage: 'hta_tree_building', requiredGates: ['goal_collection', 'context_gathering', 'complexity_analysis'] },
+      { stage: 'task_generation', requiredGates: ['goal_collection', 'context_gathering', 'complexity_analysis', 'hta_tree_building'] }
+    ];
+    
+    // Find the correct stage by checking which gates are completed
+    for (let i = stageProgression.length - 1; i >= 0; i--) {
+      const stageInfo = stageProgression[i];
+      const hasAllRequiredGates = stageInfo.requiredGates.every(gate => 
+        completedGates.includes(gate)
+      );
+      
+      if (hasAllRequiredGates) {
+        // If all gates for this stage are completed, move to next stage
+        if (i < stageProgression.length - 1) {
+          return stageProgression[i + 1].stage;
+        } else {
+          // All stages completed
+          return 'completed';
+        }
+      }
+    }
+    
+    // Default to context gathering if no gates completed yet
+    return 'context_gathering';
+  }
+
+  // ===== STAGE PROCESSORS =====
+  
+  async processContextGathering(projectId, inputData, onboardingState) {
+    const context = inputData.context || '';
+    const goal = onboardingState.goal;
+    
+    // If no context provided, request it
+    if (!context || context.trim().length === 0) {
+      return {
+        success: false,
+        message: 'Context gathering stage - please provide your current situation and experience',
+        stage: 'context_gathering',
+        gate_status: 'blocked',
+        suggestions: [
+          'Describe your current experience level with this topic',
+          'Mention how much time you can dedicate to learning',
+          'Include any constraints or challenges you face',
+          'Provide background about your current situation'
+        ],
+        next_action: {
+          description: 'Provide context about your current situation and experience level',
+          command: 'continue_onboarding_forest with context data'
+        }
+      };
+    }
+    
+    const contextValidation = await this.validateContext(context, goal);
+    if (!contextValidation.sufficient) {
+      return {
+        success: false,
+        message: `Context validation failed: ${contextValidation.reason}`,
+        suggestions: contextValidation.suggestions,
+        stage: 'context_gathering',
+        gate_status: 'blocked',
+        provided_context: context,
+        analysis: contextValidation.analysis,
+        next_action: {
+          description: 'Provide more detailed context about your situation',
+          command: 'continue_onboarding_forest with enhanced context'
+        }
+      };
+    }
+    
+    // Update onboarding state
+    onboardingState.current_stage = 'complexity_analysis';
+    onboardingState.gates_completed = onboardingState.gates_completed || [];
+    if (!onboardingState.gates_completed.includes('context_gathering')) {
+      onboardingState.gates_completed.push('context_gathering');
+    }
+    onboardingState.context = context;
+    
+    await this.dataPersistence.saveProjectData(projectId, 'onboarding_state.json', onboardingState);
+    
+    return {
+      success: true,
+      message: 'Context gathered successfully! Moving to complexity analysis.',
+      stage: 'complexity_analysis',
+      gate_status: 'passed',
+      context_provided: context,
+      next_action: {
+        description: 'Analyze goal complexity and generate learning strategy',
+        command: 'continue_onboarding_forest'
+      }
+    };
+  }
+  
+  async processComplexityAnalysis(projectId, inputData, onboardingState) {
+    const completeUserData = {
+      goal: onboardingState.goal,
+      context: onboardingState.context,
+      responses: inputData.responses || {}
+    };
+    
+    const analysis = await this.analyzeComplexity(completeUserData);
+    
+    // Update onboarding state
+    onboardingState.current_stage = 'hta_tree_building';
+    onboardingState.gates_completed.push('complexity_analysis');
+    onboardingState.complexity_analysis = analysis;
+    
+    await this.dataPersistence.saveProjectData(projectId, 'onboarding_state.json', onboardingState);
+    
+    return {
+      success: true,
+      message: 'Complexity analysis completed',
+      stage: 'hta_tree_building',
+      gate_status: 'passed',
+      analysis: analysis,
+      next_action: {
+        description: 'Build HTA tree structure',
+        command: 'continue_onboarding_forest'
+      }
+    };
+  }
+  
+  async processHtaTreeBuilding(projectId, inputData, onboardingState) {
+    const analyzedData = {
+      goal: onboardingState.goal,
+      context: onboardingState.context,
+      complexity: onboardingState.complexity_analysis?.complexity || 'moderate',
+      difficulty: onboardingState.complexity_analysis?.difficulty || 5
+    };
+    
+    const htaResult = await this.buildHtaTree(analyzedData);
+    if (!htaResult.built_successfully) {
+      return {
+        success: false,
+        message: 'HTA tree building failed',
+        error: htaResult.error,
+        stage: 'hta_tree_building',
+        gate_status: 'blocked'
+      };
+    }
+    
+    // Update onboarding state
+    onboardingState.current_stage = 'task_generation';
+    onboardingState.gates_completed.push('hta_tree_building');
+    onboardingState.hta_tree = htaResult;
+    
+    await this.dataPersistence.saveProjectData(projectId, 'onboarding_state.json', onboardingState);
+    
+    return {
+      success: true,
+      message: 'HTA tree built successfully',
+      stage: 'task_generation',
+      gate_status: 'passed',
+      hta_tree: htaResult,
+      next_action: {
+        description: 'Generate initial task batch',
+        command: 'continue_onboarding_forest'
+      }
+    };
+  }
+  
+  async processTaskGeneration(projectId, inputData, onboardingState) {
+    const taskBatch = await this.generateInitialTaskBatch(
+      onboardingState.hta_tree,
+      onboardingState.goal,
+      onboardingState.context
+    );
+    
+    if (!taskBatch.tasks || taskBatch.tasks.length === 0) {
+      return {
+        success: false,
+        message: 'Task generation failed',
+        stage: 'task_generation',
+        gate_status: 'blocked'
+      };
+    }
+    
+    // Update onboarding state
+    onboardingState.current_stage = 'completed';
+    onboardingState.gates_completed.push('task_generation');
+    onboardingState.task_batch = taskBatch;
+    onboardingState.completed_at = new Date().toISOString();
+    
+    await this.dataPersistence.saveProjectData(projectId, 'onboarding_state.json', onboardingState);
+    
+    return {
+      success: true,
+      message: 'Task generation completed',
+      stage: 'completed',
+      gate_status: 'passed',
+      task_batch: taskBatch,
+      onboarding_complete: true,
+      next_action: {
+        description: 'Start learning with first task',
+        command: 'get_next_task_forest'
+      }
+    };
+  }
+
+  // ===== GATE 1: LANDING PAGE AND USER SELECTION =====
+
+  async presentLandingPage() {
+    return {
+      gated: true,
+      gate: 'landing_page',
+      message: 'Welcome to Forest AI Learning System',
+      options: ['start_new_project', 'list_existing_projects', 'resume_existing'],
+      requiresSelection: true
+    };
+  }
+
+  async validateUserSelection(selection) {
+    const validSelections = ['start_new_project', 'list_existing_projects', 'resume_existing'];
+    
+    if (!validSelections.includes(selection)) {
+      return {
+        valid: false,
+        error: 'Invalid selection. Please choose from available options.',
+        gate: 'landing_page'
+      };
+    }
+
+    this.currentGateData.user_selection = { selection, valid: true };
+
+    if (selection === 'list_existing_projects') {
+      const projects = await this.projectManagement.listProjects();
+      return {
+        valid: true,
+        selection,
+        projects,
+        nextGate: 'project_selection'
+      };
+    }
+
+    return {
+      valid: true,
+      selection,
+      nextGate: 'goal_collection'
+    };
+  }
+
+  // ===== GATE 2: GOAL COLLECTION AND VALIDATION =====
+
+  async presentGoalCollectionGate() {
+    return {
+      gate: 'goal_collection',
+      prompt: 'Please describe your goal, dream, or the path you wish to embark on. Be as specific as possible about what you want to achieve.',
+      validation_required: true,
+      examples: [
+        'Learn advanced JavaScript programming with React and Node.js',
+        'Master portrait photography including lighting and post-processing',
+        'Build a career in data science with Python and machine learning'
+      ]
+    };
+  }
+
+  async validateGoal(goal, sessionId = null) {
+    try {
+      let analysis;
+
+      // Prefer delegated goal analysis if available (e.g., LLM/Core intelligence)
+      if (this.htaCore && typeof this.htaCore.analyzeGoal === 'function') {
+        try {
+          analysis = await this.htaCore.analyzeGoal(goal);
+        } catch (delegationError) {
+          // Surface to outer catch for fallback handling
+          throw delegationError;
+        }
+      }
+
+      // If external analysis did not run or returned unusable result, run heuristic fallback
+      if (!analysis || typeof analysis !== 'object' || analysis.isValid === undefined) {
+        analysis = {
+          isValid: goal && goal.length >= 10,
+          clarity: goal && goal.length >= 20 ? 0.8 : 0.5,
+          specificity: goal && /\b(learn|master|build|create|develop)\b/i.test(goal) ? 0.8 : 0.6,
+          achievability: 0.7
+        };
+      }
+
+      // If goal is not sufficiently clear, provide suggestions but do not throw
+      if (!analysis.isValid || analysis.clarity < 0.6) {
+        return {
+          valid: false,
+          reason: 'Goal lacks sufficient clarity or specificity',
+          clarity_score: analysis.clarity,
+          suggestions: [
+            'Be more specific about the technology or skill',
+            'Define your desired outcome or level of mastery',
+            'Include context about your current situation',
+            'Make your goal at least 20 characters long'
+          ]
+        };
+      }
+
+      // Persist valid goal data in gate state
+      const gateData = sessionId ? this.sessionStates.get(sessionId)?.gateData || {} : this.currentGateData;
+      gateData.goal_validation = {
+        valid: true,
+        goal,
+        clarity: analysis.clarity,
+        specificity: analysis.specificity,
+        achievability: analysis.achievability
+      };
+
+      if (sessionId) {
+        this.sessionStates.get(sessionId).gateData = gateData;
+      } else {
+        this.currentGateData = gateData;
+      }
+
+      return {
+        valid: true,
+        goal,
+        analysis,
+        nextGate: 'context_gathering'
+      };
+    } catch (error) {
+      // Gracefully degrade to heuristic fallback validation
+      return {
+        error: error.message ?? String(error),
+        fallback_validation: true,
+        // Basic heuristic: consider valid if goal length > 20 characters
+        valid: goal && goal.length > 20,
+        goal
       };
     }
   }
 
-  async validateContextCompleteness(contextSummary) {
-    // Simple validation - in production this would use LLM
-    const requiredFields = ['background', 'constraints', 'motivation', 'timeline'];
-    const missingFields = requiredFields.filter(field => !contextSummary[field]);
+  // ===== GATE 3: CONTEXT GATHERING =====
 
+  async presentContextGatheringGate() {
+    const goal = this.currentGateData.goal_validation?.goal;
     return {
-      isComplete: missingFields.length === 0,
-      message: missingFields.length > 0 ? 
-        `Missing context information: ${missingFields.join(', ')}` : 
-        'Context is complete',
-      missingInfo: missingFields
+      gate: 'context_gathering',
+      prompt: `Now please elaborate on exactly where you stand with your goal: "${goal}". Include your current knowledge, experience, available time, and any constraints.`,
+      goal_reference: goal,
+      validation_required: true
     };
   }
 
-  async validateQuestionnaireCompleteness(responses) {
-    // Simple validation - check if we have basic responses
-    const requiredResponses = ['experience_level', 'timeline', 'daily_time', 'motivation'];
-    const missingResponses = requiredResponses.filter(field => !responses[field]);
-
-    return {
-      isComplete: missingResponses.length === 0,
-      message: missingResponses.length > 0 ? 
-        `Missing questionnaire responses: ${missingResponses.join(', ')}` : 
-        'Questionnaire responses are complete',
-      missingResponses: missingResponses
+  async validateContext(context, goal) {
+    const minLength = 50;
+    const contextAnalysis = {
+      length: context.length,
+      mentions_experience: /experience|knowledge|familiar|background/i.test(context),
+      mentions_time: /time|hours|schedule|available|week/i.test(context),
+      mentions_constraints: /constraint|limitation|challenge|difficulty/i.test(context)
     };
-  }
 
-  async analyzeGoalComplexity(goal, contextSummary, questionnaireResults) {
-    try {
-      const prompt = `Analyze the complexity of this learning goal:
+    const sufficient = context.length >= minLength && 
+                      (contextAnalysis.mentions_experience || contextAnalysis.mentions_time);
 
-Goal: "${goal}"
-Context: ${JSON.stringify(contextSummary, null, 2)}
-Questionnaire Results: ${JSON.stringify(questionnaireResults, null, 2)}
-
-Determine:
-1. Complexity level (1-10)
-2. Required depth of HTA tree
-3. Optimal learning path characteristics
-4. Risk factors and mitigation strategies
-5. Estimated timeline for achievement
-
-Response format:
-{
-  "complexity_level": 1-10,
-  "tree_depth": 3-7,
-  "path_characteristics": {},
-  "risk_factors": [],
-  "estimated_timeline": "string"
-}`;
-
-      const response = await this.coreIntelligence.generateLogicalDeductions({
-        context: 'Complexity analysis for HTA generation',
-        prompt
-      });
-
-      return response;
-
-    } catch (error) {
-      console.error('Complexity analysis failed:', error);
+    if (!sufficient) {
       return {
-        complexity_level: 5,
-        tree_depth: 4,
-        path_characteristics: { approach: 'balanced' },
-        risk_factors: ['time_constraints'],
-        estimated_timeline: '3-6 months'
+        sufficient: false,
+        reason: 'Context needs more detail about your current situation',
+        analysis: contextAnalysis,
+        suggestions: [
+          'Describe your current experience level',
+          'Mention how much time you can dedicate',
+          'Include any constraints or challenges you face'
+        ]
       };
+    }
+
+    this.currentGateData.context_validation = {
+      sufficient: true,
+      context,
+      analysis: contextAnalysis
+    };
+
+    return {
+      sufficient: true,
+      context,
+      nextGate: 'schema_analysis'
+    };
+  }
+
+  combineGoalAndContext() {
+    const goal = this.currentGateData.goal_validation?.goal;
+    const context = this.currentGateData.context_validation?.context;
+    
+    return {
+      goal,
+      context,
+      ready_for_analysis: !!(goal && context)
+    };
+  }
+
+  // ===== GATE 4: DYNAMIC HTA SCHEMA ANALYSIS =====
+
+  async analyzeHtaSchemaGaps(goalContextData) {
+    try {
+      // Build prompt for external analysis (if available)
+      const prompt = `Analyze this goal and context against HTA schema requirements and reply ONLY with valid compact JSON.\nGoal: ${goalContextData.goal}\nContext: ${goalContextData.context}\n\nReturn object properties:\n- missing_fields: array (string) of required fields still needed\n- schema_completion: number (0-1) of schema completeness\n- needs_questionnaire: boolean`;
+
+      let analysis;
+
+      // Delegate to external intelligence if available
+      if (this.htaCore && typeof this.htaCore.chat === 'function') {
+        try {
+          const response = await this.htaCore.chat(prompt);
+          // Attempt to parse JSON from response.text or response
+          const raw = response?.text ?? response;
+          if (raw) {
+            analysis = JSON.parse(raw);
+          }
+        } catch (delegationError) {
+          // bubble up to trigger fallback handling below
+          throw delegationError;
+        }
+      }
+
+      // Validate and/or fall back to heuristic if necessary
+      if (!analysis || !Array.isArray(analysis.missing_fields)) {
+        analysis = {
+          missing_fields: ['time_commitment', 'experience_level'],
+          schema_completion: 0.6,
+          needs_questionnaire: true,
+        };
+      }
+
+      // Persist in gate data
+      this.currentGateData.schema_analysis = {
+        ...analysis,
+        valid: true,
+      };
+
+      return {
+        ...analysis,
+        goal: goalContextData.goal,
+        context: goalContextData.context,
+        nextGate: analysis.needs_questionnaire ? 'questionnaire_generation' : 'complexity_analysis',
+      };
+    } catch (error) {
+      // Graceful degradation
+      const fallback = {
+        error: error.message ?? String(error),
+        goal: goalContextData.goal,
+        context: goalContextData.context,
+        missing_fields: ['time_commitment', 'experience_level'],
+        needs_questionnaire: true,
+        schema_completion: 0.5,
+        nextGate: 'questionnaire_generation',
+      };
+
+      this.currentGateData.schema_analysis = {
+        ...fallback,
+        valid: false,
+      };
+
+      return fallback;
+    }
+  }
+
+  async generateTargetedQuestionnaire(schemaGaps) {
+    const questions = [];
+    
+    schemaGaps.missing_fields.forEach(field => {
+      switch (field) {
+        case 'time_commitment':
+          questions.push({
+            id: 'timeCommitment',
+            text: 'How many hours per week can you dedicate to learning?',
+            type: 'number',
+            required: true
+          });
+          break;
+        case 'experience_level':
+          questions.push({
+            id: 'experienceLevel',
+            text: 'What is your current experience level?',
+            type: 'select',
+            options: ['beginner', 'intermediate', 'advanced'],
+            required: true
+          });
+          break;
+        case 'learning_style':
+          questions.push({
+            id: 'learningStyle',
+            text: 'What learning approach do you prefer?',
+            type: 'select',
+            options: ['hands-on projects', 'theoretical study', 'mixed approach'],
+            required: true
+          });
+          break;
+      }
+    });
+
+    return {
+      questions,
+      addresses_gaps: true,
+      gap_fields: schemaGaps.missing_fields
+    };
+  }
+
+
+  async generateQuestionnaire(schemaGaps) {
+    try {
+      // Use the targeted questionnaire generator as the main method
+      const questionnaireResolved = await Promise.resolve(this.generateTargetedQuestionnaire(schemaGaps));
+      const questionnaire = questionnaireResolved;
+      
+      this.currentGateData.questionnaire_generation = {
+        generated: true,
+        questionnaire,
+        addresses_gaps: true
+      };
+      
+      return {
+        ...questionnaire,
+        addresses_gaps: true,
+        gate: 'questionnaire_generation'
+      };
+    } catch (error) {
+      // Fallback questionnaire
+      const fallbackQuestionnaire = this.generateTargetedQuestionnaire(schemaGaps);
+      
+      this.currentGateData.questionnaire_generation = {
+        generated: true,
+        questionnaire: fallbackQuestionnaire,
+        addresses_gaps: true
+      };
+      
+      return fallbackQuestionnaire;
+    }
+  }
+
+  async validateQuestionnaireCompletion(questionnaire, answers) {
+    const requiredQuestions = questionnaire.questions.filter(q => q.required);
+    const answeredRequired = requiredQuestions.filter(q => answers[q.id]);
+
+    const complete = answeredRequired.length === requiredQuestions.length;
+
+    if (!complete) {
+      return {
+        complete: false,
+        missing: requiredQuestions
+          .filter(q => !answers[q.id])
+          .map(q => q.id),
+        progress: answeredRequired.length / requiredQuestions.length
+      };
+    }
+
+    this.currentGateData.questionnaire_completion = {
+      complete: true,
+      answers,
+      questionnaire
+    };
+
+    return {
+      complete: true,
+      answers,
+      nextGate: 'complexity_analysis'
+    };
+  }
+
+  mergeUserData() {
+    const goal = this.currentGateData.goal_validation?.goal;
+    const context = this.currentGateData.context_validation?.context;
+    const responses = this.currentGateData.questionnaire_completion?.answers;
+
+    return {
+      goal,
+      context,
+      responses,
+      ready_for_complexity_analysis: !!(goal && context && responses)
+    };
+  }
+
+  // ===== GATE 6: COMPLEXITY ANALYSIS =====
+
+  async analyzeComplexity(completeUserData) {
+    try {
+      let analysis;
+
+      // Prefer delegated complexity analysis if available (e.g., LLM/Core Intelligence)
+      if (this.htaCore && typeof this.htaCore.analyzeComplexity === 'function') {
+        try {
+          /*
+           * Delegate to external intelligence. This may throw (e.g., service unavailable).
+           * We purposefully isolate this call so that any thrown error is caught and we
+           * can gracefully fall back to the heuristic analysis below.
+           */
+          analysis = await this.htaCore.analyzeComplexity(completeUserData);
+        } catch (delegationError) {
+          // Re-throw so it can be handled uniformly in the outer catch block.
+          throw delegationError;
+        }
+      }
+
+      // If delegation did not yield a usable result, run internal heuristic.
+      if (!analysis || !analysis.complexity) {
+        const goal = completeUserData.goal || '';
+        const context = completeUserData.context || '';
+
+        // Default values
+        let complexity = 'moderate';
+        let difficulty = 5;
+        let estimatedDuration = '2-3 months';
+
+        // Heuristic keyword buckets
+        const complexKeywords = ['advanced', 'master', 'expert', 'comprehensive', 'complete', 'professional'];
+        const beginnerKeywords = ['basic', 'introduction', 'beginner', 'simple', 'start'];
+
+        if (complexKeywords.some(k => goal.toLowerCase().includes(k))) {
+          complexity = 'complex';
+          difficulty = 7;
+          estimatedDuration = '4-6 months';
+        } else if (beginnerKeywords.some(k => goal.toLowerCase().includes(k))) {
+          complexity = 'simple';
+          difficulty = 3;
+          estimatedDuration = '1-2 months';
+        }
+
+        // Adjust difficulty if the context is particularly rich
+        if (context.length > 100) {
+          difficulty = Math.min(difficulty + 1, 10);
+        }
+
+        analysis = {
+          complexity,
+          difficulty,
+          estimatedDuration,
+          confidence: 0.7
+        };
+      }
+
+      // Persist analysis in gate data
+      this.currentGateData.complexity_analysis = {
+        ...analysis,
+        valid: true
+      };
+
+      return {
+        ...analysis,
+        nextGate: 'hta_tree_building'
+      };
+    } catch (error) {
+      const fallback = {
+        error: error.message ?? String(error),
+        fallback_complexity: 'moderate',
+        difficulty: 5,
+        estimatedDuration: '2-3 months'
+      };
+
+      // Persist failed analysis attempt for transparency
+      this.currentGateData.complexity_analysis = {
+        ...fallback,
+        valid: false
+      };
+
+      return fallback;
     }
   }
 
   async validateComplexityAnalysis(analysis) {
+    const valid = analysis.complexity && analysis.difficulty > 0;
+    
     return {
-      isValid: analysis.complexity_level && analysis.tree_depth,
-      message: analysis.complexity_level && analysis.tree_depth ? 
-        'Complexity analysis is valid' : 
-        'Complexity analysis needs refinement'
+      valid,
+      ready_for_hta_building: valid,
+      analysis
     };
   }
 
-  async generateStrategicFramework(htaTree, complexityAnalysis, questionnaireResults) {
+  // ===== GATE 7: HTA TREE BUILDING AND VECTORIZATION =====
+
+  async buildHtaTree(analyzedData) {
     try {
-      const prompt = `Generate a strategic learning framework based on:
-
-HTA Tree: ${JSON.stringify(htaTree, null, 2)}
-Complexity Analysis: ${JSON.stringify(complexityAnalysis, null, 2)}
-User Profile: ${JSON.stringify(questionnaireResults, null, 2)}
-
-Create a framework that includes:
-1. Learning phases and milestones
-2. Task selection strategies
-3. Progress tracking methods
-4. Adaptation triggers
-5. Success metrics
-
-Format as a structured framework for task generation.`;
-
-      const response = await this.coreIntelligence.generateLogicalDeductions({
-        context: 'Strategic framework generation',
-        prompt
+      // Create project if not exists
+      const project = await this.projectManagement.createProject({
+        name: `${analyzedData.goal} - Learning Journey`,
+        goal: analyzedData.goal,
+        context: analyzedData.context,
+        complexity: analyzedData.complexity
       });
 
-      return response;
+      // Build HTA structure
+      const htaTree = {
+        goal: analyzedData.goal,
+        strategicBranches: this.generateStrategicBranches(analyzedData),
+        frontierNodes: [],
+        hierarchyMetadata: {
+          total_tasks: 0,
+          complexity: analyzedData.complexity,
+          difficulty: analyzedData.difficulty,
+          created: new Date().toISOString()
+        }
+      };
 
-    } catch (error) {
-      console.error('Strategic framework generation failed:', error);
+      // Save HTA tree
+      await this.dataPersistence.saveProjectData(project.project_id, 'hta.json', htaTree);
+      
+      this.currentGateData.hta_building = {
+        built_successfully: true,
+        project_id: project.project_id,
+        hta_tree: htaTree
+      };
+
       return {
-        phases: ['foundation', 'building', 'mastery'],
-        task_selection: 'progressive',
-        tracking: 'milestone-based',
-        adaptation: 'feedback-driven',
-        success_metrics: ['completion_rate', 'understanding_depth']
+        ...htaTree,
+        built_successfully: true,
+        project_id: project.project_id
+      };
+    } catch (error) {
+      return {
+        error: error.message,
+        built_successfully: false,
+        retry_available: true
       };
     }
   }
 
-  async validateStrategicFramework(framework) {
-    return {
-      isValid: framework.phases && framework.task_selection,
-      message: framework.phases && framework.task_selection ? 
-        'Strategic framework is valid' : 
-        'Strategic framework needs refinement'
-    };
-  }
+  generateStrategicBranches(analyzedData) {
+    const basePhases = ['foundation', 'research', 'capability', 'implementation'];
+    
+    if (analyzedData.difficulty >= 7) {
+      basePhases.push('mastery');
+    }
 
-  calculateOnboardingProgress(gates) {
-    const totalGates = Object.keys(gates).length;
-    const completedGates = Object.values(gates).filter(completed => completed).length;
-    return Math.round((completedGates / totalGates) * 100);
-  }
-
-  formatGatesProgress(gates) {
-    const gateNames = {
-      goal_captured: 'Goal Capture',
-      context_gathered: 'Context Gathering',
-      questionnaire_complete: 'Dynamic Questionnaire',
-      complexity_analyzed: 'Complexity Analysis',
-      tree_generated: 'HTA Tree Generation',
-      framework_built: 'Strategic Framework'
-    };
-
-    return Object.entries(gates).map(([key, completed]) => ({
-      name: gateNames[key] || key,
-      status: completed ? '✅' : '⬜',
-      completed
+    return basePhases.map((phase, index) => ({
+      id: `${phase}-branch`,
+      name: phase.charAt(0).toUpperCase() + phase.slice(1),
+      phase,
+      description: `${phase} phase for ${analyzedData.goal}`,
+      estimatedDuration: this.calculatePhaseDuration(phase, analyzedData.complexity),
+      order: index
     }));
   }
 
+  calculatePhaseDuration(phase, complexity) {
+    const baseDurations = {
+      foundation: 0.2,
+      research: 0.25,
+      capability: 0.3,
+      implementation: 0.25,
+      mastery: 0.15
+    };
+
+    const complexityMultiplier = {
+      simple: 0.7,
+      moderate: 1.0,
+      complex: 1.4,
+      advanced: 1.8
+    };
+
+    return baseDurations[phase] * (complexityMultiplier[complexity] || 1.0);
+  }
+
+  async vectorizeHtaTree(htaTree, projectId) {
+    try {
+      // Simulate vectorization process
+      return {
+        vectorized: true,
+        project_id: projectId,
+        nextGate: 'task_generation'
+      };
+    } catch (error) {
+      return {
+        vectorized: false,
+        error: error.message
+      };
+    }
+  }
+
+  async validateHtaTreeCompletion(htaTree) {
+    const complete = !!(htaTree.strategicBranches && 
+                       htaTree.strategicBranches.length > 0 &&
+                       htaTree.hierarchyMetadata);
+
+    return {
+      complete,
+      branches_count: htaTree.strategicBranches?.length || 0,
+      ready_for_tasks: complete
+    };
+  }
+
+  // ===== GATE 8: TASK GENERATION AND DEPENDENCY ORDERING =====
+
+  async generateInitialTaskBatch(htaTree, goal, userResponses) {
+    const tasks = [];
+    
+    // Generate tasks for each strategic branch
+    for (const branch of htaTree.strategicBranches) {
+      const branchTasks = this.generateTasksForBranch(branch, goal, userResponses);
+      tasks.push(...branchTasks);
+    }
+
+    // Order by dependencies
+    const orderedTasks = await this.orderTasksByDependency(tasks);
+
+    this.currentGateData.task_generation = {
+      tasks: orderedTasks,
+      ordered_by_dependency: true,
+      total_generated: orderedTasks.length
+    };
+
+    return {
+      tasks: orderedTasks,
+      ordered_by_dependency: true,
+      total_generated: orderedTasks.length
+    };
+  }
+
+  generateTasksForBranch(branch, goal, userResponses) {
+    const taskCount = branch.phase === 'foundation' ? 3 : 2;
+    const tasks = [];
+
+    for (let i = 0; i < taskCount; i++) {
+      tasks.push({
+        id: `${branch.phase}_task_${i + 1}`,
+        title: `${branch.name} Task ${i + 1}`,
+        description: `Learn ${branch.phase} concepts for ${goal}`,
+        difficulty: this.calculateTaskDifficulty(branch.phase, i),
+        dependencies: i > 0 ? [`${branch.phase}_task_${i}`] : [],
+        branch_id: branch.id,
+        phase: branch.phase,
+        estimated_duration: 30 + (i * 15),
+        priority: i === 0 ? 'high' : 'medium'
+      });
+    }
+
+    return tasks;
+  }
+
+  calculateTaskDifficulty(phase, taskIndex) {
+    const baseDifficulties = {
+      foundation: 2,
+      research: 3,
+      capability: 4,
+      implementation: 5,
+      mastery: 7
+    };
+
+    return baseDifficulties[phase] + taskIndex;
+  }
+
+  async orderTasksByDependency(tasks) {
+    // Simple topological sort
+    const sorted = [];
+    const visited = new Set();
+    const visiting = new Set();
+
+    const visit = (task) => {
+      if (visiting.has(task.id)) {
+        throw new Error(`Circular dependency detected involving task ${task.id}`);
+      }
+      if (visited.has(task.id)) {
+        return;
+      }
+
+      visiting.add(task.id);
+      
+      // Visit dependencies first
+      for (const depId of task.dependencies || []) {
+        const depTask = tasks.find(t => t.id === depId);
+        if (depTask) {
+          visit(depTask);
+        }
+      }
+
+      visiting.delete(task.id);
+      visited.add(task.id);
+      sorted.push(task);
+    };
+
+    try {
+      for (const task of tasks) {
+        visit(task);
+      }
+      return sorted;
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+
+  async validateTaskGeneration(taskBatch) {
+    const valid = taskBatch.tasks && 
+                 taskBatch.tasks.length > 0 &&
+                 taskBatch.ordered_by_dependency;
+
+    return {
+      valid,
+      task_count: taskBatch.tasks?.length || 0,
+      nextGate: valid ? 'first_task_recommendation' : 'task_generation'
+    };
+  }
+
+  // ===== GATE 9: FIRST TASK RECOMMENDATION =====
+
+  async recommendFirstTask(taskBatch, userProfile) {
+    // Find optimal first task
+    const availableTasks = taskBatch.tasks.filter(task => 
+      !task.dependencies || task.dependencies.length === 0
+    );
+
+    let recommendedTask = availableTasks[0];
+    let bestScore = 0;
+
+    for (const task of availableTasks) {
+      let score = 0;
+      
+      // Priority scoring
+      if (task.priority === 'high') score += 30;
+      else if (task.priority === 'medium') score += 20;
+      
+      // Difficulty matching
+      const userLevel = userProfile.experience_level;
+      if (userLevel === 'beginner' && task.difficulty <= 3) score += 25;
+      else if (userLevel === 'intermediate' && task.difficulty >= 3 && task.difficulty <= 5) score += 25;
+      else if (userLevel === 'advanced' && task.difficulty >= 4) score += 25;
+
+      if (score > bestScore) {
+        bestScore = score;
+        recommendedTask = task;
+      }
+    }
+
+    this.currentGateData.first_recommendation = {
+      recommended_task: recommendedTask,
+      reasoning: `Selected based on ${userProfile.experience_level} level and task priority`,
+      onboarding_complete: true
+    };
+
+    return {
+      recommended_task: recommendedTask,
+      reasoning: `Optimal first task for ${userProfile.experience_level} level`,
+      available_alternatives: availableTasks.length - 1,
+      onboarding_complete: true
+    };
+  }
+
+  async completeOnboarding(projectId, firstTaskId) {
+    this.currentGateData.onboarding_status = {
+      complete: true,
+      project_id: projectId,
+      first_task_recommended: firstTaskId,
+      completed_at: new Date().toISOString()
+    };
+
+    return {
+      onboarding_complete: true,
+      first_task_recommended: firstTaskId,
+      next_action: 'begin_task_execution',
+      project_id: projectId
+    };
+  }
+
+  async generateOnboardingSummary() {
+    const intermediaryKeys = ['questionnaire_generation'];
+    const completedGates = Object.keys(this.currentGateData).filter(k => !intermediaryKeys.includes(k)).length;
+    
+    return {
+      gates_completed: completedGates,
+      goal: this.currentGateData.goal_validation?.goal,
+      context_provided: !!this.currentGateData.context_validation,
+      tasks_generated: this.currentGateData.task_generation?.total_generated || 0,
+      ready_to_start: this.currentGateData.first_recommendation?.onboarding_complete || false,
+      summary_generated_at: new Date().toISOString()
+    };
+  }
+
+  // ===== POST-ONBOARDING: TASK COMPLETION AND CONTEXT FOLDING =====
+
+  async handleTaskCompletion(taskCompletion, projectId) {
+    const contextData = {
+      learned: taskCompletion.learned,
+      questions: taskCompletion.next_questions,
+      outcome: taskCompletion.outcome,
+      difficulty_experienced: taskCompletion.difficulty_rating,
+      time_spent: taskCompletion.time_spent,
+      insights: this.extractInsights(taskCompletion.learned)
+    };
+
+    // Check for breakthrough
+    const breakthrough = await this.detectBreakthrough({
+      learned: taskCompletion.learned,
+      breakthrough: taskCompletion.breakthrough
+    });
+
+    return {
+      context_collected: true,
+      collected_context: contextData,
+      breakthrough_detected: breakthrough.breakthrough_detected,
+      next_task_available: true,
+      evolution_triggered: breakthrough.should_evolve_strategy
+    };
+  }
+
+  extractInsights(learnedContent) {
+    if (!learnedContent) return [];
+    
+    const insights = [];
+    const insightKeywords = ['understand', 'realize', 'insight', 'breakthrough', 'clear', 'clicked'];
+    
+    insightKeywords.forEach(keyword => {
+      if (learnedContent.toLowerCase().includes(keyword)) {
+        insights.push(`Learning breakthrough: ${keyword}`);
+      }
+    });
+
+    return insights;
+  }
+
+  async foldContextIntoNextTask(completedTaskContext, nextTask) {
+    const enhancedTask = {
+      ...nextTask,
+      contextual_background: this.buildContextualBackground(completedTaskContext),
+      relevant_insights: completedTaskContext.insights,
+      builds_upon: completedTaskContext.learned,
+      rich_background: completedTaskContext.learned?.length > 50
+    };
+
+    return {
+      enhanced_task: enhancedTask,
+      context_applied: true,
+      background_rich: completedTaskContext.learned?.length > 50
+    };
+  }
+
+  buildContextualBackground(context) {
+    return `Building on your previous learning: ${context.learned || 'Previous task completed'}. ${
+      context.questions ? `You're curious about: ${context.questions}` : ''
+    }`;
+  }
+
+  async accumulateTaskContext(taskHistory) {
+    /*
+     * Build additive learning progression such that after each task
+     * the cumulative knowledge includes all previous learning, e.g.
+     * Task1 → Task1+Task2 → Task1+Task2+Task3
+     */
+    const progressiveSegments = [];
+    const cumulativeStack = [];
+
+    for (const task of taskHistory) {
+      if (task && task.learned) {
+        cumulativeStack.push(task.learned);
+        progressiveSegments.push(cumulativeStack.join(' + '));
+      }
+    }
+
+    const cumulativeLearning = progressiveSegments.join(' → ');
+
+    const progressiveQuestions = taskHistory
+      .map(t => t?.questions)
+      .filter(Boolean);
+
+    return {
+      cumulative_learning: cumulativeLearning,
+      progressive_questions: progressiveQuestions,
+      learning_trajectory: taskHistory.length
+    };
+  }
+
+  async combineTaskContexts(contexts) {
+    // Collate learning across multiple completed tasks and build additive sequence
+    const allLearning = contexts.map(c => c.learned).filter(Boolean);
+    const allQuestions = contexts.map(c => c.questions).filter(Boolean);
+    const allInsights = contexts.flatMap(c => c.insights || []);
+
+    // Build additive progression: A → A+B → A+B+C
+    const progressiveSegments = [];
+    const cumulativeStack = [];
+    for (const l of allLearning) {
+      cumulativeStack.push(l);
+      progressiveSegments.push(cumulativeStack.join(' + '));
+    }
+    const combinedLearned = progressiveSegments.join(' → ');
+
+    return {
+      learned: combinedLearned,
+      questions: allQuestions.join(' + '),
+      insights: allInsights,
+      all_learning: allLearning,
+      all_questions: allQuestions,
+      all_insights: allInsights,
+      rich_background: cumulativeStack.length >= 2
+    };
+  }
+
+  // ===== BREAKTHROUGH DETECTION AND EVOLUTION =====
+
+  async detectBreakthrough(completionData) {
+    const breakthrough = completionData.breakthrough ||
+      /breakthrough|major insight|everything clicked|significant progress/i.test(completionData.learned || '');
+
+    return {
+      breakthrough_detected: breakthrough,
+      should_evolve_strategy: breakthrough,
+      insight_level: breakthrough ? 'high' : 'normal'
+    };
+  }
+
+  async triggerTreeEvolution(breakthroughData) {
+    // Simulate tree evolution
+    const newTasksGenerated = Math.floor(Math.random() * 3) + 2;
+    
+    return {
+      evolution_triggered: true,
+      new_tasks_generated: newTasksGenerated,
+      evolution_type: 'breakthrough_expansion'
+    };
+  }
+
+  async triggerBatchEvolution(pattern, projectId) {
+    return {
+      batch_evolved: true,
+      pattern_addressed: pattern.pattern_type,
+      difficulty_increased: pattern.pattern_type === 'rapid_progress',
+      support_added: pattern.pattern_type === 'consistent_struggle'
+    };
+  }
+
+  // ===== UTILITY METHODS =====
+
+  async attemptGateProgression(targetGate, data) {
+    const currentGateIndex = this.gateOrder.indexOf(targetGate);
+    
+    // Map gate names to their data keys
+    const gateKeyMapping = {
+      'landing_page': 'user_selection',
+      'goal_collection': 'goal_validation', 
+      'context_gathering': 'context_validation',
+      'schema_analysis': 'schema_analysis',
+      'questionnaire_generation': 'questionnaire_generation',
+      'complexity_analysis': 'complexity_analysis',
+      'hta_tree_building': 'hta_building',
+      'task_generation': 'task_generation',
+      'first_task_recommendation': 'first_recommendation'
+    };
+    
+    // Check if all previous gates are complete
+    for (let i = 0; i < currentGateIndex; i++) {
+      const gateName = this.gateOrder[i];
+      const gateKey = gateKeyMapping[gateName];
+      if (!this.currentGateData[gateKey]) {
+        return {
+          blocked: true,
+          reason: `Gate ${gateName} not completed`,
+          missing_prerequisites: this.gateOrder.slice(0, currentGateIndex)
+        };
+      }
+    }
+
+    return {
+      blocked: false,
+      can_proceed: true,
+      target_gate: targetGate
+    };
+  }
+
+  getCurrentGateData() {
+    return {
+      ...this.currentGateData,
+      goal: this.currentGateData.goal_validation?.goal,
+      context: this.currentGateData.context_validation?.context,
+      ready_for_schema_analysis: !!(
+        this.currentGateData.goal_validation && 
+        this.currentGateData.context_validation
+      )
+    };
+  }
+
+  async startSession(sessionId) {
+    this.sessionStates.set(sessionId, {
+      gateData: {},
+      startedAt: new Date().toISOString()
+    });
+  }
+
+  getSessionData(sessionId) {
+    return this.sessionStates.get(sessionId)?.gateData || {};
+  }
 }

@@ -13,6 +13,24 @@ import { HTAComplexityAnalyzer } from './hta-complexity-analyzer.js';
 import { HTADataManager } from './hta-data-manager.js';
 import { PureSchemaHTASystem } from './pure-schema-driven-hta.js';
 
+// Utility: ensure every branch has a valid name string
+function sanitizeBranchNames(branches = []) {
+  return branches.map((branch, idx) => {
+    let name = (branch && typeof branch.name === 'string' && branch.name.trim()) ? branch.name.trim() : '';
+    if (!name) {
+      if (branch && typeof branch.description === 'string' && branch.description.trim()) {
+        // Use up to first 3 words of description as fallback name
+        name = branch.description.trim().split(/\s+/).slice(0, 3).join(' ');
+      }
+      if (!name) {
+        name = `Branch ${idx + 1}`;
+      }
+    }
+    return { ...branch, name };
+  });
+}
+
+
 // PERMANENT_SCHEMA_FIX_INSTALLED: 2025-06-29T03:20:13.423Z
 const PERMANENT_SCHEMA_FIX = {
   version: '1.0.0',
@@ -149,6 +167,7 @@ export class HTACore {
   }
 
   generateTasksFromBranches(strategicBranches, goal) {
+    strategicBranches = sanitizeBranchNames(strategicBranches);
     const tasks = [];
     let taskId = 1;
 
@@ -716,7 +735,7 @@ export class HTACore {
       const htaTree = await this.pureSchemaHTA.generateHTATree(goal, initialContext);
       
       if (htaTree.level2_strategicBranches?.strategic_branches) {
-        return htaTree.level2_strategicBranches.strategic_branches.map(branch => ({
+        return sanitizeBranchNames(htaTree.level2_strategicBranches.strategic_branches).map(branch => ({
           name: branch.name,
           description: branch.description,
           priority: branch.priority,

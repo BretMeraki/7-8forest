@@ -323,7 +323,6 @@ export const DEPRECATED_TOOLS = [
   'continue_onboarding_forest',
   'check_onboarding_status_forest',
   'get_onboarding_status_forest',
-  'build_framework_forest',
   
   // Pipeline variation (keep simple get_next_task_forest)
   'get_next_pipeline_forest',

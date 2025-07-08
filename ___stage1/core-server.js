@@ -21,6 +21,9 @@ import { validateToolCall } from './utils/tool-schemas.js';
 import { AmbiguousDesiresManager } from './modules/ambiguous-desires/index.js';
 import { GatedOnboardingFlow } from './modules/gated-onboarding-flow.js';
 import { NextPipelinePresenter } from './modules/next-pipeline-presenter.js';
+import { ForestDataVectorization } from './modules/forest-data-vectorization.js';
+import { ChromaDBLifecycleManager } from './modules/ChromaDBLifecycleManager.js';
+import path from 'path';
 
 // Replaced pino with simple stderr console logger to avoid JSON log leakage
 
@@ -91,6 +94,21 @@ class Stage1CoreServer {
     // Connect TaskStrategyCore to AmbiguousDesiresManager
     this.ambiguousDesiresManager.taskStrategyCore = this.taskStrategyCore;
 
+    // Initialize Forest Data Vectorization FIRST for semantic operations
+    this.forestDataVectorization = new ForestDataVectorization(this.dataPersistence.dataDir);
+    
+    // Initialize ChromaDB Lifecycle Manager for parallel startup and graceful shutdown
+    this.chromaDBLifecycle = new ChromaDBLifecycleManager({
+      dataDir: path.join(this.dataPersistence.dataDir, '.chromadb'),
+      host: process.env.CHROMA_HOST || '0.0.0.0',
+      port: parseInt(process.env.CHROMA_PORT) || 8000,
+      serverPath: 'python3',
+      serverScript: path.join(process.cwd(), 'start-chromadb-server.py'),
+      enableAutoRestart: process.env.CHROMA_AUTO_RESTART !== 'false',
+      maxRetries: parseInt(process.env.CHROMA_MAX_RETRIES) || 3,
+      startupTimeout: parseInt(process.env.CHROMA_STARTUP_TIMEOUT) || 30000
+    });
+    
     // Initialize gated onboarding flow and Next + Pipeline presenter
     this.gatedOnboarding = new GatedOnboardingFlow(
       this.dataPersistence,
@@ -121,6 +139,12 @@ class Stage1CoreServer {
     try {
       console.error('🚀 Initializing Stage1 Core Server...');
       
+      // Start ChromaDB in parallel (non-blocking)
+      console.error('🔄 Starting ChromaDB server in parallel...');
+      this.chromaDBLifecycle.startParallel().catch(error => {
+        console.error('⚠️ ChromaDB startup failed (non-blocking):', error.message);
+      });
+      
       // Initialize core modules with vector support
 
       
@@ -138,6 +162,29 @@ class Stage1CoreServer {
       
       // Ensure vector store is properly initialized
       console.error('📊 Initializing vector intelligence...');
+      
+      // Initialize ForestDataVectorization first
+      try {
+        await this.forestDataVectorization.initialize();
+        console.error('✅ Forest Data Vectorization ready');
+      } catch (vectorizationError) {
+        console.error('⚠️ Forest Data Vectorization initialization failed:', vectorizationError.message);
+      }
+      
+      // Check ChromaDB status (non-blocking)
+      try {
+        const chromaStatus = this.chromaDBLifecycle.getStatus();
+        if (chromaStatus.isRunning) {
+          console.error('✅ ChromaDB server running', { port: chromaStatus.port, pid: chromaStatus.pid });
+        } else if (chromaStatus.isStarting) {
+          console.error('🔄 ChromaDB server starting...', { port: chromaStatus.port });
+        } else {
+          console.error('⚠️ ChromaDB server not available', chromaStatus);
+        }
+      } catch (chromaError) {
+        console.error('⚠️ ChromaDB status check failed:', chromaError.message);
+      }
+      
       const htaCore = this.htaCore;
       if (htaCore && typeof htaCore.initializeVectorStore === 'function') {
         try {
@@ -235,15 +282,14 @@ class Stage1CoreServer {
             case 'get_active_project_forest':
               result = await this.projectManagement.getActiveProject(); break;
             case 'build_hta_tree_forest':
-              console.error('[forest-log] [ToolRouter] About to call htaCore.buildHTATree');
-              console.error('[forest-log] [ToolRouter] htaCore is:', this.htaCore);
-              result = await this.htaCore.buildHTATree(args); break;
+              console.error('[forest-log] [ToolRouter] About to call vectorized buildHTATree');
+              result = await this.buildHTATreeVectorized(args); break;
             case 'get_hta_status_forest':
               result = await this.htaCore.getHTAStatus(); break;
             case 'get_next_task_forest':
-              result = await this.taskStrategyCore.getNextTask(args); break;
+              result = await this.getNextTaskVectorized(args); break;
             case 'complete_block_forest':
-              result = await this.taskStrategyCore.handleBlockCompletion(args); break;
+              result = await this.completeBlockVectorized(args); break;
             case 'evolve_strategy_forest':
               result = await this.taskStrategyCore.evolveStrategy(args); break;
             case 'current_status_forest':
@@ -329,6 +375,18 @@ class Stage1CoreServer {
               result = await this.getNextPipeline(args); break;
             case 'evolve_pipeline_forest':
               result = await this.evolvePipeline(args); break;
+            
+            // Vectorization Status Tools
+            case 'get_vectorization_status_forest':
+              result = await this.getVectorizationStatus(args); break;
+            case 'vectorize_project_data_forest':
+              result = await this.vectorizeProjectData(args); break;
+            
+            // ChromaDB Management Tools
+            case 'get_chromadb_status_forest':
+              result = await this.getChromaDBStatus(args); break;
+            case 'restart_chromadb_forest':
+              result = await this.restartChromaDB(args); break;
             
             default:
               throw new Error(`Unknown tool: ${toolName}`);
@@ -421,6 +479,438 @@ class Stage1CoreServer {
         },
       ],
     };
+  }
+
+  /**
+   * VECTORIZED HTA TREE BUILDING - Integrates ForestDataVectorization
+   */
+  async buildHTATreeVectorized(args) {
+    try {
+      console.error('[VectorizedHTA] Starting semantic HTA tree building...');
+      
+      // Get active project
+      const activeProject = await this.projectManagement.getActiveProject();
+      if (!activeProject || !activeProject.project_id) {
+        throw new Error('No active project found. Please create a project first.');
+      }
+      
+      const projectId = activeProject.project_id;
+      const config = await this.dataPersistence.loadProjectData(projectId, 'config.json');
+      
+      if (!config || !config.goal) {
+        throw new Error('Project must have a goal defined to build HTA tree');
+      }
+      
+      // Build HTA tree using traditional method first
+      const traditionalResult = await this.htaCore.buildHTATree(args);
+      
+      // Check if we need to vectorize the project data
+      try {
+        const htaData = await this.dataPersistence.loadProjectData(projectId, 'hta.json');
+        if (htaData) {
+          console.error('[VectorizedHTA] Vectorizing project goal and HTA structure...');
+          
+          // Vectorize project goal
+          await this.forestDataVectorization.vectorizeProjectGoal(projectId, {
+            goal: config.goal,
+            complexity: this.assessGoalComplexity(config.goal, config.context),
+            domain: this.extractDomain(config.goal),
+            estimatedDuration: config.estimated_duration || '3 months',
+            created_at: config.created_at || new Date().toISOString()
+          });
+          
+          // Vectorize strategic branches if they exist
+          if (htaData.strategicBranches && htaData.strategicBranches.length > 0) {
+            await this.forestDataVectorization.vectorizeHTABranches(projectId, htaData.strategicBranches);
+          }
+          
+          // Vectorize tasks if they exist
+          if (htaData.frontierNodes && htaData.frontierNodes.length > 0) {
+            await this.forestDataVectorization.vectorizeTaskContent(projectId, htaData.frontierNodes);
+          }
+          
+          console.error('[VectorizedHTA] ✅ Project data successfully vectorized for semantic operations');
+        }
+      } catch (vectorError) {
+        console.error('[VectorizedHTA] ⚠️ Vectorization failed, continuing with traditional HTA:', vectorError.message);
+      }
+      
+      return traditionalResult;
+      
+    } catch (error) {
+      console.error('[VectorizedHTA] HTA tree building failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **HTA Tree Building Failed**\n\nError: ${error.message}\n\nPlease check your project configuration and try again.`
+        }]
+      };
+    }
+  }
+
+  /**
+   * VECTORIZED NEXT TASK - Uses semantic search for context-aware task selection
+   */
+  async getNextTaskVectorized(args) {
+    try {
+      console.error('[VectorizedTask] Starting context-aware task selection...');
+      
+      const activeProject = await this.projectManagement.getActiveProject();
+      if (!activeProject || !activeProject.project_id) {
+        return {
+          content: [{ type: 'text', text: '**No Active Project** ❌\n\nCreate or switch to a project first.' }]
+        };
+      }
+      
+      const projectId = activeProject.project_id;
+      const contextFromMemory = args.context_from_memory || args.contextFromMemory || '';
+      const energyLevel = args.energy_level || args.energyLevel || 3;
+      const timeAvailable = args.time_available || args.timeAvailable || '30 minutes';
+      
+      // Try adaptive task recommendation using vectorization first
+      try {
+        const semanticTasks = await this.forestDataVectorization.adaptiveTaskRecommendation(
+          projectId,
+          contextFromMemory,
+          energyLevel,
+          timeAvailable
+        );
+        
+        if (semanticTasks && semanticTasks.length > 0) {
+          console.error(`[VectorizedTask] ✅ Found ${semanticTasks.length} context-aware tasks`);
+          
+          // Format the best semantic match
+          const bestMatch = semanticTasks[0];
+          const taskMetadata = bestMatch.enriched_metadata || {};
+          
+          return {
+            content: [{
+              type: 'text',
+              text: `🎯 **Context-Aware Task Selected**\n\n` +
+                    `**Task**: ${bestMatch.metadata.title || 'Semantic Task'}\n` +
+                    `**Description**: ${bestMatch.metadata.description || 'AI-selected based on your context'}\n` +
+                    `**Similarity Score**: ${(bestMatch.score * 100).toFixed(1)}%\n` +
+                    `**Difficulty**: ${taskMetadata.difficulty || energyLevel}/5\n` +
+                    `**Duration**: ${taskMetadata.duration || timeAvailable}\n\n` +
+                    `**Why this task?** Selected using semantic analysis of your context: "${contextFromMemory}"\n\n` +
+                    `This task matches your current energy level (${energyLevel}/5) and available time (${timeAvailable}).\n\n` +
+                    `**Context Enhancement**: Your specific situation has been considered in this recommendation.`
+            }],
+            task_info: {
+              task_id: bestMatch.metadata.task_id,
+              similarity_score: bestMatch.score,
+              vectorized: true,
+              semantic_match: true
+            }
+          };
+        }
+      } catch (vectorError) {
+        console.error('[VectorizedTask] ⚠️ Semantic task selection failed, falling back to traditional:', vectorError.message);
+        
+        // Check if this is a ChromaDB corruption issue
+        if (vectorError.message && (
+            vectorError.message.includes('status: 500') ||
+            vectorError.message.includes('CHROMADB_CORRUPTION') ||
+            vectorError.message.includes('tolist') ||
+            vectorError.message.includes('Internal Server Error')
+        )) {
+          console.error('[VectorizedTask] 🔥 ChromaDB corruption detected - automatic recovery should trigger');
+        }
+      }
+      
+      // Fallback to traditional task selection
+      const traditionalResult = await this.taskStrategyCore.getNextTask(args);
+      
+      // Enhance traditional result with note about vectorization
+      if (traditionalResult && traditionalResult.content && traditionalResult.content[0]) {
+        traditionalResult.content[0].text += '\n\n*Note: Using traditional task selection (semantic enhancement available after vectorization)*';
+      }
+      
+      return traditionalResult;
+      
+    } catch (error) {
+      console.error('[VectorizedTask] Task selection failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Task Selection Failed**\n\nError: ${error.message}\n\nPlease check your project configuration and try again.`
+        }]
+      };
+    }
+  }
+
+  // Helper methods for vectorization
+  assessGoalComplexity(goal, context) {
+    const goalLength = goal.length;
+    const contextLength = (context || '').length;
+    const complexWords = (goal.toLowerCase().match(/\b(advanced|complex|sophisticated|comprehensive|integrate|analyze|synthesize|optimize)\b/g) || []).length;
+    
+    if (complexWords >= 3 || goalLength > 200) return 'high';
+    if (complexWords >= 1 || goalLength > 100 || contextLength > 200) return 'medium';
+    return 'low';
+  }
+  
+  extractDomain(goal) {
+    const goalLower = goal.toLowerCase();
+    
+    if (goalLower.includes('programming') || goalLower.includes('coding') || goalLower.includes('software')) return 'software_development';
+    if (goalLower.includes('machine learning') || goalLower.includes('ai') || goalLower.includes('data science')) return 'ai_ml';
+    if (goalLower.includes('business') || goalLower.includes('marketing') || goalLower.includes('finance')) return 'business';
+    if (goalLower.includes('design') || goalLower.includes('creative') || goalLower.includes('art')) return 'creative';
+    if (goalLower.includes('science') || goalLower.includes('research') || goalLower.includes('academic')) return 'academic';
+    if (goalLower.includes('language') || goalLower.includes('spanish') || goalLower.includes('french')) return 'language_learning';
+    if (goalLower.includes('health') || goalLower.includes('fitness') || goalLower.includes('wellness')) return 'health_wellness';
+    
+    return 'general';
+  }
+
+  /**
+   * VECTORIZED BLOCK COMPLETION - Captures learning insights for semantic analysis
+   */
+  async completeBlockVectorized(args) {
+    try {
+      // Complete the block using traditional method first
+      const traditionalResult = await this.taskStrategyCore.handleBlockCompletion(args);
+      
+      // Extract learning insights for vectorization
+      const activeProject = await this.projectManagement.getActiveProject();
+      if (activeProject && activeProject.project_id && args.learned) {
+        const projectId = activeProject.project_id;
+        
+        try {
+          // Create learning event for vectorization
+          const learningEvent = {
+            id: `learning_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: 'task_completion',
+            description: `Completed task: ${args.block_id || 'Unknown task'}`,
+            outcome: args.outcome || 'Task completed',
+            insights: args.learned || '',
+            breakthroughLevel: this.assessBreakthroughLevel(args),
+            taskId: args.block_id,
+            timestamp: new Date().toISOString()
+          };
+          
+          // Vectorize the learning event
+          await this.forestDataVectorization.vectorizeLearningHistory(projectId, [learningEvent]);
+          
+          // Check if this was a breakthrough for special vectorization
+          if (args.breakthrough || this.assessBreakthroughLevel(args) >= 4) {
+            const breakthroughInsight = {
+              id: `breakthrough_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              description: args.learned,
+              context: `Task completion: ${args.outcome}`,
+              impact: args.breakthrough ? 'high' : 'medium',
+              impactLevel: this.assessBreakthroughLevel(args),
+              relatedTasks: [args.block_id],
+              knowledgeDomain: this.extractDomain(args.learned || args.outcome || ''),
+              timestamp: new Date().toISOString()
+            };
+            
+            await this.forestDataVectorization.vectorizeBreakthroughInsight(projectId, breakthroughInsight);
+            
+            console.error(`[VectorizedCompletion] ✅ Breakthrough insight vectorized for future semantic recommendations`);
+          }
+          
+          console.error(`[VectorizedCompletion] ✅ Learning event vectorized for adaptive recommendations`);
+          
+          // Enhance traditional result with vectorization note
+          if (traditionalResult && traditionalResult.content && traditionalResult.content[0]) {
+            traditionalResult.content[0].text += '\n\n*🧠 Learning insights captured for semantic enhancement of future recommendations*';
+          }
+          
+        } catch (vectorError) {
+          console.error('[VectorizedCompletion] ⚠️ Learning vectorization failed:', vectorError.message);
+        }
+      }
+      
+      return traditionalResult;
+      
+    } catch (error) {
+      console.error('[VectorizedCompletion] Block completion failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Block Completion Failed**\n\nError: ${error.message}\n\nPlease try again.`
+        }]
+      };
+    }
+  }
+  
+  assessBreakthroughLevel(args) {
+    let level = 2; // baseline
+    
+    if (args.breakthrough) level += 2;
+    if (args.learned && args.learned.length > 100) level += 1;
+    if (args.difficulty_rating && args.difficulty_rating >= 4) level += 1;
+    if (args.outcome && args.outcome.toLowerCase().includes('breakthrough')) level += 1;
+    if (args.learned && (args.learned.toLowerCase().includes('insight') || args.learned.toLowerCase().includes('understanding'))) level += 1;
+    
+    return Math.min(level, 5);
+  }
+
+  /**
+   * Get vectorization status and analytics
+   */
+  async getVectorizationStatus(args) {
+    try {
+      const activeProject = await this.projectManagement.getActiveProject();
+      const projectId = activeProject?.project_id;
+      
+      // Get vectorization stats
+      const vectorStats = await this.forestDataVectorization.getVectorizationStats();
+      
+      // Get corruption recovery status
+      const recoveryStatus = await this.forestDataVectorization.getCorruptionRecoveryStatus();
+      
+      let statusText = `**🧠 Vectorization Intelligence Status**\n\n`;
+      
+      // System status
+      statusText += `**System Status**: ${this.forestDataVectorization.initialized ? '✅ Active' : '❌ Not Initialized'}\n`;
+      statusText += `**Vector Store**: ${recoveryStatus.vector_store_status === 'healthy' ? '✅ Healthy' : '❌ Issues Detected'}\n`;
+      
+      // Corruption recovery info
+      if (recoveryStatus.last_recovery) {
+        statusText += `**Last Recovery**: ${new Date(recoveryStatus.last_recovery).toLocaleString()}\n`;
+      }
+      if (recoveryStatus.recovered_projects.length > 0) {
+        statusText += `**Recovered Projects**: ${recoveryStatus.recovered_projects.length}\n`;
+      }
+      statusText += `\n`;
+      
+      // Cache performance
+      const cacheStats = vectorStats.cache_stats;
+      statusText += `**Performance Analytics**\n`;
+      statusText += `• Cache Size: ${cacheStats.size}/${cacheStats.max_size} entries\n`;
+      statusText += `• Hit Rate: ${cacheStats.hit_rate.toFixed(1)}% (${cacheStats.hits} hits, ${cacheStats.misses} misses)\n\n`;
+      
+      // Project-specific status
+      if (projectId) {
+        statusText += `**Current Project**: ${projectId}\n`;
+        
+        // Check if project data is vectorized
+        try {
+          const goalMetadata = await this.dataPersistence.loadProjectData(projectId, 'goal_metadata.json');
+          const branchMetadata = await this.dataPersistence.loadProjectData(projectId, 'branch_metadata.json');
+          const taskMetadata = await this.dataPersistence.loadProjectData(projectId, 'task_metadata.json');
+          
+          statusText += `• Goal Vectorized: ${goalMetadata?.vectorized ? '✅ Yes' : '❌ No'}\n`;
+          statusText += `• Branches Vectorized: ${branchMetadata?.vectorized ? `✅ Yes (${branchMetadata.branches?.length || 0} branches)` : '❌ No'}\n`;
+          statusText += `• Tasks Vectorized: ${taskMetadata?.vectorized ? `✅ Yes (${taskMetadata.tasks?.length || 0} tasks)` : '❌ No'}\n\n`;
+          
+          if (goalMetadata?.last_vectorized) {
+            statusText += `• Last Vectorization: ${new Date(goalMetadata.last_vectorized).toLocaleString()}\n\n`;
+          }
+        } catch (metadataError) {
+          statusText += `• Vectorization Status: ⚠️ Metadata unavailable\n\n`;
+        }
+      } else {
+        statusText += `**Current Project**: None active\n\n`;
+      }
+      
+      // Available vectorization types
+      statusText += `**Available Intelligence Types**\n`;
+      statusText += `• **Project Goals**: Semantic goal analysis and comparison\n`;
+      statusText += `• **HTA Branches**: Strategic branch similarity and clustering\n`;
+      statusText += `• **Task Content**: Context-aware task recommendations\n`;
+      statusText += `• **Learning History**: Experience-based learning insights\n`;
+      statusText += `• **Breakthrough Insights**: High-impact learning moment capture\n\n`;
+      
+      // Instructions
+      statusText += `**How to Use**\n`;
+      statusText += `• Use \`vectorize_project_data_forest\` to enable semantic intelligence for current project\n`;
+      statusText += `• All \`get_next_task_forest\` calls now use context-aware recommendations when vectorized\n`;
+      statusText += `• Task completions with learning insights are automatically vectorized\n`;
+      statusText += `• Project goals and branches are automatically vectorized during HTA tree creation`;
+      
+      return {
+        content: [{ type: 'text', text: statusText }],
+        vectorization_stats: vectorStats,
+        project_vectorized: projectId ? {
+          goal: (await this.dataPersistence.loadProjectData(projectId, 'goal_metadata.json'))?.vectorized || false,
+          branches: (await this.dataPersistence.loadProjectData(projectId, 'branch_metadata.json'))?.vectorized || false,
+          tasks: (await this.dataPersistence.loadProjectData(projectId, 'task_metadata.json'))?.vectorized || false
+        } : null
+      };
+      
+    } catch (error) {
+      console.error('Vectorization status check failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Vectorization Status Check Failed**\n\nError: ${error.message}\n\nVectorization may not be properly initialized.`
+        }]
+      };
+    }
+  }
+
+  /**
+   * Manually vectorize project data for semantic intelligence
+   */
+  async vectorizeProjectData(args) {
+    try {
+      const activeProject = await this.projectManagement.getActiveProject();
+      if (!activeProject || !activeProject.project_id) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**No Active Project** ❌\n\nCreate or switch to a project first to vectorize data.'
+          }]
+        };
+      }
+      
+      const projectId = activeProject.project_id;
+      
+      let statusText = `**🔄 Vectorizing Project Data...**\n\nProject: ${projectId}\n\n`;
+      
+      // Perform bulk vectorization
+      const bulkResult = await this.forestDataVectorization.bulkVectorizeProject(projectId);
+      
+      statusText += `**Vectorization Results:**\n`;
+      statusText += `• Total Items Vectorized: ${bulkResult.vectorized}\n`;
+      statusText += `• Errors: ${bulkResult.errors}\n\n`;
+      
+      if (bulkResult.types) {
+        statusText += `**Breakdown by Type:**\n`;
+        if (bulkResult.types.goals) statusText += `• Goals: ${bulkResult.types.goals}\n`;
+        if (bulkResult.types.branches) statusText += `• Strategic Branches: ${bulkResult.types.branches}\n`;
+        if (bulkResult.types.tasks) statusText += `• Tasks: ${bulkResult.types.tasks}\n`;
+        if (bulkResult.types.learning_events) statusText += `• Learning Events: ${bulkResult.types.learning_events}\n`;
+        statusText += `\n`;
+      }
+      
+      if (bulkResult.vectorized > 0) {
+        statusText += `✅ **Semantic Intelligence Activated!**\n\n`;
+        statusText += `Your project now benefits from:\n`;
+        statusText += `• **Context-Aware Task Recommendations**: Tasks selected based on your specific situation and learning history\n`;
+        statusText += `• **Semantic Goal Analysis**: Better understanding of goal complexity and domain\n`;
+        statusText += `• **Learning Pattern Recognition**: Insights from your previous breakthroughs and completions\n`;
+        statusText += `• **Adaptive Strategy Evolution**: Data-driven strategy improvements\n\n`;
+        statusText += `Try \`get_next_task_forest\` with detailed context to experience the improvement!`;
+      } else {
+        statusText += `⚠️ **Limited Vectorization**\n\n`;
+        statusText += `No new data was vectorized. This could mean:\n`;
+        statusText += `• Project data is already vectorized\n`;
+        statusText += `• HTA tree needs to be built first (\`build_hta_tree_forest\`)\n`;
+        statusText += `• No tasks or learning history available yet\n\n`;
+        statusText += `Create some content first, then try vectorization again.`;
+      }
+      
+      return {
+        content: [{ type: 'text', text: statusText }],
+        vectorization_result: bulkResult,
+        success: bulkResult.vectorized > 0
+      };
+      
+    } catch (error) {
+      console.error('Manual vectorization failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **Vectorization Failed**\n\nError: ${error.message}\n\nPlease check your project data and try again.`
+        }],
+        error: error.message
+      };
+    }
   }
 
   /**
@@ -535,6 +1025,16 @@ class Stage1CoreServer {
         }
       }
 
+      // ChromaDB health check
+      let chromaDBHealthy = false;
+      let chromaDBStatus = null;
+      try {
+        chromaDBStatus = await this.chromaDBLifecycle.getHealthStatus();
+        chromaDBHealthy = chromaDBStatus.status === 'healthy';
+      } catch (error) {
+        chromaDBStatus = { status: 'error', reason: error.message };
+      }
+
       const memory = process.memoryUsage();
 
       return {
@@ -545,6 +1045,8 @@ class Stage1CoreServer {
               status: 'ok',
               dataDirWritable,
               vectorStoreHealthy,
+              chromaDBHealthy,
+              chromaDBStatus,
               memory,
               timestamp: new Date().toISOString(),
             },
@@ -825,12 +1327,24 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
       
       let responseText = `**🚀 Onboarding Progress**\n\n${result.message}\n\n`;
       
+      // Use the stage from result instead of potentially undefined input stage
+      const currentStage = result.stage || stage || 'unknown';
+      
       if (result.gate_status === 'passed') {
-        responseText += `✅ **${stage}** stage completed!\n\n`;
+        responseText += `✅ **${currentStage}** stage completed!\n\n`;
       } else if (result.gate_status === 'blocked') {
-        responseText += `⛔ **${stage}** stage blocked - action required\n\n`;
+        responseText += `⛔ **${currentStage}** stage blocked - action required\n\n`;
       } else if (result.gate_status === 'in_progress') {
-        responseText += `⏳ **${stage}** stage in progress\n\n`;
+        responseText += `⏳ **${currentStage}** stage in progress\n\n`;
+      }
+      
+      // Add suggestions if provided
+      if (result.suggestions && result.suggestions.length > 0) {
+        responseText += `**Suggestions**:\n`;
+        result.suggestions.forEach(suggestion => {
+          responseText += `• ${suggestion}\n`;
+        });
+        responseText += `\n`;
       }
 
       if (result.next_action) {
@@ -1022,6 +1536,135 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
           text: `**Pipeline Evolution Failed** ❌\n\nError: ${error.message}\n\nYour existing pipeline remains available.`
         }],
         error: error.message
+      };
+    }
+  }
+
+  /**
+   * Get ChromaDB server status and health information
+   */
+  async getChromaDBStatus(args) {
+    try {
+      const status = this.chromaDBLifecycle.getStatus();
+      const healthStatus = await this.chromaDBLifecycle.getHealthStatus();
+      
+      let statusText = `**🔧 ChromaDB Server Status**\n\n`;
+      
+      // Server status
+      statusText += `**Server Status**: ${status.isRunning ? '✅ Running' : status.isStarting ? '🔄 Starting' : status.isStopping ? '🛑 Stopping' : '❌ Stopped'}\n`;
+      statusText += `**Host**: ${status.host}\n`;
+      statusText += `**Port**: ${status.port}\n`;
+      statusText += `**Data Directory**: ${status.dataDir}\n`;
+      
+      if (status.pid) {
+        statusText += `**Process ID**: ${status.pid}\n`;
+      }
+      
+      if (status.retryCount > 0) {
+        statusText += `**Retry Count**: ${status.retryCount}/${status.maxRetries}\n`;
+      }
+      
+      statusText += `\n`;
+      
+      // Health status
+      statusText += `**Health Status**: ${healthStatus.status === 'healthy' ? '✅ Healthy' : healthStatus.status === 'unhealthy' ? '⚠️ Unhealthy' : '❌ Error'}\n`;
+      
+      if (healthStatus.lastCheck) {
+        statusText += `**Last Health Check**: ${healthStatus.lastCheck.timestamp}\n`;
+        if (healthStatus.lastCheck.statusCode) {
+          statusText += `**HTTP Status**: ${healthStatus.lastCheck.statusCode}\n`;
+        }
+        if (healthStatus.lastCheck.error) {
+          statusText += `**Error**: ${healthStatus.lastCheck.error}\n`;
+        }
+      }
+      
+      if (healthStatus.reason) {
+        statusText += `**Reason**: ${healthStatus.reason}\n`;
+      }
+      
+      statusText += `\n`;
+      
+      // Configuration
+      statusText += `**Configuration**\n`;
+      statusText += `• Auto-restart: ${this.chromaDBLifecycle.options.enableAutoRestart ? 'Enabled' : 'Disabled'}\n`;
+      statusText += `• Health check interval: ${this.chromaDBLifecycle.options.healthCheckInterval}ms\n`;
+      statusText += `• Startup timeout: ${this.chromaDBLifecycle.options.startupTimeout}ms\n`;
+      statusText += `• Max retries: ${this.chromaDBLifecycle.options.maxRetries}\n\n`;
+      
+      // Instructions
+      statusText += `**Management**\n`;
+      statusText += `• Use \`restart_chromadb_forest\` to restart the server\n`;
+      statusText += `• ChromaDB starts automatically with Forest and shuts down when Forest stops\n`;
+      statusText += `• Server will auto-restart on failures if enabled`;
+      
+      return {
+        content: [{ type: 'text', text: statusText }],
+        server_status: status,
+        health_status: healthStatus,
+        success: true
+      };
+      
+    } catch (error) {
+      console.error('ChromaDB status check failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **ChromaDB Status Check Failed**\n\nError: ${error.message}\n\nChromaDB may not be properly initialized.`
+        }],
+        error: error.message,
+        success: false
+      };
+    }
+  }
+
+  /**
+   * Restart ChromaDB server
+   */
+  async restartChromaDB(args) {
+    try {
+      let statusText = `**🔄 Restarting ChromaDB Server...**\n\n`;
+      
+      const initialStatus = this.chromaDBLifecycle.getStatus();
+      statusText += `**Initial Status**: ${initialStatus.isRunning ? 'Running' : 'Stopped'}\n`;
+      statusText += `**Port**: ${initialStatus.port}\n\n`;
+      
+      // Perform restart
+      const restartResult = await this.chromaDBLifecycle.restart();
+      
+      const finalStatus = this.chromaDBLifecycle.getStatus();
+      
+      statusText += `**Restart Result**: ✅ Success\n`;
+      statusText += `**Final Status**: ${finalStatus.isRunning ? '✅ Running' : '⚠️ Not Running'}\n`;
+      statusText += `**Process ID**: ${finalStatus.pid || 'Unknown'}\n`;
+      statusText += `**Port**: ${finalStatus.port}\n\n`;
+      
+      if (restartResult && restartResult.status) {
+        statusText += `**Details**: ${restartResult.status}\n\n`;
+      }
+      
+      statusText += `**Next Steps**\n`;
+      statusText += `• ChromaDB server has been restarted\n`;
+      statusText += `• Vector operations should now work normally\n`;
+      statusText += `• Use \`get_chromadb_status_forest\` to verify health\n`;
+      statusText += `• Use \`get_vectorization_status_forest\` to check vectorization capabilities`;
+      
+      return {
+        content: [{ type: 'text', text: statusText }],
+        restart_result: restartResult,
+        final_status: finalStatus,
+        success: true
+      };
+      
+    } catch (error) {
+      console.error('ChromaDB restart failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ **ChromaDB Restart Failed**\n\nError: ${error.message}\n\nThe server may need manual intervention or there could be a configuration issue.`
+        }],
+        error: error.message,
+        success: false
       };
     }
   }
@@ -1264,6 +1907,17 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
         this.htaExpansionAgent?.stop();
         this.backgroundProcessor?.stop();
       } catch (_) { /* ignore */ }
+
+      // Gracefully shutdown ChromaDB server
+      try {
+        if (this.chromaDBLifecycle) {
+          console.error('🛑 Stopping ChromaDB server...');
+          await this.chromaDBLifecycle.stop();
+          console.error('✅ ChromaDB server stopped');
+        }
+      } catch (error) {
+        console.error('⚠️ ChromaDB shutdown failed:', error.message);
+      }
 
       // Clear caches
       this.dataPersistence.clearCache();

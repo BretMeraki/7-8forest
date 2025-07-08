@@ -575,24 +575,6 @@ export class McpCore {
         },
       },
       {
-        name: 'build_framework_forest',
-        description: 'Build the strategic framework and HTA tree after completing gated onboarding',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            session_id: {
-              type: 'string',
-              description: 'Session identifier for tracking onboarding progress'
-            },
-            project_name: {
-              type: 'string',
-              description: 'Name for the new project'
-            }
-          },
-          required: ['session_id', 'project_name']
-        },
-      },
-      {
         name: 'check_onboarding_status_forest',
         description: 'Check the current status of the gated onboarding process',
         inputSchema: {
@@ -704,6 +686,33 @@ export class McpCore {
         inputSchema: {
           type: 'object',
           properties: {},
+        },
+      },
+      // Vectorization Intelligence Tools
+      {
+        name: 'get_vectorization_status_forest',
+        description: 'Check semantic intelligence status and vectorization analytics for enhanced task recommendations',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            project_id: {
+              type: 'string',
+              description: 'Optional project ID to check (defaults to active project)'
+            }
+          }
+        },
+      },
+      {
+        name: 'vectorize_project_data_forest',
+        description: 'Manually enable semantic intelligence for the current project to get context-aware task recommendations',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            force_refresh: {
+              type: 'boolean',
+              description: 'Force re-vectorization of existing data'
+            }
+          }
         },
       },
     ];

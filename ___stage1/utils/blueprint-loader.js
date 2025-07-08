@@ -14,18 +14,25 @@ let cachedBlueprint = null;
 
 function isStale() {
   try {
+    // If blueprint doesn't exist, it's stale
+    if (!fs.existsSync(BLUEPRINT_PATH)) {
+      return true;
+    }
+    
     const bpStat = fs.statSync(BLUEPRINT_PATH);
     const htaCoreFile = path.join(STAGE1_ROOT, 'modules', 'hta-core.js');
     const taskStrategyCoreFile = path.join(STAGE1_ROOT, 'modules', 'task-strategy-core.js');
     
-    // Safety check - ensure files are parseable and not in excluded directories
+    // Safety check - ensure files exist and are parseable
+    if (!fs.existsSync(htaCoreFile) || !fs.existsSync(taskStrategyCoreFile)) {
+      return true;
+    }
+    
     if (!isParseableFile(htaCoreFile) || !isParseableFile(taskStrategyCoreFile)) {
-      console.warn('[Blueprint] Core files are not parseable, treating as stale');
       return true;
     }
     
     if (isExcludedDirectory(path.dirname(htaCoreFile)) || isExcludedDirectory(path.dirname(taskStrategyCoreFile))) {
-      console.warn('[Blueprint] Core files are in excluded directories, treating as stale');
       return true;
     }
     

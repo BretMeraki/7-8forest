@@ -12,6 +12,9 @@ export class ContextGuard extends EventEmitter {
   constructor(options = {}) {
     super();
     this.memoryFilePath = options.memoryFilePath || path.join(os.tmpdir(), 'forest-context-memory.json');
+    this.memoryFile = options.memoryFile || 'memory.json';
+    this.maxRetries = options.maxRetries || 3;
+    this.logger = options.logger || console;
     this.componentStatus = new Map();
     this.initialized = false;
   }
@@ -39,20 +42,33 @@ export class ContextGuard extends EventEmitter {
       }
     } catch (error) {
       if (error.code !== 'ENOENT') {
-        throw error;
+        // Handle JSON parsing errors gracefully, but still throw for directory read errors
+        if (error.code === 'EISDIR') {
+          throw error;
+        }
+        // For JSON parsing errors, warn but continue with empty state
+        console.warn('[ContextGuard] Failed to parse memory file:', error.message);
       }
-      // File doesn't exist, start with empty state
+      // File doesn't exist or has parsing issues, start with empty state
     }
   }
 
   async saveMemoryFile() {
     try {
+      // If the path looks like a directory (no .json extension), append memoryFile
+      let filePath = this.memoryFilePath;
+      if (!filePath.endsWith('.json')) {
+        filePath = path.join(filePath, this.memoryFile);
+      }
+
+      // Ensure parent directory exists
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+
       const data = {
         componentStatus: Object.fromEntries(this.componentStatus),
         lastUpdated: new Date().toISOString(),
       };
-      
-      await fs.writeFile(this.memoryFilePath, JSON.stringify(data, null, 2), 'utf8');
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
     } catch (error) {
       console.warn('[ContextGuard] Failed to save memory file:', error.message);
     }
@@ -114,12 +130,12 @@ export class ContextGuard extends EventEmitter {
 
     // Check for health status contradictions
     if (storedHealth !== undefined && providedHealth !== undefined) {
-      if ((storedHealth === 'healthy' || storedHealth === 'pass') && 
+      if ((storedHealth === 'healthy' || storedHealth === 'pass' || storedHealth === 'good') && 
           (providedHealth === 'failed' || providedHealth === 'fail')) {
         contradictions.push('Health status changed from healthy to failed');
       }
       if ((storedHealth === 'failed' || storedHealth === 'fail') && 
-          (providedHealth === 'healthy' || providedHealth === 'pass')) {
+          (providedHealth === 'healthy' || providedHealth === 'pass' || providedHealth === 'good')) {
         contradictions.push('Health status changed from failed to healthy without intervention');
       }
     }
@@ -135,6 +151,13 @@ export class ContextGuard extends EventEmitter {
     if (storedStatus.version !== undefined && providedStatus.version !== undefined) {
       if (storedStatus.version !== providedStatus.version) {
         contradictions.push(`Version changed from ${storedStatus.version} to ${providedStatus.version}`);
+      }
+    }
+
+    // Check for performance contradictions
+    if (storedStatus.performance !== undefined && providedStatus.performance !== undefined) {
+      if (storedStatus.performance !== providedStatus.performance) {
+        contradictions.push(`Performance changed from ${storedStatus.performance} to ${providedStatus.performance}`);
       }
     }
 

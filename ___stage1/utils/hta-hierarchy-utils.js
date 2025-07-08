@@ -11,153 +11,246 @@
  */
 
 // HTA Level Constants
-const HTA_LEVELS = {
-  GOAL: 0,
-  STRATEGY: 1, 
-  BRANCH: 2,
-  TASK: 3,
-  ACTION: 4
+export const HTA_LEVELS = {
+  GOAL: 'goal',
+  STRATEGY: 'strategy',
+  BRANCH: 'branch',
+  TASK: 'task',
+  ACTION: 'action'
 };
 
 /**
  * Build a parent→children lookup map for quick ancestry traversal.
- * @param {Array<{id:string, parent_id?:string|null}>} nodes
- * @returns {Map<string, Array<object>>}
+ * @param {object} hta - HTA structure with frontierNodes
+ * @returns {object} Map where keys are node IDs and values are arrays of prerequisite IDs
  */
-export function buildParentMap(nodes = []) {
-  /** @type {Map<string, Array<object>>} */
-  const map = new Map();
-  if (!Array.isArray(nodes)) return map;
-  for (const node of nodes) {
-    const parent = node.parent_id ?? '__root__';
-    if (!map.has(parent)) map.set(parent, []);
-    map.get(parent).push(node);
+export function buildParentChildMap(hta) {
+  if (!hta || !hta.frontierNodes || !Array.isArray(hta.frontierNodes)) {
+    return {};
   }
+  
+  const map = {};
+  
+  function processNode(node) {
+    if (node && node.id) {
+      map[node.id] = Array.isArray(node.prerequisites) ? [...node.prerequisites] : [];
+      
+      // Recursively process subtasks if they exist
+      if (node.subtasks && Array.isArray(node.subtasks)) {
+        for (const subtask of node.subtasks) {
+          processNode(subtask);
+        }
+      }
+    }
+  }
+  
+  // Process all frontierNodes
+  for (const node of hta.frontierNodes) {
+    processNode(node);
+  }
+  
   return map;
 }
 
 /**
  * Get direct children of a parent node.
- * @param {Array<object>} nodes
- * @param {string|null} parentId
- * @returns {Array<object>}
+ * @param {string} nodeId - ID of the node to get children for
+ * @param {object} map - Parent-child map from buildParentChildMap
+ * @returns {Array<string>} Array of child node IDs (prerequisites)
  */
-export function getChildren(nodes = [], parentId = null) {
-  const map = buildParentMap(nodes);
-  return map.get(parentId ?? '__root__') || [];
+export function getChildren(nodeId, map) {
+  if (!nodeId || !map || typeof map !== 'object') {
+    return [];
+  }
+  
+  return map[nodeId] || [];
 }
 
 /**
- * Extract actionable leaf-level tasks (level >= ACTION or nodes with no children).
- * Essential for frontier node management and task selection.
- * @param {Array<object>} nodes
- * @returns {Array<object>} Actionable tasks
+ * Extract actionable leaf-level tasks from HTA structure.
+ * @param {object} hta - HTA structure with frontierNodes
+ * @returns {Array<object>} Array of leaf tasks
  */
-export function getLeafTasks(nodes = []) {
-  if (!Array.isArray(nodes)) return [];
-  const map = buildParentMap(nodes);
-  return nodes.filter(n => {
-    // Explicit action-level flag takes precedence
-    if (n.level !== undefined && n.level !== null) {
-      return n.level >= HTA_LEVELS.ACTION;
+export function getLeafTasks(hta) {
+  if (!hta || !hta.frontierNodes || !Array.isArray(hta.frontierNodes)) {
+    return [];
+  }
+  
+  const leafTasks = [];
+  
+  function extractTasks(node) {
+    if (node && typeof node === 'object' && node.id) {
+      leafTasks.push(node);
+      
+      // Recursively add subtasks if they exist
+      if (node.subtasks && Array.isArray(node.subtasks)) {
+        for (const subtask of node.subtasks) {
+          extractTasks(subtask);
+        }
+      }
     }
-    // Fallback: treat as leaf if no children recorded
-    return !(map.get(n.id) && map.get(n.id).length > 0);
-  });
+  }
+  
+  for (const node of hta.frontierNodes) {
+    extractTasks(node);
+  }
+  
+  return leafTasks;
 }
 
 /**
  * Detect common hierarchy problems such as orphaned nodes or cycles.
- * Critical for maintaining HTA tree structure integrity.
- * The implementation purposefully errs on the side of leniency to avoid
- * false positives at runtime.
- *
- * @param {Array<{id:string,parent_id?:string|null}>} nodes
- * @returns {{valid:boolean, errors:string[]}}
+ * @param {object} hta - HTA structure with frontierNodes
+ * @returns {{valid:boolean, errors:string[], orphans:string[], cycles:Array<string[]>}}
  */
-export function validateHierarchy(nodes = []) {
+export function validateHierarchy(hta) {
   const errors = [];
-  if (!Array.isArray(nodes) || nodes.length === 0) {
-    return { valid: true, errors }; // nothing to validate
+  const orphans = [];
+  const cycles = [];
+  
+  if (!hta || !hta.frontierNodes || !Array.isArray(hta.frontierNodes)) {
+    return { valid: true, errors, orphans, cycles };
   }
-
-  // 1. Check orphaned nodes (parent not present)
-  const ids = new Set(nodes.map(n => n.id));
-  for (const n of nodes) {
-    if (n.parent_id && !ids.has(n.parent_id)) {
-      errors.push(`Orphaned node ${n.id} references missing parent ${n.parent_id}`);
-    }
-  }
-
-  // 2. Simple cycle detection via DFS (depth limited to avoid blow-ups)
-  /** @type {Map<string,string|null>} */
-  const parentMap = new Map();
-  for (const n of nodes) parentMap.set(n.id, n.parent_id ?? null);
-  for (const n of nodes) {
-    const visited = new Set();
-    let current = n.id;
-    let depthGuard = 0;
-    while (current !== null && depthGuard < 100) {
-      if (visited.has(current)) {
-        errors.push(`Cyclic dependency detected starting at ${n.id}`);
-        break;
+  
+  // Get all task IDs
+  const allTasks = getLeafTasks(hta);
+  const taskIds = new Set(allTasks.map(t => t.id));
+  
+  // Check for orphaned tasks (prerequisites that don't exist)
+  for (const task of allTasks) {
+    if (task.prerequisites && Array.isArray(task.prerequisites)) {
+      for (const prereq of task.prerequisites) {
+        if (!taskIds.has(prereq)) {
+          orphans.push(task.id);
+          break;
+        }
       }
-      visited.add(current);
-      current = parentMap.get(current) ?? null;
-      depthGuard++;
     }
   }
-
-  return { valid: errors.length === 0, errors };
-}
-
-/**
- * Flatten only actionable tasks into a single array for schedule generators.
- * Used by daily scheduling and task selection logic.
- * @param {Array<object>} nodes
- * @returns {Array<object>}
- */
-export function flattenToActionTasks(nodes = []) {
-  return getLeafTasks(nodes);
-}
-
-/**
- * Build a prerequisite adjacency list keyed by task ID.
- * Essential for dependency-aware task ordering and scheduling.
- * @param {Array<{id:string, prerequisites?:string[]}>} nodes
- * @returns {Map<string,string[]>}
- */
-export function buildDependencyGraph(nodes = []) {
-  /** @type {Map<string,string[]>} */
-  const graph = new Map();
-  if (!Array.isArray(nodes)) return graph;
-  for (const n of nodes) {
-    graph.set(n.id, Array.isArray(n.prerequisites) ? n.prerequisites : []);
+  
+  // Check for cycles using DFS
+  const visited = new Set();
+  const recursionStack = new Set();
+  
+  function hasCycle(taskId, currentPath = []) {
+    if (recursionStack.has(taskId)) {
+      // Found a cycle
+      const cycleStart = currentPath.indexOf(taskId);
+      const cycle = currentPath.slice(cycleStart).concat([taskId]);
+      cycles.push(cycle);
+      return true;
+    }
+    
+    if (visited.has(taskId)) {
+      return false;
+    }
+    
+    visited.add(taskId);
+    recursionStack.add(taskId);
+    currentPath.push(taskId);
+    
+    const task = allTasks.find(t => t.id === taskId);
+    if (task && task.prerequisites && Array.isArray(task.prerequisites)) {
+      for (const prereq of task.prerequisites) {
+        if (hasCycle(prereq, [...currentPath])) {
+          return true;
+        }
+      }
+    }
+    
+    recursionStack.delete(taskId);
+    currentPath.pop();
+    return false;
   }
-  return graph;
+  
+  for (const task of allTasks) {
+    if (!visited.has(task.id)) {
+      hasCycle(task.id);
+    }
+  }
+  
+  return {
+    valid: errors.length === 0 && orphans.length === 0 && cycles.length === 0,
+    errors,
+    orphans,
+    cycles
+  };
 }
 
 /**
- * Get all ancestor nodes for a given node ID.
- * Useful for understanding task context and branch relationships.
- * @param {Array<object>} nodes
- * @param {string} nodeId
- * @returns {Array<object>} Array of ancestor nodes from root to immediate parent
+ * Flatten HTA structure into actionable tasks.
+ * @param {object} hta - HTA structure with frontierNodes
+ * @returns {Array<object>} Array of actionable tasks
  */
-export function getAncestors(nodes = [], nodeId) {
-  if (!Array.isArray(nodes) || !nodeId) return [];
+export function flattenToActions(hta) {
+  return getLeafTasks(hta);
+}
+
+/**
+ * Build a dependency graph with nodes and edges.
+ * @param {object} hta - HTA structure with frontierNodes
+ * @returns {{nodes: Array<object>, edges: Array<{from: string, to: string}>}}
+ */
+export function buildDependencyGraph(hta) {
+  if (!hta || !hta.frontierNodes || !Array.isArray(hta.frontierNodes)) {
+    return { nodes: [], edges: [] };
+  }
   
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const allTasks = getLeafTasks(hta);
+  const nodes = allTasks.map(task => ({
+    id: task.id,
+    title: task.title,
+    description: task.description
+  }));
+  
+  const edges = [];
+  
+  for (const task of allTasks) {
+    if (task.prerequisites && Array.isArray(task.prerequisites)) {
+      for (const prereq of task.prerequisites) {
+        edges.push({
+          from: prereq,
+          to: task.id
+        });
+      }
+    }
+  }
+  
+  return { nodes, edges };
+}
+
+/**
+ * Get all ancestor nodes for a given node ID using prerequisite relationships.
+ * @param {string} nodeId - ID of the node to get ancestors for
+ * @param {object} map - Parent-child map from buildParentChildMap
+ * @returns {Array<string>} Array of ancestor node IDs
+ */
+export function getAncestors(nodeId, map) {
+  if (!nodeId || !map || typeof map !== 'object') {
+    return [];
+  }
+  
   const ancestors = [];
-  let current = nodeMap.get(nodeId);
+  const visited = new Set();
+  const prerequisites = map[nodeId] || [];
   
-  while (current && current.parent_id) {
-    const parent = nodeMap.get(current.parent_id);
-    if (parent) {
-      ancestors.unshift(parent); // Add to beginning for root->parent order
-      current = parent;
-    } else {
-      break;
+  function collectAncestors(currentId, path = []) {
+    if (visited.has(currentId) || path.includes(currentId)) return;
+    visited.add(currentId);
+    
+    const prereqs = map[currentId] || [];
+    for (const prereq of prereqs) {
+      if (!ancestors.includes(prereq) && !path.includes(prereq)) {
+        ancestors.push(prereq);
+        collectAncestors(prereq, [...path, currentId]);
+      }
+    }
+  }
+  
+  for (const prereq of prerequisites) {
+    if (!ancestors.includes(prereq)) {
+      ancestors.push(prereq);
+      collectAncestors(prereq, [nodeId]);
     }
   }
   
@@ -166,66 +259,80 @@ export function getAncestors(nodes = [], nodeId) {
 
 /**
  * Get all descendant nodes for a given node ID.
- * Useful for understanding subtree scope and impact analysis.
- * @param {Array<object>} nodes
- * @param {string} nodeId
- * @returns {Array<object>} Array of all descendant nodes
+ * @param {string} nodeId - ID of the node to get descendants for
+ * @param {object} reverseMap - Reverse dependency map (from parent to children)
+ * @returns {Array<string>} Array of descendant node IDs
  */
-export function getDescendants(nodes = [], nodeId) {
-  if (!Array.isArray(nodes) || !nodeId) return [];
+export function getDescendants(nodeId, reverseMap) {
+  if (!nodeId || !reverseMap || typeof reverseMap !== 'object') {
+    return [];
+  }
   
-  const parentMap = buildParentMap(nodes);
   const descendants = [];
-  const stack = [nodeId];
+  const visited = new Set();
   
-  while (stack.length > 0) {
-    const current = stack.pop();
-    const children = parentMap.get(current) || [];
+  function collectDescendants(currentId, path = []) {
+    if (visited.has(currentId) || path.includes(currentId)) return;
+    visited.add(currentId);
     
+    const children = reverseMap[currentId] || [];
     for (const child of children) {
-      descendants.push(child);
-      stack.push(child.id);
+      if (!descendants.includes(child) && !path.includes(child)) {
+        descendants.push(child);
+        collectDescendants(child, [...path, currentId]);
+      }
     }
   }
+  
+  collectDescendants(nodeId);
   
   return descendants;
 }
 
 /**
- * Calculate the depth/level of a node in the hierarchy.
- * Useful for understanding tree structure and rendering.
- * @param {Array<object>} nodes
- * @param {string} nodeId
- * @returns {number} Depth level (0 = root, 1 = first level, etc.)
+ * Calculate the depth/level of a node in the hierarchy based on prerequisites.
+ * @param {string} nodeId - ID of the node to calculate depth for
+ * @param {object} map - Parent-child map from buildParentChildMap
+ * @returns {number} Depth level (0 = no prerequisites, 1+ = has prerequisites)
  */
-export function getNodeDepth(nodes = [], nodeId) {
-  if (!Array.isArray(nodes) || !nodeId) return 0;
-  
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
-  let depth = 0;
-  let current = nodeMap.get(nodeId);
-  
-  while (current && current.parent_id) {
-    depth++;
-    current = nodeMap.get(current.parent_id);
-    
-    // Safety guard against infinite loops
-    if (depth > 100) break;
+export function getNodeDepth(nodeId, map) {
+  if (!nodeId || !map || typeof map !== 'object') {
+    return -1;
   }
   
-  return depth;
+  if (!map.hasOwnProperty(nodeId)) {
+    return -1;
+  }
+  
+  const prerequisites = map[nodeId] || [];
+  if (prerequisites.length === 0) {
+    return 0;
+  }
+  
+  const visited = new Set();
+  
+  function calculateDepth(currentId, currentDepth) {
+    if (visited.has(currentId) || currentDepth > 100) {
+      return currentDepth;
+    }
+    
+    visited.add(currentId);
+    const prereqs = map[currentId] || [];
+    
+    if (prereqs.length === 0) {
+      return currentDepth;
+    }
+    
+    let maxPrereqDepth = currentDepth;
+    for (const prereq of prereqs) {
+      const depth = calculateDepth(prereq, currentDepth + 1);
+      maxPrereqDepth = Math.max(maxPrereqDepth, depth);
+    }
+    
+    return maxPrereqDepth;
+  }
+  
+  return calculateDepth(nodeId, 0);
 }
 
-// Export all utilities with HTA_LEVELS constant
-export default {
-  buildParentMap,
-  getChildren,
-  getLeafTasks,
-  flattenToActionTasks,
-  validateHierarchy,
-  buildDependencyGraph,
-  getAncestors,
-  getDescendants,
-  getNodeDepth,
-  HTA_LEVELS
-};
+// All functions and constants are exported individually above

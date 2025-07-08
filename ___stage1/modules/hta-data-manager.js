@@ -19,12 +19,22 @@ export class HTADataManager {
       
       // Try to load existing HTA data
       const htaData = await this.dataPersistence.loadPathData(projectId, canonicalPath, FILE_SYSTEM.HTA_FILENAME);
-      
-      if (htaData && htaData.version && htaData.strategic_branches) {
+      // Perform lightweight schema migration to support legacy/camelCase keys
+      if (htaData) {
+        // Migrate `strategicBranches` ➜ `strategic_branches` if necessary
+        if (!htaData.strategic_branches && Array.isArray(htaData.strategicBranches)) {
+          htaData.strategic_branches = htaData.strategicBranches;
+        }
+
+        // Promote metadata.version to root-level version for backwards-compat
+        if (!htaData.version && htaData.metadata && htaData.metadata.version) {
+          htaData.version = htaData.metadata.version;
+        }
+
         console.log(`✅ Loaded existing HTA data for ${projectId}/${canonicalPath}`);
         return htaData;
       }
-      
+
       return null;
     } catch (error) {
       console.warn('Failed to load HTA data:', error.message);
@@ -48,6 +58,11 @@ export class HTADataManager {
         htaData.metadata.updated = new Date().toISOString();
       }
       
+      // Ensure `strategic_branches` uses snake_case for canonical storage
+      if (Array.isArray(htaData.strategicBranches) && !htaData.strategic_branches) {
+        htaData.strategic_branches = htaData.strategicBranches;
+      }
+
       // Save to data persistence
       await this.dataPersistence.savePathData(projectId, canonicalPath, FILE_SYSTEM.HTA_FILENAME, htaData);
       
@@ -118,11 +133,16 @@ export class HTADataManager {
 
   async ensureVectorStore() {
     try {
-      if (this.vectorStore && typeof this.vectorStore.isConnected === 'function') {
-        const connected = await this.vectorStore.isConnected();
-        return connected ? this.vectorStore : null;
+      // In most cases `this.vectorStore` is an instance of HTAVectorIntegration
+      // which exposes `ensureVectorStore(dataPersistence)` that returns a
+      // status object with `{ success, instance }`.
+      if (this.vectorStore && typeof this.vectorStore.ensureVectorStore === 'function') {
+        const status = await this.vectorStore.ensureVectorStore(this.dataPersistence);
+        if (status && status.success && status.instance) {
+          return status.instance; // HTAVectorStore instance
+        }
       }
-      return this.vectorStore || null;
+      return null;
     } catch (error) {
       console.warn('Vector store check failed:', error.message);
       return null;
@@ -135,21 +155,46 @@ export class HTADataManager {
     }
 
     try {
-      // Try vector-enhanced task selection first
+      // Build candidate list once
+      const incompleteNodes = htaData.frontierNodes.filter(node => !node.completed);
+      if (incompleteNodes.length === 0) return null;
+
+      // Attempt a lightweight semantic match against the learning goal if a
+      // vector store (or at least the goal text) is available.
       const vectorStore = await this.ensureVectorStore();
-      if (vectorStore) {
-        // Use vector similarity for task selection
-        const incompleteNodes = htaData.frontierNodes.filter(node => !node.completed);
-        if (incompleteNodes.length > 0) {
-          // For now, return first incomplete task
-          // TODO: Implement vector-based recommendation
-          return incompleteNodes[0];
+      if (vectorStore && htaData.goal) {
+        // Token–overlap heuristic: counts shared terms between goal and task text
+        const goalTokens = new Set(
+          htaData.goal.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+        );
+
+        let bestTask = null;
+        let bestScore = -1;
+        for (const task of incompleteNodes) {
+          const text = `${task.title || ''} ${task.description || ''}`.toLowerCase();
+          const taskTokens = new Set(text.split(/[^a-z0-9]+/).filter(Boolean));
+          const overlap = [...taskTokens].filter(t => goalTokens.has(t)).length;
+          const score = overlap / (taskTokens.size + 1); // normalised
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestTask = task;
+          }
+        }
+
+        if (bestTask) {
+          return bestTask;
         }
       }
 
-      // Fallback to simple selection
-      const incompleteNodes = htaData.frontierNodes.filter(node => !node.completed);
-      return incompleteNodes.length > 0 ? incompleteNodes[0] : null;
+      // Fallback: choose by lowest priority then lowest difficulty for a
+      // sensible progression order.
+      incompleteNodes.sort(
+        (a, b) =>
+          (a.priority || 0) - (b.priority || 0) ||
+          (a.difficulty || 0) - (b.difficulty || 0)
+      );
+      return incompleteNodes[0] || null;
     } catch (error) {
       console.warn('Task selection failed:', error.message);
       return null;

@@ -314,9 +314,9 @@ export class TaskScorer {
       if (projectGoal) {
         const goalKeywords = projectGoal
           .split(/\W+/)
-          .filter(word => word.length > 3 && !['learning', 'study', 'practice', 'work', 'task'].includes(word));
+          .filter(word => word.length > 3 && !['learning', 'study', 'practice', 'work', 'task'].includes(word.toLowerCase()));
         
-        const hasGoalMatch = goalKeywords.some(keyword => taskText.includes(keyword));
+        const hasGoalMatch = goalKeywords.some(keyword => taskText.includes(keyword.toLowerCase()));
         if (hasGoalMatch) {
           return true;
         }

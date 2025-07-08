@@ -42,11 +42,13 @@ export class TaskGeneratorEvolution {
       let htaData = await this.loadPathHTA(activeProjectId, activePath);
       
       // If path-specific data doesn't exist, try loading from project level
-      if (!htaData && activePath === 'general') {
+      if (!htaData && activePath !== 'general') {
         htaData = await this.dataPersistence.loadPathData(activeProjectId, 'general', FILE_NAMES.HTA);
       }
       
-      if (!htaData) {
+      // Consider empty or structurally invalid HTA as missing
+      if (!htaData || Object.keys(htaData).length === 0 ||
+          !Array.isArray(htaData.frontierNodes) || htaData.frontierNodes.length === 0) {
         throw new Error('No HTA data found to evolve');
       }
 
@@ -150,10 +152,13 @@ export class TaskGeneratorEvolution {
       // Substantial questions indicate deep engagement
       evolutionType = 'deep_dive';
       shouldEvolve = true;
-    } else if (learned.length > TASK_STRATEGY_CONSTANTS.EFFICIENCY_THRESHOLD) {
-      // Substantial learning content
-      evolutionType = 'progressive';
-      shouldEvolve = true;
+    } else {
+      // Detect progressive accumulation by length or additive markers
+      const additiveSignals = learned.includes('→') || learned.includes('+');
+      if (learned.length >= TASK_STRATEGY_CONSTANTS.EFFICIENCY_THRESHOLD || learned.length >= 100 || additiveSignals) {
+        evolutionType = 'progressive';
+        shouldEvolve = true;
+      }
     }
 
     return {
@@ -166,8 +171,9 @@ export class TaskGeneratorEvolution {
   }
 
   analyzeEvolutionNeeds(feedback, htaData) {
-    // Ensure feedback is a string
-    const feedbackStr = typeof feedback === 'string' ? feedback : String(feedback || '');
+    // Preserve the original feedback for context, but also generate a normalized string
+    const feedbackOriginal = typeof feedback === 'string' ? feedback : JSON.stringify(feedback ?? '');
+    const feedbackStr = typeof feedback === 'string' ? feedback : String(feedback ?? '');
     const feedbackLower = feedbackStr.toLowerCase();
     let focus = 'general';
     let summary = 'Analyzing current progress and identifying growth opportunities';
@@ -186,9 +192,11 @@ export class TaskGeneratorEvolution {
       summary = 'New interests identified - expanding scope to explore related areas';
     }
 
-    const completedTasks = htaData.frontierNodes?.filter(task => task.completed) || [];
-    const completionRate =
-      htaData.frontierNodes?.length > 0 ? completedTasks.length / htaData.frontierNodes.length : 0;
+    // Only consider tasks that explicitly have a completion state so that newly generated
+    // tasks that have not yet been started do not skew the statistics.
+    const tasksWithStatus = htaData?.frontierNodes?.filter(task => task.completed !== undefined) || [];
+    const completedTasks = tasksWithStatus.filter(task => task.completed) || [];
+    const completionRate = tasksWithStatus.length > 0 ? completedTasks.length / tasksWithStatus.length : 0;
 
     if (completionRate > TASK_STRATEGY_CONSTANTS.DIFFICULTY_ADJUSTMENT_FACTOR) {
       focus = 'advanced_progression';
@@ -199,7 +207,7 @@ export class TaskGeneratorEvolution {
       focus,
       summary,
       completionRate,
-      feedback,
+      feedback: feedbackOriginal,
       needsNewTasks:
         completionRate > TASK_STRATEGY_CONSTANTS.STRATEGY_IMPROVEMENT_FACTOR || focus !== 'general',
     };

@@ -100,6 +100,8 @@ export class SelfHealManager extends EventEmitter {
   async executeHealing(componentName, options) {
     const healingCommands = this.getHealingCommands(componentName, options);
     const results = [];
+    let lastError = null;
+
     for (let attempt = 1; attempt <= options.maxRetries; attempt++) {
       try {
         for (const command of healingCommands) {
@@ -133,6 +135,7 @@ export class SelfHealManager extends EventEmitter {
           healedAt: new Date().toISOString(),
         };
       } catch (error) {
+        lastError = error;
         const failureResult = {
           command: error.cmd || 'unknown',
           error: error.message,
@@ -140,18 +143,20 @@ export class SelfHealManager extends EventEmitter {
           success: false,
         };
         results.push(failureResult);
-        // If this was the last attempt, throw the error
-        if (attempt === options.maxRetries) {
-          throw new Error(`All ${options.maxRetries} healing attempts failed. Last error: ${error.message}`);
+        
+        if (attempt < options.maxRetries) {
+          // Wait before retry (exponential backoff)
+          const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
         }
-        // Wait before retry (exponential backoff)
-        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
+
+    // If loop finishes, it means all retries failed.
+    throw new Error(`All ${options.maxRetries} healing attempts failed. Last error: ${lastError.message}`);
   }
 
-  getHealingCommands(componentName, options) {
+  getHealingCommands(componentName, options = {}) {
     // Define healing commands for different components
     const healingStrategies = {
       'task-scorer': [
@@ -196,7 +201,7 @@ export class SelfHealManager extends EventEmitter {
       return history;
     }
 
-    return Object.fromEntries(this.healingHistory);
+    return Array.from(this.healingHistory.entries()).map(([healingId, record]) => ({ healingId, ...record }));
   }
 
   clearHealingHistory() {

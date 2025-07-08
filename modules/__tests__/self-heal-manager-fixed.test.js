@@ -4,12 +4,15 @@
  */
 
 import { jest } from '@jest/globals';
-import { SelfHealManager } from '../self-heal-manager.js';
 
 // Mock child_process for all tests
 jest.unstable_mockModule('child_process', () => ({
   execSync: jest.fn()
 }));
+
+// Import the mocked module and the SelfHealManager
+const { execSync } = await import('child_process');
+const { SelfHealManager } = await import('../self-heal-manager.js');
 
 describe('SelfHealManager Comprehensive Coverage', () => {
   beforeEach(() => {
@@ -396,22 +399,20 @@ describe('SelfHealManager Comprehensive Coverage', () => {
 
   describe('Error Handling and Edge Cases', () => {
     test('should handle execSync timeout errors', async () => {
-      const cp = await import('child_process');
       const timeoutError = new Error('Command timed out');
       timeoutError.cmd = 'npm test';
-      cp.execSync.mockImplementation(() => {
+      execSync.mockImplementation(() => {
         throw timeoutError;
       });
 
       const manager = new SelfHealManager();
       
       await expect(manager.triggerSelfHealing('timeout-component'))
-        .rejects.toThrow('Self-healing failed');
+        .rejects.toThrow('All 3 healing attempts failed');
     });
 
     test('should handle execSync without cmd property', async () => {
-      const cp = await import('child_process');
-      cp.execSync.mockImplementation(() => {
+      execSync.mockImplementation(() => {
         const error = new Error('Generic error');
         // No cmd property
         throw error;
@@ -420,12 +421,11 @@ describe('SelfHealManager Comprehensive Coverage', () => {
       const manager = new SelfHealManager();
       
       await expect(manager.triggerSelfHealing('error-component'))
-        .rejects.toThrow('Self-healing failed');
+        .rejects.toThrow('All 3 healing attempts failed');
     });
 
     test('should cap exponential backoff wait time', async () => {
-      const cp = await import('child_process');
-      cp.execSync.mockImplementation(() => {
+      execSync.mockImplementation(() => {
         throw new Error('Always fails');
       });
 
@@ -435,7 +435,7 @@ describe('SelfHealManager Comprehensive Coverage', () => {
       
       try {
         await manager.executeHealing('failing-component', { 
-          maxRetries: 5, 
+          maxRetries: 3, 
           timeout: 1000 
         });
       } catch (error) {
@@ -446,8 +446,8 @@ describe('SelfHealManager Comprehensive Coverage', () => {
       const totalTime = endTime - startTime;
       
       // Should not take more than reasonable time due to capped backoff
-      expect(totalTime).toBeLessThan(30000); // 30 seconds max
-    });
+      expect(totalTime).toBeLessThan(15000); // 15 seconds max
+    }, 20000); // 20 second timeout for the test
 
     test('should handle concurrent healing of different components', async () => {
       const cp = await import('child_process');

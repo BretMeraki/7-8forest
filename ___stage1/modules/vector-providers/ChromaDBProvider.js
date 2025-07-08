@@ -57,9 +57,10 @@ class ChromaDBProvider extends IVectorProvider {
                 success: true,
                 provider: 'ChromaDBProvider',
                 collection: this.collectionName,
-                mode: this.isEmbedded ? 'embedded' : 'server',
-                path: this.isEmbedded ? (this.config.path || '.chromadb') : this.config.url,
-                url: this.isEmbedded ? null : this.config.url,
+                mode: 'embedded_local',
+                path: process.env.CHROMA_DATA_DIR || '/Users/bretmeraki/.forest-data/.chromadb',
+                url: null,
+                note: 'Running in local embedded mode - no server required'
             };
         } catch (error) {
             console.error('[ChromaDBProvider] Initialization failed:', error.message);
@@ -74,20 +75,22 @@ class ChromaDBProvider extends IVectorProvider {
         try {
             const ClientClass = await loadChromaClient();
             
-            // Use embedded mode by default for ChromaDB v3.x
-            this.isEmbedded = !this.config.url || this.config.url.includes('embedded') || this.config.url === 'embedded://localhost';
+            // Determine if we should use server mode or embedded mode
+            const useServerMode = this.config.url && this.config.url.startsWith('http');
             
-            if (this.isEmbedded) {
-                // Embedded mode - ChromaDB v3.x uses default constructor for embedded
-                this.client = new ClientClass();
+            if (useServerMode) {
+                console.log(`[ChromaDBProvider] Initializing ChromaDB client for server mode (${this.config.url})`);
+                this.client = new ClientClass({ url: this.config.url });
+                this.isEmbedded = false;
             } else {
-                // Server mode
-                this.client = new ClientClass({
-                    path: this.config.url
-                });
+                console.log('[ChromaDBProvider] Initializing local ChromaDB client (embedded mode)');
+                this.client = new ClientClass();
+                this.isEmbedded = true;
             }
-
+            
             this.collectionName = (this.config && typeof this.config.collection === 'string') ? this.config.collection : 'forest_vectors';
+            
+            console.log(`[ChromaDBProvider] Using collection: ${this.collectionName}`);
             
             // Test connection by listing collections
             await this.client.listCollections();
@@ -121,6 +124,18 @@ class ChromaDBProvider extends IVectorProvider {
             const collections = await this.client.listCollections();
             const collectionExists = collections.some(c => c.name === this.collectionName);
             
+            // Dynamically load default embedder to avoid heavy import when not needed
+            let embeddingFunction;
+            try {
+                const embedMod = await import('@chroma-core/default-embed');
+                const DefaultEmbeddingFunction = embedMod.DefaultEmbeddingFunction || embedMod.default;
+                if (DefaultEmbeddingFunction) {
+                    embeddingFunction = new DefaultEmbeddingFunction();
+                }
+            } catch (err) {
+                console.warn('[ChromaDBProvider] Default embedding package not available, continuing without embeddingFunction');
+            }
+
             if (!collectionExists) {
                 this.collection = await this.client.createCollection({
                     name: this.collectionName,
@@ -128,10 +143,22 @@ class ChromaDBProvider extends IVectorProvider {
                         description: 'Forest MCP vector storage',
                         dimension: typeof this.config.dimension === 'number' ? this.config.dimension : 1536,
                     },
+                    ...(embeddingFunction && process.env.NODE_ENV !== 'test' ? { embeddingFunction } : {})
                 });
             } else {
+                // Ensure we still attach the embedding function when retrieving existing collection
+                let embeddingFunction;
+                try {
+                    const embedMod = await import('@chroma-core/default-embed');
+                    const DefaultEmbeddingFunction = embedMod.DefaultEmbeddingFunction || embedMod.default;
+                    if (DefaultEmbeddingFunction) {
+                        embeddingFunction = new DefaultEmbeddingFunction();
+                    }
+                } catch (_) {}
+
                 this.collection = await this.client.getCollection({
                     name: this.collectionName,
+                    ...(embeddingFunction && process.env.NODE_ENV !== 'test' ? { embeddingFunction } : {})
                 });
             }
         } catch (err) {
@@ -209,18 +236,72 @@ class ChromaDBProvider extends IVectorProvider {
     async upsertVector(id, vector, metadata = {}) {
         await this.ensureConnection();
         try {
+            // Flatten metadata to only include simple types (ChromaDB requirement)
+            const flattenedMetadata = this.flattenMetadata(metadata);
+            
             await this.collection.upsert({
                 ids: [id],
                 embeddings: [vector],
-                metadatas: [metadata],
+                metadatas: [flattenedMetadata],
             });
         } catch (err) {
             console.error('[ChromaDBProvider] upsertVector failed:', err?.message || err);
+            
+            // Check for corruption indicators
+            const isCorruption = err?.message && (
+                err.message.includes('tolist') ||
+                err.message.includes('500') ||
+                err.message.includes('Internal Server Error') ||
+                err.message.includes('AttributeError') ||
+                err.message.includes('status: 500')
+            );
+            
+            if (isCorruption) {
+                console.error('[ChromaDBProvider] 🔥 Corruption detected in upsertVector:', err.message);
+                this.isConnected = false;
+                throw new Error('CHROMADB_CORRUPTION: ' + err.message);
+            }
+            
             if (err?.message?.includes('channel') || err?.message?.includes('connection')) {
                 this.isConnected = false;
             }
             throw err;
         }
+    }
+    
+    /**
+     * Flatten metadata to only include simple types (string, number, boolean)
+     * @param {any} metadata - The metadata object to flatten
+     * @returns {object} - Flattened metadata with only simple types
+     */
+    flattenMetadata(metadata) {
+        if (!metadata || typeof metadata !== 'object') {
+            return {};
+        }
+        
+        const flattened = {};
+        
+        for (const [key, value] of Object.entries(metadata)) {
+            if (value === null || value === undefined) {
+                continue; // Skip null/undefined values
+            }
+            
+            const type = typeof value;
+            if (type === 'string' || type === 'number' || type === 'boolean') {
+                flattened[key] = value;
+            } else if (Array.isArray(value)) {
+                // Convert arrays to JSON strings
+                flattened[key] = JSON.stringify(value);
+            } else if (type === 'object') {
+                // Convert objects to JSON strings
+                flattened[key] = JSON.stringify(value);
+            } else {
+                // Convert other types to strings
+                flattened[key] = String(value);
+            }
+        }
+        
+        return flattened;
     }
 
     /**
@@ -264,6 +345,21 @@ class ChromaDBProvider extends IVectorProvider {
             .sort((a, b) => b.similarity - a.similarity)
             .slice(0, limit);
         } catch (err) {
+            // Check for corruption indicators
+            const isCorruption = err?.message && (
+                err.message.includes('tolist') ||
+                err.message.includes('500') ||
+                err.message.includes('Internal Server Error') ||
+                err.message.includes('AttributeError') ||
+                err.message.includes('status: 500')
+            );
+            
+            if (isCorruption) {
+                console.error('[ChromaDBProvider] 🔥 Corruption detected in queryVectors:', err.message);
+                this.isConnected = false;
+                throw new Error('CHROMADB_CORRUPTION: ' + err.message);
+            }
+            
             if (err?.message?.includes('channel') || err?.message?.includes('connection')) {
                 this.isConnected = false;
             }
@@ -316,6 +412,52 @@ class ChromaDBProvider extends IVectorProvider {
     }
 
     /**
+     * Reset the entire collection to recover from corruption
+     */
+    async resetCollection() {
+        try {
+            console.error('[ChromaDBProvider] 🔧 Resetting collection to recover from corruption...');
+            
+            if (this.collection) {
+                try {
+                    // Delete the entire collection
+                    await this.client.deleteCollection({ name: this.collectionName });
+                    console.error('[ChromaDBProvider] Collection deleted successfully');
+                } catch (deleteError) {
+                    console.error('[ChromaDBProvider] Collection deletion failed (may not exist):', deleteError.message);
+                }
+            }
+            
+            // Recreate the collection
+            this.collection = await this.client.createCollection({
+                name: this.collectionName,
+                metadata: { 
+                    description: 'Forest HTA Vector Store - Recreated after corruption recovery',
+                    created: new Date().toISOString()
+                }
+            });
+            
+            // Reset connection state
+            this.isConnected = true;
+            this.reconnectAttempts = 0;
+            
+            console.error('[ChromaDBProvider] ✅ Collection reset completed successfully');
+            
+        } catch (error) {
+            console.error('[ChromaDBProvider] ❌ Collection reset failed:', error.message);
+            
+            // Try to establish a fresh connection
+            try {
+                await this.connect();
+                console.error('[ChromaDBProvider] Fresh connection established after reset failure');
+            } catch (reconnectError) {
+                console.error('[ChromaDBProvider] Fresh connection also failed:', reconnectError.message);
+                throw new Error(`Collection reset and reconnection failed: ${error.message}`);
+            }
+        }
+    }
+
+    /**
      * List all vectors whose ID starts with the given prefix.
      * @param {String} prefix
      * @returns {Promise<Array<{id: String, vector: Number[], metadata: any}>>}
@@ -340,6 +482,21 @@ class ChromaDBProvider extends IVectorProvider {
                 }))
                 .filter(item => String(item.id).startsWith(prefix));
         } catch (err) {
+            // Check for corruption indicators
+            const isCorruption = err?.message && (
+                err.message.includes('tolist') ||
+                err.message.includes('500') ||
+                err.message.includes('Internal Server Error') ||
+                err.message.includes('AttributeError') ||
+                err.message.includes('status: 500')
+            );
+            
+            if (isCorruption) {
+                console.error('[ChromaDBProvider] 🔥 Corruption detected in listVectors:', err.message);
+                this.isConnected = false;
+                throw new Error('CHROMADB_CORRUPTION: ' + err.message);
+            }
+            
             if (err?.message?.includes('channel') || err?.message?.includes('connection')) {
                 this.isConnected = false;
             }
@@ -359,6 +516,22 @@ class ChromaDBProvider extends IVectorProvider {
     async flush() {
         // ChromaDB persists data automatically, so nothing to flush
         return;
+    }
+
+    /**
+     * Ping the ChromaDB server to check connectivity
+     */
+    async ping() {
+        try {
+            await this.ensureConnection();
+            // Try a simple operation to verify the connection works
+            await this.collection.count();
+            return true;
+        } catch (error) {
+            console.error('[ChromaDBProvider] Ping failed:', error.message);
+            this.isConnected = false;
+            throw error;
+        }
     }
 
     async close() {

@@ -370,20 +370,29 @@ export class EnhancedHTACore extends HTACore {
     let taskId = 1;
 
     for (const branch of strategicBranches) {
+      // Defensive check for branch name - add fallback if undefined
+      const branchName = branch.name || `Unnamed Branch ${taskId}`;
+      const branchDescription = branch.description || `Branch activities for ${branchName}`;
+      
+      // Log warning if branch name was missing
+      if (!branch.name) {
+        console.warn(`[EnhancedHTA] Branch name undefined, using fallback: ${branchName}`);
+      }
+      
       // Generate 2-4 initial tasks per branch using schema intelligence
       const taskCount = Math.min(4, Math.max(2, Math.floor(complexityAnalysis.score / 2)));
       
       for (let i = 0; i < taskCount; i++) {
         const task = {
-          id: `${branch.name.toLowerCase().replace(/\s+/g, '_')}_${taskId}`,
-          title: `${this.getProgressiveTaskName(i, taskCount)} ${branch.name}`,
-          description: `${branch.description} - Phase ${i + 1}`,
+          id: `${branchName.toLowerCase().replace(/\s+/g, '_')}_${taskId}`,
+          title: `${this.getProgressiveTaskName(i, taskCount)} ${branchName}`,
+          description: `${branchDescription} - Phase ${i + 1}`,
           difficulty: Math.min(5, Math.max(1, Math.floor(complexityAnalysis.score / 2) + (i * 0.5))),
           duration: this.calculateContextAwareDuration(complexityAnalysis.score, i, initialContext),
-          branch: branch.name,
-          priority: branch.priority * 100 + (i * 10),
-          prerequisites: i > 0 ? [`${branch.name.toLowerCase().replace(/\s+/g, '_')}_${taskId - 1}`] : [],
-          learningOutcome: `Progress in ${branch.name}`,
+          branch: branchName,
+          priority: (branch.priority || 0.5) * 100 + (i * 10),
+          prerequisites: i > 0 ? [`${branchName.toLowerCase().replace(/\s+/g, '_')}_${taskId - 1}`] : [],
+          learningOutcome: `Progress in ${branchName}`,
           generated: true,
           schema_generated: true,
           domain_focus: branch.domain_focus,

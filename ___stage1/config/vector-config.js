@@ -8,9 +8,8 @@
  */
 
 export default {
-  // Use LocalJSON as primary since ChromaDB v3.x requires a server
-  // Set FOREST_VECTOR_PROVIDER=chroma when you have a ChromaDB server running
-  provider: process.env.FOREST_VECTOR_PROVIDER || 'localjson',
+  // Use ChromaDB as primary provider with LocalJSON as fallback
+  provider: process.env.FOREST_VECTOR_PROVIDER || 'chroma',
   fallbackProvider: 'localjson',
   qdrant: {
     url: process.env.QDRANT_URL || 'http://localhost:6333',
@@ -29,7 +28,7 @@ export default {
   },
   chroma: {
     // Use embedded mode by default (no server required)
-    url: process.env.CHROMA_URL || 'embedded://localhost',
+    url: process.env.CHROMA_URL || 'http://localhost:8000',
     path: process.env.CHROMA_PATH || '.chromadb',
     collection: process.env.CHROMA_COLLECTION || 'forest_vectors',
     dimension: parseInt(process.env.CHROMA_DIMENSION, 10) || 1536

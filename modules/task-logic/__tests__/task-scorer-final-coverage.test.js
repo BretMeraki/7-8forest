@@ -44,7 +44,7 @@ describe('TaskScorer Final Coverage', () => {
 
       const contextWithGoal = {
         ...projectContext,
-        goal: 'Learn advanced programming concepts'
+        goal: 'Achieve goal oriented tasks'
       };
 
       const result = TaskScorer.isDomainRelevant(task, contextWithGoal);

@@ -74,9 +74,14 @@ export class ProjectManagement {
       const logger = await this.getLogger();
       logger.info('[ProjectManagement] Creating project', { project_id, goal });
 
+      // Auto-generate project ID if not provided
+      if (!project_id) {
+        project_id = this.generateProjectId(goal);
+      }
+      
       // Validate required fields
-      if (!project_id || !goal) {
-        throw new Error('Project ID and goal are required');
+      if (!goal) {
+        throw new Error('Goal is required');
       }
 
       // Check if project already exists
@@ -648,5 +653,19 @@ export class ProjectManagement {
     } catch (error) {
       return { valid: false, error: error.message };
     }
+  }
+
+  /**
+   * Generate a project ID from the goal
+   */
+  generateProjectId(goal) {
+    const words = goal.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter(w => w.length > 2)
+      .slice(0, 3);
+    
+    const base = words.join('_') || 'project';
+    return `${base}_${Date.now().toString(36).slice(-4)}`;
   }
 }
