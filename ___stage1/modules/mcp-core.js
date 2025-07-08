@@ -41,6 +41,7 @@ class McpCore {
       'start_learning_journey_forest',
       'continue_onboarding_forest',
       'get_onboarding_status_forest',
+      'complete_onboarding_forest',
       'get_next_pipeline_forest',
       'evolve_pipeline_forest',
       

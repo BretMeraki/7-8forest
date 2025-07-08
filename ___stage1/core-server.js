@@ -374,6 +374,8 @@ class Stage1CoreServer {
               result = await this.continueOnboarding(args); break;
             case 'get_onboarding_status_forest':
               result = await this.getOnboardingStatus(args); break;
+            case 'complete_onboarding_forest':
+              result = await this.completeOnboarding(args); break;
             
             // Next + Pipeline Presentation Tools
             case 'get_next_pipeline_forest':
@@ -1462,6 +1464,41 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
         content: [{
           type: 'text',
           text: `**Status Check Failed** ❌\n\nError: ${error.message}`
+        }],
+        error: error.message
+      };
+    }
+  }
+
+  async completeOnboarding(args) {
+    try {
+      if (!args.final_confirmation) {
+        return {
+          content: [{
+            type: 'text',
+            text: '**Onboarding Completion Requires Confirmation** ⚠️\n\nPlease set final_confirmation: true to complete the onboarding process.'
+          }],
+          error: 'final_confirmation required'
+        };
+      }
+
+      const result = await this.gatedOnboardingFlow.completeOnboarding();
+      
+      return {
+        content: [{
+          type: 'text',
+          text: result.message || '**Onboarding Complete!** ✅\n\nYour project is now fully set up and ready for task execution. Use `get_next_task_forest` to begin your learning journey!'
+        }],
+        success: true,
+        onboarding_complete: true
+      };
+
+    } catch (error) {
+      console.error('Stage1CoreServer.completeOnboarding failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**Onboarding Completion Failed** ❌\n\nError: ${error.message}`
         }],
         error: error.message
       };

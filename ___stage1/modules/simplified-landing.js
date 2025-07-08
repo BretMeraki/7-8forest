@@ -37,7 +37,12 @@ Forest Suite helps you achieve any goal through intelligent task breakdown and a
 
 ### 🚀 Ready to Start? It's Simple!
 
-**Just one command to begin:**
+**Recommended: Start with guided onboarding:**
+\`\`\`
+start_learning_journey_forest
+\`\`\`
+
+**Or create project directly:**
 \`\`\`
 create_project_forest {"goal": "your goal here"}
 \`\`\`

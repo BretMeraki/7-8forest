@@ -261,6 +261,67 @@ export const FOREST_TOOLS = {
     }
   },
 
+  // ========== ONBOARDING FLOW ==========
+  start_learning_journey_forest: {
+    name: 'start_learning_journey_forest',
+    description: 'Begin the guided onboarding process for new users. Provides step-by-step setup and goal collection.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        goal: {
+          type: 'string',
+          description: 'Optional: Initial goal if user already knows what they want to achieve'
+        },
+        context: {
+          type: 'string',
+          description: 'Optional: Additional context about the goal'
+        }
+      }
+    }
+  },
+
+  continue_onboarding_forest: {
+    name: 'continue_onboarding_forest',
+    description: 'Continue the onboarding process through validation gates. Guides users through required setup steps.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        input: {
+          type: 'string',
+          description: 'User input for the current onboarding step'
+        },
+        gate: {
+          type: 'string',
+          description: 'Optional: Specific gate to process (if not provided, continues from current gate)'
+        }
+      }
+    }
+  },
+
+  get_onboarding_status_forest: {
+    name: 'get_onboarding_status_forest',
+    description: 'Check the current onboarding progress and next required steps.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+
+  complete_onboarding_forest: {
+    name: 'complete_onboarding_forest',
+    description: 'Complete the onboarding process and activate the project for task execution.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        final_confirmation: {
+          type: 'boolean',
+          description: 'Required: Confirm completion of onboarding process'
+        }
+      },
+      required: ['final_confirmation']
+    }
+  },
+
   // ========== SYSTEM MANAGEMENT ==========
   factory_reset_forest: {
     name: 'factory_reset_forest',
@@ -389,15 +450,12 @@ export const FOREST_TOOLS = {
 
 // ========== DEPRECATED TOOLS TO REMOVE ==========
 export const DEPRECATED_TOOLS = [
-  // Confusing multi-step onboarding
-  'start_learning_journey_forest',
+  // Confusing multi-step onboarding components (keeping main flow)
   'start_gated_onboarding_forest',
   'submit_goal_forest',
   'submit_context_forest',
   'submit_questionnaire_forest',
-  'continue_onboarding_forest',
   'check_onboarding_status_forest',
-  'get_onboarding_status_forest',
   
   // Pipeline variation (keep simple get_next_task_forest)
   'get_next_pipeline_forest',

@@ -46,6 +46,19 @@ export const toolSchemas = {
   get_health_status_forest: {
     required: [],
   },
+  // Onboarding flow tools
+  start_learning_journey_forest: {
+    required: [],
+  },
+  continue_onboarding_forest: {
+    required: [],
+  },
+  get_onboarding_status_forest: {
+    required: [],
+  },
+  complete_onboarding_forest: {
+    required: ['final_confirmation'],
+  },
   // Ambiguous Desires functionality is now integrated into existing tools
 };
 
