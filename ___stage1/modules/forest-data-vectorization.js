@@ -12,7 +12,7 @@ import { buildPrompt } from '../utils/hta-graph-enricher.js';
 import path from 'path';
 import os from 'os';
 
-// FIX: Import numpy array support for ChromaDB compatibility
+// FIX: Import numpy array support for vector store compatibility
 let numpy = null;
 try {
   // Try to import numpy for proper array handling
@@ -61,8 +61,8 @@ class ForestDataVectorization {
       await this.vectorStore.initialize();
       await this.dataPersistence.ensureDataDir();
       
-      // Test ChromaDB integrity and auto-recover from corruption
-      await this.testAndRecoverChromaDB();
+      // Test vector store integrity and auto-recover from corruption
+      await this.testAndRecoverVectorStore();
       
       this.initialized = true;
       console.error('[ForestDataVectorization] Initialized with selective vectorization strategy');
@@ -70,7 +70,7 @@ class ForestDataVectorization {
       console.error('[ForestDataVectorization] Initialization failed:', error.message);
       // Try recovery and reinitialize
       if (error.message.includes('tolist') || error.message.includes('500') || error.message.includes('Internal Server Error')) {
-        console.error('[ForestDataVectorization] Detected ChromaDB corruption, attempting recovery...');
+        console.error('[ForestDataVectorization] Detected vector store corruption, attempting recovery...');
         await this.recoverFromCorruption();
         this.initialized = true;
       } else {
@@ -96,7 +96,7 @@ class ForestDataVectorization {
       VECTORIZATION_TYPES.PROJECT_GOAL.dimension
     );
     
-    // FIX: Ensure embedding is numpy-compatible array for ChromaDB
+    // FIX: Ensure embedding is numpy-compatible array for vector store
     const goalVector = this.ensureNumpyCompatible(goalVectorRaw);
 
     await this.vectorStore.provider.upsertVector(
@@ -147,7 +147,7 @@ class ForestDataVectorization {
         VECTORIZATION_TYPES.HTA_BRANCH.dimension
       );
       
-      // FIX: Ensure embedding is numpy-compatible array for ChromaDB
+      // FIX: Ensure embedding is numpy-compatible array for vector store
       const branchVector = this.ensureNumpyCompatible(branchVectorRaw);
 
       await this.vectorStore.provider.upsertVector(
@@ -202,7 +202,7 @@ class ForestDataVectorization {
         VECTORIZATION_TYPES.TASK_CONTENT.dimension
       );
       
-      // FIX: Ensure embedding is numpy-compatible array for ChromaDB
+      // FIX: Ensure embedding is numpy-compatible array for vector store
       const taskVector = this.ensureNumpyCompatible(taskVectorRaw);
 
       await this.vectorStore.provider.upsertVector(
@@ -254,7 +254,7 @@ class ForestDataVectorization {
         VECTORIZATION_TYPES.LEARNING_HISTORY.dimension
       );
       
-      // FIX: Ensure embedding is numpy-compatible array for ChromaDB
+      // FIX: Ensure embedding is numpy-compatible array for vector store
       const eventVector = this.ensureNumpyCompatible(eventVectorRaw);
 
       await this.vectorStore.provider.upsertVector(
@@ -290,7 +290,7 @@ class ForestDataVectorization {
       VECTORIZATION_TYPES.BREAKTHROUGH_INSIGHT.dimension
     );
     
-    // FIX: Ensure embedding is numpy-compatible array for ChromaDB
+    // FIX: Ensure embedding is numpy-compatible array for vector store
     const insightVector = this.ensureNumpyCompatible(insightVectorRaw);
 
     await this.vectorStore.provider.upsertVector(
@@ -326,7 +326,7 @@ class ForestDataVectorization {
 
     try {
       const queryVectorRaw = await embeddingService.embedText(queryText, VECTORIZATION_TYPES.TASK_CONTENT.dimension);
-      // FIX: Ensure query vector is numpy-compatible for ChromaDB
+      // FIX: Ensure query vector is numpy-compatible for vector store
       const queryVector = this.ensureNumpyCompatible(queryVectorRaw);
       
       const results = await this.vectorStore.provider.queryVectors(queryVector, {
@@ -362,7 +362,7 @@ class ForestDataVectorization {
     if (!this.initialized) await this.initialize();
 
     const queryVectorRaw = await embeddingService.embedText(context, VECTORIZATION_TYPES.BREAKTHROUGH_INSIGHT.dimension);
-    // FIX: Ensure query vector is numpy-compatible for ChromaDB
+    // FIX: Ensure query vector is numpy-compatible for vector store
     const queryVector = this.ensureNumpyCompatible(queryVectorRaw);
     
     const results = await this.vectorStore.provider.queryVectors(queryVector, {
@@ -383,7 +383,7 @@ class ForestDataVectorization {
     if (!this.initialized) await this.initialize();
 
     const queryVectorRaw = await embeddingService.embedText(targetContext, VECTORIZATION_TYPES.BREAKTHROUGH_INSIGHT.dimension);
-    // FIX: Ensure query vector is numpy-compatible for ChromaDB
+    // FIX: Ensure query vector is numpy-compatible for vector store
     const queryVector = this.ensureNumpyCompatible(queryVectorRaw);
     
     const results = await this.vectorStore.provider.queryVectors(queryVector, {
@@ -410,7 +410,7 @@ class ForestDataVectorization {
       // Create context vector
       const contextQuery = `energy:${energyLevel} time:${timeAvailable} context:${userContext}`;
       const contextVectorRaw = await embeddingService.embedText(contextQuery, VECTORIZATION_TYPES.TASK_CONTENT.dimension);
-      // FIX: Ensure context vector is numpy-compatible for ChromaDB
+      // FIX: Ensure context vector is numpy-compatible for vector store
       const contextVector = this.ensureNumpyCompatible(contextVectorRaw);
       
       // Get project config to find active path
@@ -572,7 +572,7 @@ class ForestDataVectorization {
   }
 
   /**
-   * Check if an error indicates ChromaDB corruption
+   * Check if an error indicates vector store corruption
    */
   isCorruptionError(error) {
     if (!error || !error.message) return false;
@@ -589,9 +589,9 @@ class ForestDataVectorization {
   }
 
   /**
-   * CRITICAL FIX: Ensure embedding vectors are properly formatted for ChromaDB
+   * CRITICAL FIX: Ensure embedding vectors are properly formatted for vector store
    * 
-   * ChromaDB expects embeddings as plain JavaScript arrays (not typed arrays)
+   * vector store expects embeddings as plain JavaScript arrays (not typed arrays)
    * but needs them to be numeric and properly formatted.
    * 
    * This fixes both the "AttributeError: 'list' object has no attribute 'tolist'" 
@@ -635,7 +635,7 @@ class ForestDataVectorization {
       }
     }
     
-    console.error(`[ForestDataVectorization] ✅ Converted ${plainArray.length}-dim vector to ChromaDB-compatible format`);
+    console.error(`[ForestDataVectorization] ✅ Converted ${plainArray.length}-dim vector to vector store-compatible format`);
     return plainArray;
   }
 
@@ -740,11 +740,11 @@ class ForestDataVectorization {
   }
 
   /**
-   * Test ChromaDB integrity and recover from corruption
+   * Test vector store integrity and recover from corruption
    */
-  async testAndRecoverChromaDB() {
+  async testAndRecoverVectorStore() {
     try {
-      console.error('[ForestDataVectorization] Testing ChromaDB integrity...');
+      console.error('[ForestDataVectorization] Testing vector store integrity...');
       
       // Test basic operations
       await this.vectorStore.provider.ping();
@@ -769,7 +769,7 @@ class ForestDataVectorization {
         // Clean up test data
         await this.vectorStore.provider.deleteVector(testId);
         
-        console.error('[ForestDataVectorization] ✅ ChromaDB integrity test passed');
+        console.error('[ForestDataVectorization] ✅ vector store integrity test passed');
         
       } catch (testError) {
         if (testError.message.includes('tolist') || 
@@ -777,8 +777,8 @@ class ForestDataVectorization {
             testError.message.includes('Internal Server Error') ||
             testError.message.includes('AttributeError')) {
           
-          console.error('[ForestDataVectorization] ❌ ChromaDB corruption detected:', testError.message);
-          throw new Error('ChromaDB corruption detected');
+          console.error('[ForestDataVectorization] ❌ vector store corruption detected:', testError.message);
+          throw new Error('vector store corruption detected');
         } else {
           // Non-corruption error, re-throw
           throw testError;
@@ -786,13 +786,13 @@ class ForestDataVectorization {
       }
       
     } catch (error) {
-      if (error.message.includes('ChromaDB corruption') || 
+      if (error.message.includes('vector store corruption') || 
           error.message.includes('tolist') || 
           error.message.includes('500')) {
         
-        console.error('[ForestDataVectorization] 🔧 Auto-recovering from ChromaDB corruption...');
+        console.error('[ForestDataVectorization] 🔧 Auto-recovering from vector store corruption...');
         await this.recoverFromCorruption();
-        console.error('[ForestDataVectorization] ✅ ChromaDB recovery completed');
+        console.error('[ForestDataVectorization] ✅ vector store recovery completed');
       } else {
         throw error;
       }
@@ -800,11 +800,11 @@ class ForestDataVectorization {
   }
 
   /**
-   * Recover from ChromaDB corruption by resetting collections
+   * Recover from vector store corruption by resetting collections
    */
   async recoverFromCorruption() {
     try {
-      console.error('[ForestDataVectorization] 🚨 Starting ChromaDB corruption recovery...');
+      console.error('[ForestDataVectorization] 🚨 Starting vector store corruption recovery...');
       
       // Reset the vector store
       if (this.vectorStore && typeof this.vectorStore.resetCollections === 'function') {

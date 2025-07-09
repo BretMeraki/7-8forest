@@ -203,6 +203,26 @@ class LocalJSONProvider extends IVectorProvider {
             newestAccess: this.cacheAccessOrder.size > 0 ? Math.max(...this.cacheAccessOrder.values()) : null,
         };
     }
+
+    /**
+     * Ping/health check method for compatibility
+     */
+    async ping() {
+        try {
+            const stats = await this.getStats();
+            return { 
+                success: true, 
+                status: 'healthy',
+                total_vectors: stats.total_vectors || 0
+            };
+        } catch (error) {
+            return { 
+                success: false, 
+                status: 'error',
+                error: error.message 
+            };
+        }
+    }
 }
 
 export default LocalJSONProvider; 

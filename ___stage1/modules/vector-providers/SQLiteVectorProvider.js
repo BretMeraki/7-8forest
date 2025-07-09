@@ -395,4 +395,29 @@ export class SQLiteVectorProvider {
   getType() {
     return 'sqlite';
   }
+
+  /**
+   * Ping/health check method for compatibility
+   */
+  async ping() {
+    try {
+      if (!this.isInitialized) {
+        throw new Error('SQLite provider not initialized');
+      }
+      
+      // Simple health check - try to query the database
+      const row = await this._getQuery('SELECT COUNT(*) as count FROM vectors LIMIT 1');
+      return { 
+        success: true, 
+        status: 'healthy',
+        total_vectors: row.count
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        status: 'error',
+        error: error.message 
+      };
+    }
+  }
 }
