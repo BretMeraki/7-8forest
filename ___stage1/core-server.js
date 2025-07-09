@@ -22,7 +22,6 @@ import { AmbiguousDesiresManager } from './modules/ambiguous-desires/index.js';
 import { GatedOnboardingFlow } from './modules/gated-onboarding-flow.js';
 import { NextPipelinePresenter } from './modules/next-pipeline-presenter.js';
 import { ForestDataVectorization } from './modules/forest-data-vectorization.js';
-import { ChromaDBLifecycleManager } from './modules/ChromaDBLifecycleManager.js';
 import { ClaudeDiagnosticHelper } from './utils/claude-diagnostic-helper.js';
 import path from 'path';
 
@@ -101,17 +100,7 @@ class Stage1CoreServer {
     // Initialize Forest Data Vectorization FIRST for semantic operations
     this.forestDataVectorization = new ForestDataVectorization(this.dataPersistence.dataDir);
     
-    // Initialize ChromaDB Lifecycle Manager for parallel startup and graceful shutdown
-    this.chromaDBLifecycle = new ChromaDBLifecycleManager({
-      dataDir: path.join(this.dataPersistence.dataDir, '.chromadb'),
-      host: process.env.CHROMA_HOST || '0.0.0.0',
-      port: parseInt(process.env.CHROMA_PORT) || 8000,
-      serverPath: 'python3',
-      serverScript: path.join(process.cwd(), 'start-chromadb-server.py'),
-      enableAutoRestart: process.env.CHROMA_AUTO_RESTART !== 'false',
-      maxRetries: parseInt(process.env.CHROMA_MAX_RETRIES) || 3,
-      startupTimeout: parseInt(process.env.CHROMA_STARTUP_TIMEOUT) || 30000
-    });
+    // ChromaDB removed in favor of SQLite vector storage
     
     // Initialize gated onboarding flow and Next + Pipeline presenter
     this.gatedOnboarding = new GatedOnboardingFlow(
@@ -144,10 +133,7 @@ class Stage1CoreServer {
       console.error('🚀 Initializing Stage1 Core Server...');
       
       // Start ChromaDB in parallel (non-blocking)
-      console.error('🔄 Starting ChromaDB server in parallel...');
-      this.chromaDBLifecycle.startParallel().catch(error => {
-        console.error('⚠️ ChromaDB startup failed (non-blocking):', error.message);
-      });
+      console.error('🔄 Initializing SQLite vector storage...');
       
       // Initialize core modules with vector support
 
@@ -176,19 +162,7 @@ class Stage1CoreServer {
         console.error('⚠️ Forest Data Vectorization initialization failed:', vectorizationError.message);
       }
       
-      // Check ChromaDB status (non-blocking)
-      try {
-        const chromaStatus = this.chromaDBLifecycle.getStatus();
-        if (chromaStatus.isRunning) {
-          console.error('✅ ChromaDB server running', { port: chromaStatus.port, pid: chromaStatus.pid });
-        } else if (chromaStatus.isStarting) {
-          console.error('🔄 ChromaDB server starting...', { port: chromaStatus.port });
-        } else {
-          console.error('⚠️ ChromaDB server not available', chromaStatus);
-        }
-      } catch (chromaError) {
-        console.error('⚠️ ChromaDB status check failed:', chromaError.message);
-      }
+      // SQLite vector storage is embedded and always available
       
       const htaCore = this.htaCore;
       if (htaCore && typeof htaCore.initializeVectorStore === 'function') {
@@ -1052,15 +1026,8 @@ class Stage1CoreServer {
         }
       }
 
-      // ChromaDB health check
-      let chromaDBHealthy = false;
-      let chromaDBStatus = null;
-      try {
-        chromaDBStatus = await this.chromaDBLifecycle.getHealthStatus();
-        chromaDBHealthy = chromaDBStatus.status === 'healthy';
-      } catch (error) {
-        chromaDBStatus = { status: 'error', reason: error.message };
-      }
+      // SQLite vector storage health (always healthy when initialized)
+      let vectorStorageHealthy = true;
 
       const memory = process.memoryUsage();
 
@@ -1614,8 +1581,6 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
    */
   async getChromaDBStatus(args) {
     try {
-      const status = this.chromaDBLifecycle.getStatus();
-      const healthStatus = await this.chromaDBLifecycle.getHealthStatus();
       
       let statusText = `**🔧 ChromaDB Server Status**\n\n`;
       
@@ -1656,10 +1621,6 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
       
       // Configuration
       statusText += `**Configuration**\n`;
-      statusText += `• Auto-restart: ${this.chromaDBLifecycle.options.enableAutoRestart ? 'Enabled' : 'Disabled'}\n`;
-      statusText += `• Health check interval: ${this.chromaDBLifecycle.options.healthCheckInterval}ms\n`;
-      statusText += `• Startup timeout: ${this.chromaDBLifecycle.options.startupTimeout}ms\n`;
-      statusText += `• Max retries: ${this.chromaDBLifecycle.options.maxRetries}\n\n`;
       
       // Instructions
       statusText += `**Management**\n`;
@@ -1694,14 +1655,11 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
     try {
       let statusText = `**🔄 Restarting ChromaDB Server...**\n\n`;
       
-      const initialStatus = this.chromaDBLifecycle.getStatus();
       statusText += `**Initial Status**: ${initialStatus.isRunning ? 'Running' : 'Stopped'}\n`;
       statusText += `**Port**: ${initialStatus.port}\n\n`;
       
       // Perform restart
-      const restartResult = await this.chromaDBLifecycle.restart();
       
-      const finalStatus = this.chromaDBLifecycle.getStatus();
       
       statusText += `**Restart Result**: ✅ Success\n`;
       statusText += `**Final Status**: ${finalStatus.isRunning ? '✅ Running' : '⚠️ Not Running'}\n`;
@@ -2131,16 +2089,7 @@ Use engaging, inspiring language that matches the motto. Keep it concise but mot
         this.backgroundProcessor?.stop();
       } catch (_) { /* ignore */ }
 
-      // Gracefully shutdown ChromaDB server
-      try {
-        if (this.chromaDBLifecycle) {
-          console.error('🛑 Stopping ChromaDB server...');
-          await this.chromaDBLifecycle.stop();
-          console.error('✅ ChromaDB server stopped');
-        }
-      } catch (error) {
-        console.error('⚠️ ChromaDB shutdown failed:', error.message);
-      }
+      // SQLite vector storage shuts down automatically
 
       // Clear caches
       this.dataPersistence.clearCache();

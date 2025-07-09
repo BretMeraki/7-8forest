@@ -8,8 +8,8 @@
  */
 
 export default {
-  // Use ChromaDB as primary provider with LocalJSON as fallback
-  provider: process.env.FOREST_VECTOR_PROVIDER || 'chroma',
+  // Use SQLite as primary provider with LocalJSON as fallback
+  provider: process.env.FOREST_VECTOR_PROVIDER || 'sqlitevec',
   fallbackProvider: 'localjson',
   qdrant: {
     url: process.env.QDRANT_URL || 'http://localhost:6333',

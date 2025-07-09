@@ -12,6 +12,7 @@ import IVectorProvider from './vector-providers/IVectorProvider.js';
 import QdrantProvider from './vector-providers/QdrantProvider.js';
 import ChromaDBProvider from './vector-providers/ChromaDBProvider.js';
 import LocalJSONProvider from './vector-providers/LocalJSONProvider.js';
+import { SQLiteVectorProvider } from './vector-providers/SQLiteVectorProvider.js';
 import { enrichHTA, buildPrompt } from '../utils/hta-graph-enricher.js';
 import embeddingService from '../utils/embedding-service.js';
 
@@ -207,6 +208,15 @@ class VectorStore {
 
 function getProviderInstance(config) {
   // Try to use the configured primary provider
+  if (config.provider === 'sqlitevec') {
+    try {
+      console.error('[HTA-Vector] Initializing SQLite as primary provider');
+      return new SQLiteVectorProvider();
+    } catch (e) {
+      console.error('[HTA-Vector] SQLiteVectorProvider init failed:', e && e.message ? e.message : e);
+    }
+  }
+  
   if (config.provider === 'chroma') {
     try {
       console.error('[HTA-Vector] Initializing ChromaDB as primary provider');
