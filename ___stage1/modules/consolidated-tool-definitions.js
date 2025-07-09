@@ -323,6 +323,15 @@ export const FOREST_TOOLS = {
   },
 
   // ========== SYSTEM MANAGEMENT ==========
+  get_landing_page_forest: {
+    name: 'get_landing_page_forest',
+    description: 'Display the Forest Suite landing page with current status and available actions.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+
   factory_reset_forest: {
     name: 'factory_reset_forest',
     description: 'Factory reset - delete project(s) with confirmation. WARNING: This permanently deletes data.',

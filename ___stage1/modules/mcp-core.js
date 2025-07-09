@@ -37,22 +37,11 @@ class McpCore {
       'get_landing_page_forest',
       'get_current_config',
       
-      // Gated Onboarding & Pipeline Tools
+      // Gated Onboarding Tools
       'start_learning_journey_forest',
       'continue_onboarding_forest',
       'get_onboarding_status_forest',
       'complete_onboarding_forest',
-      'get_next_pipeline_forest',
-      'evolve_pipeline_forest',
-      
-      // Ambiguous Desires Tools
-      'assess_goal_clarity_forest',
-      'start_clarification_dialogue_forest', 
-      'continue_clarification_dialogue_forest',
-      'analyze_goal_convergence_forest',
-      'smart_evolution_forest',
-      'adaptive_evolution_forest',
-      'get_ambiguous_desire_status_forest',
       
       // Diagnostic Tools
       'verify_system_health_forest',
@@ -78,29 +67,16 @@ class McpCore {
   ask_truthful_claude_forest() { return this.callHandler('ask_truthful_claude_forest', arguments); }
   factory_reset_forest() { return this.callHandler('factory_reset_forest', arguments); }
   get_current_config() { return this.callHandler('get_current_config', arguments); }
+  get_landing_page_forest() { return this.callHandler('get_landing_page_forest', arguments); }
 
-  // ===== AMBIGUOUS DESIRES TOOLS =====
-  assess_goal_clarity_forest() { 
-    return this.callHandler('assess_goal_clarity_forest', arguments); 
-  }
-  start_clarification_dialogue_forest() { 
-    return this.callHandler('start_clarification_dialogue_forest', arguments); 
-  }
-  continue_clarification_dialogue_forest() { 
-    return this.callHandler('continue_clarification_dialogue_forest', arguments); 
-  }
-  analyze_goal_convergence_forest() { 
-    return this.callHandler('analyze_goal_convergence_forest', arguments); 
-  }
-  smart_evolution_forest() { 
-    return this.callHandler('smart_evolution_forest', arguments); 
-  }
-  adaptive_evolution_forest() { 
-    return this.callHandler('adaptive_evolution_forest', arguments); 
-  }
-  get_ambiguous_desire_status_forest() { 
-    return this.callHandler('get_ambiguous_desire_status_forest', arguments); 
-  }
+  // ===== ONBOARDING FLOW TOOLS =====
+  start_learning_journey_forest() { return this.callHandler('start_learning_journey_forest', arguments); }
+  continue_onboarding_forest() { return this.callHandler('continue_onboarding_forest', arguments); }
+  get_onboarding_status_forest() { return this.callHandler('get_onboarding_status_forest', arguments); }
+  complete_onboarding_forest() { return this.callHandler('complete_onboarding_forest', arguments); }
+
+  // ===== DEPRECATED TOOLS REMOVED =====
+  // Ambiguous Desires tools moved to integrated functionality
 
   // ===== DIAGNOSTIC TOOLS =====
   verify_system_health_forest() { 
