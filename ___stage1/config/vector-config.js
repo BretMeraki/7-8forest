@@ -7,6 +7,11 @@
  * - fallbackProvider: used if main provider fails
  */
 
+import path from 'path';
+
+// Use the same Forest data directory as the main server
+const getForestDataDir = () => process.env.FOREST_DATA_DIR || path.resolve('.', '.forest-data');
+
 export default {
   // Use SQLite as primary provider with LocalJSON as fallback
   provider: process.env.FOREST_VECTOR_PROVIDER || 'sqlitevec',
@@ -18,12 +23,12 @@ export default {
     dimension: parseInt(process.env.QDRANT_DIMENSION, 10) || 1536
   },
   localjson: {
-    baseDir: process.env.LOCALJSON_DIR || '.forest-vectors'
+    baseDir: process.env.LOCALJSON_DIR || path.join(getForestDataDir(), 'vectors')
   },
   embedding: {
     provider: process.env.FOREST_EMBEDDING_PROVIDER || 'openai',
     model: process.env.FOREST_EMBEDDING_MODEL || 'text-embedding-ada-002',
-    cacheDir: process.env.EMBEDDING_CACHE_DIR || '.embedding-cache',
+    cacheDir: process.env.EMBEDDING_CACHE_DIR || path.join(getForestDataDir(), 'embedding-cache'),
     batchSize: parseInt(process.env.EMBEDDING_BATCH_SIZE, 10) || 32
   },
   chroma: {
@@ -35,7 +40,7 @@ export default {
     dimension: parseInt(process.env.CHROMA_DIMENSION, 10) || 1536
   },
   sqlitevec: {
-    dbPath: process.env.SQLITEVEC_PATH || 'forest_vectors.sqlite',
+    dbPath: process.env.SQLITEVEC_PATH || path.join(getForestDataDir(), 'forest_vectors.sqlite'),
     dimension: parseInt(process.env.SQLITEVEC_DIMENSION, 10) || 1536
   }
 }; 
