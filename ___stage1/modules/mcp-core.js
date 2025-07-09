@@ -28,9 +28,7 @@ class McpCore {
       'complete_block_forest',
       'evolve_strategy_forest',
       'current_status_forest',
-      'generate_daily_schedule_forest',
       'sync_forest_memory_forest',
-      'ask_truthful_claude_forest',
       
       // System Management
       'factory_reset_forest',
@@ -62,9 +60,7 @@ class McpCore {
   complete_block_forest() { return this.callHandler('complete_block_forest', arguments); }
   evolve_strategy_forest() { return this.callHandler('evolve_strategy_forest', arguments); }
   current_status_forest() { return this.callHandler('current_status_forest', arguments); }
-  generate_daily_schedule_forest() { return this.callHandler('generate_daily_schedule_forest', arguments); }
   sync_forest_memory_forest() { return this.callHandler('sync_forest_memory_forest', arguments); }
-  ask_truthful_claude_forest() { return this.callHandler('ask_truthful_claude_forest', arguments); }
   factory_reset_forest() { return this.callHandler('factory_reset_forest', arguments); }
   get_current_config() { return this.callHandler('get_current_config', arguments); }
   get_landing_page_forest() { return this.callHandler('get_landing_page_forest', arguments); }

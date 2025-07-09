@@ -194,39 +194,6 @@ export const FOREST_TOOLS = {
     }
   },
 
-  generate_daily_schedule_forest: {
-    name: 'generate_daily_schedule_forest',
-    description: 'ON-DEMAND: Generate comprehensive gap-free daily schedule when requested by user',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        date: {
-          type: 'string',
-          description: 'YYYY-MM-DD, defaults to today'
-        },
-        energy_level: {
-          type: 'number',
-          minimum: 1,
-          maximum: 5,
-          description: 'Current energy level (affects task difficulty and timing)'
-        },
-        available_hours: {
-          type: 'string',
-          description: 'Comma-separated list of hours to prioritize (e.g. "9,10,11,14,15")'
-        },
-        focus_type: {
-          type: 'string',
-          enum: ['learning', 'building', 'networking', 'habits', 'mixed'],
-          description: 'Type of work to prioritize today'
-        },
-        schedule_request_context: {
-          type: 'string',
-          description: 'User context about why they need a schedule now (e.g. "planning tomorrow", "need structure today")'
-        }
-      }
-    }
-  },
-
   // ========== ADVANCED FEATURES (Tools 11-12) ==========
   sync_forest_memory_forest: {
     name: 'sync_forest_memory_forest',
@@ -234,30 +201,6 @@ export const FOREST_TOOLS = {
     inputSchema: {
       type: 'object',
       properties: {}
-    }
-  },
-
-  ask_truthful_claude_forest: {
-    name: 'ask_truthful_claude_forest',
-    description: 'Query truthful Claude with structured prompts and context. REQUIRED: prompt parameter.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        prompt: {
-          type: 'string',
-          description: '**REQUIRED** Your question or request for Claude'
-        },
-        context: {
-          type: 'object',
-          description: 'Optional: Additional context for the query'
-        },
-        response_format: {
-          type: 'string',
-          enum: ['text', 'json', 'markdown'],
-          description: 'Optional: Desired response format (default: text)'
-        }
-      },
-      required: ['prompt']
     }
   },
 

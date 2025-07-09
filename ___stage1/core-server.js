@@ -299,8 +299,6 @@ class Stage1CoreServer {
               result = await this.taskStrategyCore.evolveStrategy(args); break;
             case 'current_status_forest':
               result = await this.getCurrentStatus(); break;
-            case 'generate_daily_schedule_forest':
-              result = await this.generateDailySchedule(args); break;
             case 'sync_forest_memory_forest': {
               const activeProjectSync = await this.projectManagement.getActiveProject();
               if (!activeProjectSync || !activeProjectSync.project_id) {
@@ -314,8 +312,6 @@ class Stage1CoreServer {
               }
               result = await this.memorySync.syncForestMemory(activeProjectSync.project_id); break;
             }
-            case 'ask_truthful_claude_forest':
-              result = await this.askTruthfulClaude(args.prompt); break;
             case 'get_health_status_forest':
               result = await this.getHealthStatus(); break;
             // Ambiguous Desires Architecture Tools

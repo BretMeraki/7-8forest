@@ -34,14 +34,8 @@ export const toolSchemas = {
   current_status_forest: {
     required: [],
   },
-  generate_daily_schedule_forest: {
-    required: [],
-  },
   sync_forest_memory_forest: {
     required: [],
-  },
-  ask_truthful_claude_forest: {
-    required: ['prompt'],
   },
   get_health_status_forest: {
     required: [],
