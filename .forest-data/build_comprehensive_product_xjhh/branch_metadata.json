@@ -1,0 +1,47 @@
+{
+  "branches": [
+    {
+      "name": "Roles Foundations",
+      "priority": 1,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Roles Application",
+      "priority": 2,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Roles Mastery",
+      "priority": 3,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Advanced Roles",
+      "priority": 4,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Roles Innovation",
+      "priority": 5,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Roles Implementation",
+      "priority": 6,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Roles Methodology",
+      "priority": 7,
+      "task_count": 0,
+      "vectorized": true
+    }
+  ],
+  "last_vectorized": "2025-07-11T02:22:39.159Z"
+}

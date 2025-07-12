@@ -155,7 +155,7 @@ export class ConsolidationTests {
     const server = new Stage1CoreServer(this.options);
     await server.initialize();
 
-    const toolDefinitions = server.mcpCore.getToolDefinitions();
+    const toolDefinitions = await server.mcpCore.getToolDefinitions();
 
     if (!toolDefinitions || !Array.isArray(toolDefinitions)) {
       throw new Error('Tool definitions not available');

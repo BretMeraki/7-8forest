@@ -1,0 +1,23 @@
+{
+  "id": "learn_python_programming_s5tb",
+  "goal": "Learn Python programming fundamentals and build a web application",
+  "specific_interests": [],
+  "learning_paths": [
+    {
+      "path_name": "general",
+      "priority": "high"
+    }
+  ],
+  "context": "",
+  "constraints": {},
+  "existing_credentials": [],
+  "current_habits": {},
+  "life_structure_preferences": {},
+  "urgency_level": "medium",
+  "success_metrics": [],
+  "created_at": "2025-07-11T00:53:20.879Z",
+  "knowledge_level": 1,
+  "skill_mappings": [],
+  "progress": 0,
+  "activePath": "general"
+}

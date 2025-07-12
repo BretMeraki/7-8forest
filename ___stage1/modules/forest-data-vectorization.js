@@ -12,24 +12,30 @@ import { buildPrompt } from '../utils/hta-graph-enricher.js';
 import path from 'path';
 import os from 'os';
 
-// FIX: Import numpy array support for vector store compatibility
-let numpy = null;
-try {
-  // Try to import numpy for proper array handling
-  const { spawn } = await import('child_process');
-  numpy = { array: (data) => new Float32Array(data) }; // Fallback to typed array
-} catch (e) {
-  // Use JavaScript typed array as numpy substitute
-  numpy = { array: (data) => new Float32Array(data) };
-}
+// Vector processing utilities
+const VectorUtils = {
+  normalize: (vector) => {
+    const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+    return magnitude > 0 ? vector.map(val => val / magnitude) : vector;
+  },
+  
+  ensureArray: (data) => {
+    if (Array.isArray(data)) return data;
+    if (data.constructor === Float32Array || data.constructor === Float64Array) {
+      return Array.from(data);
+    }
+    return Array.from(data);
+  }
+};
 
 // Vectorization categories and their priorities
+// Updated to use consistent dimensions for SQLite vector store
 const VECTORIZATION_TYPES = {
   PROJECT_GOAL: { priority: 1, dimension: 1536, cache: true },
   HTA_BRANCH: { priority: 2, dimension: 1536, cache: true },
   TASK_CONTENT: { priority: 3, dimension: 1536, cache: true },
-  LEARNING_HISTORY: { priority: 4, dimension: 768, cache: false },
-  USER_CONTEXT: { priority: 5, dimension: 384, cache: false },
+  LEARNING_HISTORY: { priority: 4, dimension: 1536, cache: false },
+  USER_CONTEXT: { priority: 5, dimension: 1536, cache: false },
   BREAKTHROUGH_INSIGHT: { priority: 1, dimension: 1536, cache: true }
 };
 
@@ -61,21 +67,14 @@ class ForestDataVectorization {
       await this.vectorStore.initialize();
       await this.dataPersistence.ensureDataDir();
       
-      // Test vector store integrity and auto-recover from corruption
-      await this.testAndRecoverVectorStore();
+      // Test vector store integrity
+      await this.testVectorStore();
       
       this.initialized = true;
       console.error('[ForestDataVectorization] Initialized with selective vectorization strategy');
     } catch (error) {
       console.error('[ForestDataVectorization] Initialization failed:', error.message);
-      // Try recovery and reinitialize
-      if (error.message.includes('tolist') || error.message.includes('500') || error.message.includes('Internal Server Error')) {
-        console.error('[ForestDataVectorization] Detected vector store corruption, attempting recovery...');
-        await this.recoverFromCorruption();
-        this.initialized = true;
-      } else {
-        throw error;
-      }
+      throw error;
     }
   }
 
@@ -84,7 +83,7 @@ class ForestDataVectorization {
   async vectorizeProjectGoal(projectId, goalData) {
     if (!this.initialized) await this.initialize();
     
-    const goalVectorRaw = await embeddingService.embedText(
+    const goalVector = await embeddingService.embedText(
       buildPrompt({
         type: 'goal',
         depth: 0,
@@ -95,9 +94,6 @@ class ForestDataVectorization {
       }),
       VECTORIZATION_TYPES.PROJECT_GOAL.dimension
     );
-    
-    // FIX: Ensure embedding is numpy-compatible array for vector store
-    const goalVector = this.ensureNumpyCompatible(goalVectorRaw);
 
     await this.vectorStore.provider.upsertVector(
       `${projectId}:goal`,
@@ -134,7 +130,7 @@ class ForestDataVectorization {
     const results = [];
 
     for (const [index, branch] of branches.entries()) {
-      const branchVectorRaw = await embeddingService.embedText(
+      const branchVector = await embeddingService.embedText(
         buildPrompt({
           type: 'branch',
           depth: 1,
@@ -146,9 +142,6 @@ class ForestDataVectorization {
         }),
         VECTORIZATION_TYPES.HTA_BRANCH.dimension
       );
-      
-      // FIX: Ensure embedding is numpy-compatible array for vector store
-      const branchVector = this.ensureNumpyCompatible(branchVectorRaw);
 
       await this.vectorStore.provider.upsertVector(
         `${projectId}:branch:${branch.name}`,
@@ -189,7 +182,7 @@ class ForestDataVectorization {
     const results = [];
 
     for (const [index, task] of tasks.entries()) {
-      const taskVectorRaw = await embeddingService.embedText(
+      const taskVector = await embeddingService.embedText(
         buildPrompt({
           type: 'task',
           depth: 2,
@@ -201,9 +194,6 @@ class ForestDataVectorization {
         }),
         VECTORIZATION_TYPES.TASK_CONTENT.dimension
       );
-      
-      // FIX: Ensure embedding is numpy-compatible array for vector store
-      const taskVector = this.ensureNumpyCompatible(taskVectorRaw);
 
       await this.vectorStore.provider.upsertVector(
         `${projectId}:task:${task.id}`,
@@ -249,13 +239,10 @@ class ForestDataVectorization {
     const results = [];
 
     for (const event of learningEvents) {
-      const eventVectorRaw = await embeddingService.embedText(
+      const eventVector = await embeddingService.embedText(
         `${event.type}: ${event.description} outcome: ${event.outcome}`,
         VECTORIZATION_TYPES.LEARNING_HISTORY.dimension
       );
-      
-      // FIX: Ensure embedding is numpy-compatible array for vector store
-      const eventVector = this.ensureNumpyCompatible(eventVectorRaw);
 
       await this.vectorStore.provider.upsertVector(
         `${projectId}:learning:${event.id}`,
@@ -285,13 +272,10 @@ class ForestDataVectorization {
   async vectorizeBreakthroughInsight(projectId, insight) {
     if (!this.initialized) await this.initialize();
 
-    const insightVectorRaw = await embeddingService.embedText(
+    const insightVector = await embeddingService.embedText(
       `breakthrough: ${insight.description} context: ${insight.context} impact: ${insight.impact}`,
       VECTORIZATION_TYPES.BREAKTHROUGH_INSIGHT.dimension
     );
-    
-    // FIX: Ensure embedding is numpy-compatible array for vector store
-    const insightVector = this.ensureNumpyCompatible(insightVectorRaw);
 
     await this.vectorStore.provider.upsertVector(
       `${projectId}:breakthrough:${insight.id}`,
@@ -325,9 +309,7 @@ class ForestDataVectorization {
     }
 
     try {
-      const queryVectorRaw = await embeddingService.embedText(queryText, VECTORIZATION_TYPES.TASK_CONTENT.dimension);
-      // FIX: Ensure query vector is numpy-compatible for vector store
-      const queryVector = this.ensureNumpyCompatible(queryVectorRaw);
+      const queryVector = await embeddingService.embedText(queryText, VECTORIZATION_TYPES.TASK_CONTENT.dimension);
       
       const results = await this.vectorStore.provider.queryVectors(queryVector, {
         limit: options.limit || 10,
@@ -348,22 +330,15 @@ class ForestDataVectorization {
       return enrichedResults;
       
     } catch (error) {
-      // Check for corruption and trigger recovery
-      if (this.isCorruptionError(error)) {
-        console.error('[ForestDataVectorization] 🔥 Corruption detected in findSimilarTasks, triggering recovery...');
-        await this.recoverFromCorruption();
-        return []; // Return empty array after recovery
-      }
-      throw error;
+      console.error('[ForestDataVectorization] Error in findSimilarTasks:', error.message);
+      return [];
     }
   }
 
   async findRelatedBreakthroughs(projectId, context, options = {}) {
     if (!this.initialized) await this.initialize();
 
-    const queryVectorRaw = await embeddingService.embedText(context, VECTORIZATION_TYPES.BREAKTHROUGH_INSIGHT.dimension);
-    // FIX: Ensure query vector is numpy-compatible for vector store
-    const queryVector = this.ensureNumpyCompatible(queryVectorRaw);
+    const queryVector = await embeddingService.embedText(context, VECTORIZATION_TYPES.BREAKTHROUGH_INSIGHT.dimension);
     
     const results = await this.vectorStore.provider.queryVectors(queryVector, {
       limit: options.limit || 5,
@@ -382,9 +357,7 @@ class ForestDataVectorization {
   async findCrossProjectInsights(sourceProjectId, targetContext, options = {}) {
     if (!this.initialized) await this.initialize();
 
-    const queryVectorRaw = await embeddingService.embedText(targetContext, VECTORIZATION_TYPES.BREAKTHROUGH_INSIGHT.dimension);
-    // FIX: Ensure query vector is numpy-compatible for vector store
-    const queryVector = this.ensureNumpyCompatible(queryVectorRaw);
+    const queryVector = await embeddingService.embedText(targetContext, VECTORIZATION_TYPES.BREAKTHROUGH_INSIGHT.dimension);
     
     const results = await this.vectorStore.provider.queryVectors(queryVector, {
       limit: options.limit || 8,
@@ -409,9 +382,7 @@ class ForestDataVectorization {
     try {
       // Create context vector
       const contextQuery = `energy:${energyLevel} time:${timeAvailable} context:${userContext}`;
-      const contextVectorRaw = await embeddingService.embedText(contextQuery, VECTORIZATION_TYPES.TASK_CONTENT.dimension);
-      // FIX: Ensure context vector is numpy-compatible for vector store
-      const contextVector = this.ensureNumpyCompatible(contextVectorRaw);
+      const contextVector = await embeddingService.embedText(contextQuery, VECTORIZATION_TYPES.TASK_CONTENT.dimension);
       
       // Get project config to find active path
       const config = await this.dataPersistence.loadProjectData(projectId, 'config.json');
@@ -466,13 +437,8 @@ class ForestDataVectorization {
       return await this.enrichWithMetadata(filteredResults, 'task');
       
     } catch (error) {
-      // Check for corruption and trigger recovery
-      if (this.isCorruptionError(error)) {
-        console.error('[ForestDataVectorization] 🔥 Corruption detected in adaptiveTaskRecommendation, triggering recovery...');
-        await this.recoverFromCorruption();
-        return []; // Return empty array after recovery
-      }
-      throw error;
+      console.error('[ForestDataVectorization] Error in adaptiveTaskRecommendation:', error.message);
+      return [];
     }
   }
 
@@ -572,71 +538,47 @@ class ForestDataVectorization {
   }
 
   /**
-   * Check if an error indicates vector store corruption
+   * Test vector store integrity
    */
-  isCorruptionError(error) {
-    if (!error || !error.message) return false;
-    
-    const message = error.message.toLowerCase();
-    return (
-      message.includes('chromadb_corruption') ||
-      message.includes('tolist') ||
-      message.includes('status: 500') ||
-      message.includes('internal server error') ||
-      message.includes('attributeerror') ||
-      message.includes('unable to connect to the chromadb server (status: 500)')
-    );
-  }
-
-  /**
-   * CRITICAL FIX: Ensure embedding vectors are properly formatted for vector store
-   * 
-   * vector store expects embeddings as plain JavaScript arrays (not typed arrays)
-   * but needs them to be numeric and properly formatted.
-   * 
-   * This fixes both the "AttributeError: 'list' object has no attribute 'tolist'" 
-   * and "iteration over a 0-d array" errors.
-   */
-  ensureNumpyCompatible(embedding) {
-    if (!embedding) {
-      throw new Error('Embedding cannot be null or undefined');
-    }
-    
-    // Convert to plain JavaScript array of numbers
-    let plainArray;
-    
-    if (Array.isArray(embedding)) {
-      // Already a plain array, ensure all elements are numbers
-      plainArray = embedding.map(val => Number(val));
-    } else if (embedding.constructor === Float32Array || embedding.constructor === Float64Array) {
-      // Convert typed array to plain array
-      plainArray = Array.from(embedding).map(val => Number(val));
-    } else if (embedding && typeof embedding.tolist === 'function') {
-      // Has tolist method, use it then convert to numbers
-      plainArray = embedding.tolist().map(val => Number(val));
-    } else {
-      // Try to convert whatever we got to an array
+  async testVectorStore() {
+    try {
+      console.error('[ForestDataVectorization] Testing vector store integrity...');
+      
+      // Test basic operations
+      if (this.vectorStore.provider.ping) {
+        await this.vectorStore.provider.ping();
+      }
+      
+      // Test vector operations with a simple test vector
+      const testVector = new Array(1536).fill(0.1); // Standard dimension test vector
+      const testId = `test_${Date.now()}`;
+      
       try {
-        plainArray = Array.from(embedding).map(val => Number(val));
-      } catch (conversionError) {
-        throw new Error(`Cannot convert embedding to proper format: ${conversionError.message}`);
+        // Try to add and query a test vector
+        await this.vectorStore.provider.upsertVector(testId, testVector, {
+          type: 'test',
+          test_data: true
+        });
+        
+        await this.vectorStore.provider.queryVectors(testVector, {
+          limit: 1,
+          threshold: 0.1
+        });
+        
+        // Clean up test data
+        await this.vectorStore.provider.deleteVector(testId);
+        
+        console.error('[ForestDataVectorization] ✅ Vector store integrity test passed');
+        
+      } catch (testError) {
+        console.error('[ForestDataVectorization] ❌ Vector store test failed:', testError.message);
+        throw testError;
       }
+      
+    } catch (error) {
+      console.error('[ForestDataVectorization] Vector store test failed:', error.message);
+      throw error;
     }
-    
-    // Validate the array
-    if (!Array.isArray(plainArray) || plainArray.length === 0) {
-      throw new Error('Embedding must be a non-empty array');
-    }
-    
-    // Ensure all elements are valid numbers
-    for (let i = 0; i < plainArray.length; i++) {
-      if (isNaN(plainArray[i]) || !isFinite(plainArray[i])) {
-        throw new Error(`Invalid embedding value at index ${i}: ${plainArray[i]}`);
-      }
-    }
-    
-    console.error(`[ForestDataVectorization] ✅ Converted ${plainArray.length}-dim vector to vector store-compatible format`);
-    return plainArray;
   }
 
   // ===== BULK OPERATIONS =====
@@ -740,200 +682,99 @@ class ForestDataVectorization {
   }
 
   /**
-   * Test vector store integrity and recover from corruption
+   * Get vector store status
    */
-  async testAndRecoverVectorStore() {
-    try {
-      console.error('[ForestDataVectorization] Testing vector store integrity...');
-      
-      // Test basic operations
-      await this.vectorStore.provider.ping();
-      
-      // Test vector operations with a simple test vector
-      const testVectorRaw = new Array(384).fill(0.1); // Small test vector
-      const testVector = this.ensureNumpyCompatible(testVectorRaw); // FIX: Make numpy-compatible
-      const testId = `test_${Date.now()}`;
-      
-      try {
-        // Try to add and query a test vector
-        await this.vectorStore.provider.upsertVector(testId, testVector, {
-          type: 'test',
-          test_data: true
-        });
-        
-        await this.vectorStore.provider.queryVectors(testVector, {
-          limit: 1,
-          threshold: 0.1
-        });
-        
-        // Clean up test data
-        await this.vectorStore.provider.deleteVector(testId);
-        
-        console.error('[ForestDataVectorization] ✅ vector store integrity test passed');
-        
-      } catch (testError) {
-        if (testError.message.includes('tolist') || 
-            testError.message.includes('500') || 
-            testError.message.includes('Internal Server Error') ||
-            testError.message.includes('AttributeError')) {
-          
-          console.error('[ForestDataVectorization] ❌ vector store corruption detected:', testError.message);
-          throw new Error('vector store corruption detected');
-        } else {
-          // Non-corruption error, re-throw
-          throw testError;
-        }
-      }
-      
-    } catch (error) {
-      if (error.message.includes('vector store corruption') || 
-          error.message.includes('tolist') || 
-          error.message.includes('500')) {
-        
-        console.error('[ForestDataVectorization] 🔧 Auto-recovering from vector store corruption...');
-        await this.recoverFromCorruption();
-        console.error('[ForestDataVectorization] ✅ vector store recovery completed');
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  /**
-   * Recover from vector store corruption by resetting collections
-   */
-  async recoverFromCorruption() {
-    try {
-      console.error('[ForestDataVectorization] 🚨 Starting vector store corruption recovery...');
-      
-      // Reset the vector store
-      if (this.vectorStore && typeof this.vectorStore.resetCollections === 'function') {
-        await this.vectorStore.resetCollections();
-        console.error('[ForestDataVectorization] Collections reset via vector store');
-      } else {
-        // Manual collection reset
-        try {
-          const provider = this.vectorStore.provider;
-          if (provider && typeof provider.resetCollection === 'function') {
-            await provider.resetCollection();
-            console.error('[ForestDataVectorization] Collection reset via provider');
-          }
-        } catch (resetError) {
-          console.error('[ForestDataVectorization] Collection reset failed:', resetError.message);
-        }
-      }
-      
-      // Clear operation cache
-      this.clearVectorCache();
-      
-      // Clear metadata files that might reference corrupted data
-      await this.clearCorruptedMetadata();
-      
-      console.error('[ForestDataVectorization] ✅ Corruption recovery completed successfully');
-      
-    } catch (recoveryError) {
-      console.error('[ForestDataVectorization] ❌ Recovery failed:', recoveryError.message);
-      console.error('[ForestDataVectorization] Continuing with degraded functionality...');
-    }
-  }
-
-  /**
-   * Clear metadata files that might reference corrupted vector data
-   */
-  async clearCorruptedMetadata() {
-    try {
-      const metadataFiles = [
-        'goal_metadata.json',
-        'branch_metadata.json', 
-        'task_metadata.json'
-      ];
-      
-      // Get all project directories
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
-      try {
-        const projectsDir = path.join(this.dataDir, 'projects');
-        const projects = await fs.readdir(projectsDir);
-        
-        for (const projectId of projects) {
-          for (const metadataFile of metadataFiles) {
-            try {
-              const metadataPath = path.join(projectsDir, projectId, metadataFile);
-              const metadata = await this.dataPersistence.loadProjectData(projectId, metadataFile);
-              
-              if (metadata && metadata.vectorized) {
-                // Reset vectorization flag
-                metadata.vectorized = false;
-                metadata.corruption_recovery = new Date().toISOString();
-                await this.dataPersistence.saveProjectData(projectId, metadataFile, metadata);
-                console.error(`[ForestDataVectorization] Reset vectorization flag for ${projectId}/${metadataFile}`);
-              }
-            } catch (fileError) {
-              // File doesn't exist or can't be accessed, skip
-            }
-          }
-        }
-      } catch (dirError) {
-        // Projects directory doesn't exist yet, skip
-      }
-      
-    } catch (error) {
-      console.error('[ForestDataVectorization] Failed to clear corrupted metadata:', error.message);
-    }
-  }
-
-  /**
-   * Get corruption recovery status
-   */
-  async getCorruptionRecoveryStatus() {
+  async getVectorStoreStatus() {
     const status = {
-      last_recovery: null,
-      recovered_projects: [],
-      corruption_detected: false,
-      vector_store_status: 'unknown'
+      vector_store_status: 'unknown',
+      provider_type: this.vectorStore?.provider?.constructor?.name || 'unknown',
+      last_test: null
     };
     
     try {
-      // Check if we can ping the vector store
-      await this.vectorStore.provider.ping();
+      // Test vector store connection
+      await this.testVectorStore();
       status.vector_store_status = 'healthy';
-      
-      // Check for recovery markers in metadata
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
-      try {
-        const projectsDir = path.join(this.dataDir, 'projects');
-        const projects = await fs.readdir(projectsDir);
-        
-        for (const projectId of projects) {
-          try {
-            const metadata = await this.dataPersistence.loadProjectData(projectId, 'goal_metadata.json');
-            if (metadata && metadata.corruption_recovery) {
-              status.recovered_projects.push({
-                project_id: projectId,
-                recovery_time: metadata.corruption_recovery
-              });
-              
-              if (!status.last_recovery || metadata.corruption_recovery > status.last_recovery) {
-                status.last_recovery = metadata.corruption_recovery;
-              }
-            }
-          } catch (fileError) {
-            // Skip missing files
-          }
-        }
-      } catch (dirError) {
-        // Projects directory doesn't exist
-      }
+      status.last_test = new Date().toISOString();
       
     } catch (error) {
       status.vector_store_status = 'error';
-      status.corruption_detected = true;
+      status.error_message = error.message;
     }
     
     return status;
+  }
+
+  /**
+   * Get vectorization status for a specific project
+   */
+  async getVectorizationStatus(projectId) {
+    if (!this.initialized) await this.initialize();
+    
+    try {
+      // Get project stats from vector store
+      const vectorStats = await this.vectorStore.getProjectStats(projectId);
+      
+      // Get metadata from JSON files
+      const goalMetadata = await this.dataPersistence.loadProjectData(projectId, 'goal_metadata.json');
+      const branchMetadata = await this.dataPersistence.loadProjectData(projectId, 'branch_metadata.json');
+      const taskMetadata = await this.dataPersistence.loadProjectData(projectId, 'task_metadata.json');
+      
+      const isVectorized = vectorStats.vectorCount > 0;
+      const lastVectorized = Math.max(
+        goalMetadata?.last_vectorized ? new Date(goalMetadata.last_vectorized).getTime() : 0,
+        branchMetadata?.last_vectorized ? new Date(branchMetadata.last_vectorized).getTime() : 0,
+        taskMetadata?.last_vectorized ? new Date(taskMetadata.last_vectorized).getTime() : 0
+      );
+      
+      return {
+        isVectorized,
+        vectorCount: vectorStats.vectorCount || 0,
+        lastUpdated: lastVectorized > 0 ? new Date(lastVectorized).toISOString() : null,
+        breakdown: {
+          goals: goalMetadata ? 1 : 0,
+          branches: branchMetadata?.branches?.length || 0,
+          tasks: taskMetadata?.tasks?.length || 0
+        },
+        vectorStoreStatus: await this.getVectorStoreStatus()
+      };
+      
+    } catch (error) {
+      console.error('[ForestDataVectorization] Error getting vectorization status:', error.message);
+      return {
+        isVectorized: false,
+        vectorCount: 0,
+        lastUpdated: null,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Vectorize project data (wrapper for bulkVectorizeProject)
+   */
+  async vectorizeProjectData(projectId) {
+    if (!this.initialized) await this.initialize();
+    
+    try {
+      const results = await this.bulkVectorizeProject(projectId);
+      
+      return {
+        success: true,
+        vectorCount: results.vectorized,
+        dataTypes: Object.keys(results.types),
+        breakdown: results.types,
+        errors: results.errors
+      };
+      
+    } catch (error) {
+      console.error('[ForestDataVectorization] Error vectorizing project data:', error.message);
+      return {
+        success: false,
+        error: error.message,
+        vectorCount: 0
+      };
+    }
   }
 }
 

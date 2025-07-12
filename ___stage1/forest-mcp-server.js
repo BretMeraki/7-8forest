@@ -11,8 +11,9 @@ process.stderr.on('error', (err) => {
   }
 });
 
-// Enhanced logging: write to stderr AND dedicated log file
-const logDir = process.env.FOREST_DATA_DIR || path.resolve('.', '.forest-data');
+// Enhanced logging: write to stderr AND dedicated log file (OUTSIDE data directory)
+// SECURITY: Logs must NEVER be in the data directory that Claude can access
+const logDir = process.env.FOREST_LOG_DIR || '/tmp/forest-logs';
 const logFile = path.join(logDir, 'forest-mcp.log');
 try {
   fs.mkdirSync(logDir, { recursive: true });

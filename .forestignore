@@ -1,0 +1,72 @@
+# Forest Context Exclusion Rules - STRICT MODE
+# This file ensures Claude ONLY sees essential production source code and vectors
+# By default, EXCLUDE EVERYTHING except explicitly whitelisted files
+
+# === GLOBAL EXCLUSIONS (BLACKLIST EVERYTHING) ===
+# Exclude all files by default
+**/*
+
+# === EXPLICIT INCLUSIONS (WHITELIST ONLY) ===
+# Only allow these specific essential files
+
+# Core Configuration
+!package.json
+!mcp-config-working.json
+!forest_vectors.sqlite
+!context-filter.js
+!.forestignore
+
+# Essential Core Modules ONLY
+!___stage1/modules/core-intelligence.js
+!___stage1/modules/mcp-core.js
+!___stage1/modules/hta-core.js
+!___stage1/modules/data-persistence.js
+!___stage1/modules/enhanced-hta-core.js
+!___stage1/modules/forest-data-integration.js
+!___stage1/modules/forest-data-vectorization.js
+!___stage1/modules/gated-onboarding-flow.js
+!___stage1/modules/intelligent-onboarding-system.js
+!___stage1/modules/next-pipeline-presenter.js
+!___stage1/modules/pure-schema-driven-hta.js
+!___stage1/modules/task-strategy-core.js
+!___stage1/modules/task-strategy-orchestrator.js
+!___stage1/modules/hta-vector-store.js
+!___stage1/modules/hta-task-generation.js
+!___stage1/modules/constants.js
+!___stage1/modules/errors.js
+!___stage1/modules/schemas.js
+
+# Vector Providers
+!___stage1/modules/vector-providers/IVectorProvider.js
+!___stage1/modules/vector-providers/SQLiteVecProvider.js
+!___stage1/modules/vector-providers/LocalJSONProvider.js
+
+# Essential Utils
+!___stage1/utils/embedding-service.js
+!___stage1/utils/claude-diagnostic-helper.js
+!___stage1/utils/diagnostic-verifier.js
+!___stage1/utils/tool-schemas.js
+
+# Core Server Files
+!___stage1/core-server.js
+!___stage1/core-initialization.js
+!___stage1/core-handlers.js
+
+# Main Production Files
+!modules/constants.js
+!modules/errors.js
+!modules/context-guard.js
+!modules/self-heal-manager.js
+!modules/task-logic/index.js
+!modules/task-logic/task-formatter.js
+!modules/task-logic/task-scorer.js
+!modules/task-logic/task-selector.js
+!modules/utils/cache-manager.js
+!modules/utils/event-bus.js
+!modules/utils/logger.js
+!modules/utils/tool-registry.js
+!utils/hta-eligibility.js
+!utils/interval-manager.js
+
+# NOTHING ELSE IS ALLOWED
+# This ensures only essential production code is exposed to Claude

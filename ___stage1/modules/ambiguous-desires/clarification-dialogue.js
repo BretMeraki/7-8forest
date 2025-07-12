@@ -4,6 +4,7 @@
  */
 
 import { FILE_NAMES, DEFAULT_PATHS } from '../memory-sync.js';
+import { DialoguePersistence } from './dialogue-persistence.js';
 
 const CLARIFICATION_CONSTANTS = {
   MIN_RESPONSES_FOR_CONVERGENCE: 3,
@@ -21,6 +22,7 @@ export class ClarificationDialogue {
     this.projectManagement = projectManagement;
     this.vectorStore = vectorStore;
     this.activeDialogues = new Map(); // Track ongoing clarification sessions
+    this.dialoguePersistence = new DialoguePersistence(); // SQLite-based persistence
   }
 
   /**
@@ -67,8 +69,8 @@ export class ClarificationDialogue {
       // Generate first clarification question
       const firstQuestion = this.generateClarificationQuestion(session, ambiguityAnalysis);
 
-      // Store session data
-      await this.saveDialogueSession(activeProjectId, session);
+      // Store session data in SQLite
+      await this.dialoguePersistence.saveDialogueSession(session);
 
       return {
         success: true,
@@ -105,13 +107,70 @@ export class ClarificationDialogue {
    * Continue clarification dialogue with user response
    */
   async continueDialogue(args) {
-    const dialogueId = args.dialogue_id;
+let dialogueId = args.dialogue_id;
+    if (!dialogueId) {
+      console.error('Dialogue ID not provided, attempting to find most recent active dialogue');
+      
+      // Get current project ID for scoped lookup
+      let currentProjectId = null;
+      try {
+        const activeProject = await this.projectManagement.getActiveProject();
+        currentProjectId = activeProject?.project_id;
+      } catch (error) {
+        console.error('Could not get active project for dialogue lookup:', error.message);
+      }
+      
+      // First try to get most recent from database (authoritative source)
+      try {
+        const activeDialogues = await this.dialoguePersistence.getActiveDialogues(currentProjectId);
+        if (activeDialogues.length > 0) {
+          // getActiveDialogues already returns sorted by started_at DESC, so [0] is most recent
+          dialogueId = activeDialogues[0].id;
+          console.error(`Found most recent active dialogue from database: ${dialogueId} (goal: "${activeDialogues[0].originalGoal}")`);
+        } else {
+          console.error('No active dialogues found in database');
+        }
+      } catch (dbError) {
+        console.error('Database lookup failed, falling back to in-memory cache:', dbError.message);
+        
+        // Fallback to in-memory cache, but sort by startedAt
+        const memoryDialogues = Array.from(this.activeDialogues.values())
+          .filter(session => !currentProjectId || session.projectId === currentProjectId)
+          .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
+          
+        if (memoryDialogues.length > 0) {
+          dialogueId = memoryDialogues[0].id;
+          console.error(`Found most recent dialogue from memory cache: ${dialogueId}`);
+        } else {
+          console.error('No active dialogue found in memory cache either');
+        }
+      }
+    }
     const userResponse = args.response || '';
 
     try {
-      const session = this.activeDialogues.get(dialogueId);
-      if (!session || session.status !== 'active') {
-        throw new Error('No active clarification dialogue found with that ID');
+      // First check in-memory active dialogues
+      let session = this.activeDialogues.get(dialogueId);
+      
+      // If not found in memory, try loading from SQLite database
+      if (!session && dialogueId) {
+        console.error(`Session not found in memory, loading from database: ${dialogueId}`);
+        session = await this.dialoguePersistence.loadDialogueSession(dialogueId);
+        if (session) {
+          console.error(`Session loaded from database: ${session.id}`);
+          // Restore session to active dialogues
+          this.activeDialogues.set(dialogueId, session);
+        } else {
+          console.error(`Session not found in database either: ${dialogueId}`);
+        }
+      }
+      
+      if (!session) {
+        throw new Error(`No clarification dialogue found with ID: ${dialogueId}. The dialogue may have expired or been completed. Please start a new dialogue with 'start_clarification_dialogue_forest'.`);
+      }
+      
+      if (session.status !== 'active') {
+        throw new Error(`Dialogue ${dialogueId} is not active (status: ${session.status}). Please start a new dialogue with 'start_clarification_dialogue_forest'.`);
       }
 
       // Record user response
@@ -142,8 +201,8 @@ export class ClarificationDialogue {
       // Update uncertainty map
       this.updateUncertaintyMap(session, responseData);
 
-      // Save updated session
-      await this.saveDialogueSession(session.projectId, session);
+      // Save updated session to SQLite
+      await this.dialoguePersistence.saveDialogueSession(session);
 
       return {
         success: true,
@@ -551,8 +610,8 @@ export class ClarificationDialogue {
     session.finalConfidence = confidence;
     session.completedAt = new Date().toISOString();
 
-    // Save final session
-    await this.saveDialogueSession(session.projectId, session);
+    // Save final session to SQLite
+    await this.dialoguePersistence.saveDialogueSession(session);
 
     // Generate recommendations for next steps
     const nextSteps = this.generateNextSteps(refinedGoal, convergingThemes);
@@ -709,34 +768,27 @@ export class ClarificationDialogue {
   }
 
   /**
-   * Save dialogue session to persistent storage
+   * Save dialogue session to persistent storage (deprecated - now handled by DialoguePersistence)
    */
   async saveDialogueSession(projectId, session) {
     try {
-      const sessionData = {
-        ...session,
-        lastSaved: new Date().toISOString(),
-      };
+      // Use the new SQLite-based persistence
+      await this.dialoguePersistence.saveDialogueSession(session);
 
-      await this.dataPersistence.saveProjectData(
-        projectId,
-        `clarification_dialogue_${session.id}.json`,
-        sessionData
-      );
+      // Update vector store with dialogue content
+      await this.updateVectorStoreWithDialogue(projectId, session);
     } catch (error) {
       console.error('Failed to save clarification dialogue session:', error.message);
     }
   }
 
   /**
-   * Load existing dialogue session
+   * Load existing dialogue session (deprecated - now handled by DialoguePersistence)
    */
   async loadDialogueSession(projectId, dialogueId) {
     try {
-      const sessionData = await this.dataPersistence.loadProjectData(
-        projectId,
-        `clarification_dialogue_${dialogueId}.json`
-      );
+      // Use the new SQLite-based persistence
+      const sessionData = await this.dialoguePersistence.loadDialogueSession(dialogueId);
 
       if (sessionData) {
         this.activeDialogues.set(dialogueId, sessionData);
@@ -752,7 +804,198 @@ export class ClarificationDialogue {
    * Get all active dialogue sessions for a project
    */
   getActiveDialogues(projectId) {
-    return Array.from(this.activeDialogues.values())
+    // Return from in-memory cache first
+    const memoryDialogues = Array.from(this.activeDialogues.values())
       .filter(session => session.projectId === projectId && session.status === 'active');
+    
+    return memoryDialogues;
+  }
+
+  /**
+   * Resume all active dialogues from SQLite database on server restart
+   */
+  async resumeActiveDialogues(projectId) {
+    try {
+      // Get all active dialogues from SQLite database
+      const activeDialogues = await this.dialoguePersistence.getActiveDialogues(projectId);
+      
+      for (const session of activeDialogues) {
+        try {
+          // Restore active dialogues to memory
+          this.activeDialogues.set(session.id, session);
+          console.log(`Resumed dialogue session: ${session.id}`);
+        } catch (error) {
+          console.error(`Failed to resume dialogue session ${session.id}:`, error.message);
+        }
+      }
+      
+      console.log(`Resumed ${activeDialogues.length} active dialogue sessions for project ${projectId}`);
+    } catch (error) {
+      console.error('Failed to resume active dialogues:', error.message);
+    }
+  }
+
+  /**
+   * List all active dialogue sessions for debugging
+   */
+  async listActiveDialogues() {
+    try {
+      // Get all active dialogues from SQLite database
+      const activeDialogues = await this.dialoguePersistence.getActiveDialogues();
+      
+      const activeSessions = activeDialogues.map(session => ({
+        id: session.id,
+        projectId: session.projectId,
+        status: session.status,
+        round: session.currentRound,
+        startedAt: session.startedAt,
+        originalGoal: session.originalGoal
+      }));
+      
+      console.log('Active dialogue sessions:', activeSessions);
+      return activeSessions;
+    } catch (error) {
+      console.error('Failed to list active dialogues:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Update vector store with dialogue content
+   */
+  async updateVectorStoreWithDialogue(projectId, session) {
+    try {
+      if (!this.vectorStore) {
+        console.log('Vector store not available, skipping dialogue vectorization');
+        return;
+      }
+
+      // Generate vector content for each response
+      for (const response of session.responses) {
+        const vectorContent = this.generateDialogueVectorContent(session, response);
+        
+        // Add to vector store with dialogue-specific metadata
+        await this.vectorStore.addVector({
+          projectId: projectId,
+          content: vectorContent.text,
+          metadata: {
+            type: 'clarification_dialogue',
+            dialogueId: session.id,
+            round: response.round,
+            timestamp: response.timestamp,
+            themes: response.themes,
+            confidence: response.confidence,
+            originalGoal: session.originalGoal,
+            status: session.status,
+            ...vectorContent.metadata
+          }
+        });
+      }
+
+      // If dialogue is completed, add final refined goal
+      if (session.status === 'completed' && session.refinedGoal) {
+        const refinedGoalContent = this.generateRefinedGoalVectorContent(session);
+        
+        await this.vectorStore.addVector({
+          projectId: projectId,
+          content: refinedGoalContent.text,
+          metadata: {
+            type: 'refined_goal',
+            dialogueId: session.id,
+            timestamp: session.completedAt,
+            confidence: session.finalConfidence,
+            originalGoal: session.originalGoal,
+            refinedGoal: session.refinedGoal.text,
+            themes: session.refinedGoal.themes,
+            responseCount: session.responses.length,
+            ...refinedGoalContent.metadata
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update vector store with dialogue:', error.message);
+    }
+  }
+
+  /**
+   * Generate vector content from dialogue response
+   */
+  generateDialogueVectorContent(session, response) {
+    const questionText = response.question || session.lastQuestion || '';
+    const responseText = response.response || '';
+    const themes = response.themes || [];
+    
+    // Create comprehensive text for vectorization
+    const text = [
+      `Clarification Dialogue Round ${response.round}`,
+      `Original Goal: ${session.originalGoal}`,
+      `Question: ${questionText}`,
+      `User Response: ${responseText}`,
+      `Identified Themes: ${themes.join(', ')}`,
+      `Confidence Level: ${Math.round(response.confidence * 100)}%`
+    ].join('\n');
+
+    return {
+      text,
+      metadata: {
+        questionText,
+        responseText,
+        dialogueRound: response.round,
+        identifiedThemes: themes,
+        confidenceLevel: response.confidence
+      }
+    };
+  }
+
+  /**
+   * Generate vector content from refined goal
+   */
+  generateRefinedGoalVectorContent(session) {
+    const refinedGoal = session.refinedGoal;
+    const evolutionSummary = this.createEvolutionSummary(session, refinedGoal);
+    
+    // Create comprehensive text for vectorization
+    const text = [
+      `Goal Clarification Complete`,
+      `Original Goal: ${session.originalGoal}`,
+      `Refined Goal: ${refinedGoal.text}`,
+      `Key Themes: ${refinedGoal.themes.join(', ')}`,
+      `Evolution Summary: ${evolutionSummary}`,
+      `Final Confidence: ${Math.round(session.finalConfidence * 100)}%`,
+      `Dialogue Duration: ${session.responses.length} rounds`
+    ].join('\n');
+
+    return {
+      text,
+      metadata: {
+        goalEvolution: evolutionSummary,
+        finalThemes: refinedGoal.themes,
+        dialogueDuration: session.responses.length,
+        goalTransformation: {
+          from: session.originalGoal,
+          to: refinedGoal.text
+        }
+      }
+    };
+  }
+
+  /**
+   * Create evolution summary from dialogue session
+   */
+  createEvolutionSummary(session, refinedGoal) {
+    const keyInsights = session.responses
+      .filter(response => response.themes && response.themes.length > 0)
+      .map(response => response.themes.join(', '))
+      .join('; ');
+
+    const confidenceProgression = session.responses
+      .map(response => `Round ${response.round}: ${Math.round(response.confidence * 100)}%`)
+      .join(', ');
+
+    return [
+      `Key insights emerged: ${keyInsights}`,
+      `Confidence progression: ${confidenceProgression}`,
+      `Final transformation: ${session.originalGoal} → ${refinedGoal.text}`
+    ].join('. ');
   }
 }

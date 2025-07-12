@@ -1,0 +1,35 @@
+{
+  "projects": [
+    {
+      "id": "learn_python_programming_245s",
+      "goal": "Learn Python programming fundamentals",
+      "created_at": "2025-07-11T00:33:05.681Z",
+      "last_accessed": "2025-07-11T00:33:05.691Z"
+    },
+    {
+      "id": "learn_python_programming_65cn",
+      "goal": "Learn Python programming fundamentals",
+      "created_at": "2025-07-11T00:36:13.847Z",
+      "last_accessed": "2025-07-11T00:36:13.856Z"
+    },
+    {
+      "id": "learn_python_programming_a5jk",
+      "goal": "Learn Python programming fundamentals",
+      "created_at": "2025-07-11T00:39:20.720Z",
+      "last_accessed": "2025-07-11T00:39:20.730Z"
+    },
+    {
+      "id": "learn_python_programming_1dva",
+      "goal": "Learn Python programming fundamentals",
+      "created_at": "2025-07-11T20:08:15.478Z",
+      "last_accessed": "2025-07-11T20:08:15.486Z"
+    },
+    {
+      "id": "learn_python_programming_9x36",
+      "goal": "Learn Python programming fundamentals",
+      "created_at": "2025-07-11T20:14:53.635Z",
+      "last_accessed": "2025-07-11T20:14:53.643Z"
+    }
+  ],
+  "activeProject": "learn_python_programming_9x36"
+}

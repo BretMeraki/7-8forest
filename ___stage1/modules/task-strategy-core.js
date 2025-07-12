@@ -14,10 +14,11 @@ import { FILE_NAMES } from './memory-sync.js';
 import { guard } from '../utils/hta-guard.js';
 
 export class TaskStrategyCore {
-  constructor(dataPersistence, projectManagement = null, llmInterface = null, eventBus = null, ambiguousDesiresManager = null) {
+  constructor(dataPersistence, projectManagement = null, coreIntelligence = null, eventBus = null, ambiguousDesiresManager = null) {
     this.dataPersistence = dataPersistence;
     this.projectManagement = projectManagement;
-    this.llmInterface = llmInterface;
+    this.coreIntelligence = coreIntelligence;  // Store coreIntelligence for MCP bridge access
+    this.llmInterface = coreIntelligence || null;  // Keep llmInterface for backward compatibility
     this.eventBus = eventBus;
     this.ambiguousDesiresManager = ambiguousDesiresManager;
     
@@ -26,12 +27,12 @@ export class TaskStrategyCore {
     
     // Initialize specialized engines
     this.goalFocusedSelector = new GoalFocusedTaskSelector(dataPersistence);
-    this.taskGenerator = new TaskGeneratorEvolution(dataPersistence, projectManagement, llmInterface, eventBus);
+    this.taskGenerator = new TaskGeneratorEvolution(dataPersistence, projectManagement, this.llmInterface, eventBus);
     this.batchOptimizer = new TaskBatchOptimizer();
     
     // Initialize vector store and goal context
     this.vectorStore = new HTAVectorStore();
-    this.goalContext = new GoalAchievementContext(dataPersistence?.dataDir, llmInterface);
+    this.goalContext = new GoalAchievementContext(dataPersistence?.dataDir, this.llmInterface);
     this.vectorStoreInitialized = false;
     this.goalContextInitialized = false;
     
@@ -83,7 +84,7 @@ export class TaskStrategyCore {
       const { projectId, config } = await this.getActiveProjectInfo();
       
       // Check for ambiguous desires
-      const ambiguousCheck = await this.checkAmbiguousDesires(config, contextFromMemory);
+      const ambiguousCheck = await this.checkAmbiguousDesires(config, contextFromMemory, projectId);
       if (ambiguousCheck) return ambiguousCheck;
       
       // Load HTA data
@@ -183,14 +184,14 @@ export class TaskStrategyCore {
     return { projectId, config };
   }
 
-  async checkAmbiguousDesires(config, contextFromMemory) {
+  async checkAmbiguousDesires(config, contextFromMemory, projectId) {
     if (!this.ambiguousDesiresManager) return null;
     
     const goal = config.goal;
     const context = contextFromMemory || config.context || '';
     
     const goalClarity = await this.ambiguousDesiresManager.assessGoalClarity(goal, context);
-    const evolution = await this.ambiguousDesiresManager.analyzeGoalEvolution(config.project_id);
+    const evolution = await this.ambiguousDesiresManager.analyzeGoalEvolution(projectId);
     
     if (goalClarity.uncertaintyLevel > 0.7) {
       return {

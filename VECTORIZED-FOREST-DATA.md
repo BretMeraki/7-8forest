@@ -26,7 +26,7 @@ Unified interface that intelligently routes operations between vector and JSON s
 
 ### 3. Enhanced Vector Providers
 Extended support for multiple vector databases:
-- **ChromaDB** (primary) - High-performance vector database
+- **SQLite** (primary) - High-performance local vector database
 - **Qdrant** - Alternative vector database option
 - **LocalJSON** (fallback) - File-based vector storage
 
@@ -165,16 +165,16 @@ const results = await vectorization.bulkVectorizeProject(projectId);
 ```javascript
 // config/vector-config.js
 export default {
-  provider: 'chroma', // 'chroma' | 'qdrant' | 'localjson'
+  provider: 'sqlitevec', // 'sqlitevec' | 'qdrant' | 'localjson'
   fallbackProvider: 'localjson',
-  chroma: {
-    url: 'http://localhost:8000',
-    collection: 'forest_vectors',
+  sqlitevec: {
+    database: 'forest_vectors.sqlite',
+    table: 'forest_vectors',
     dimension: 1536
   },
   embedding: {
-    provider: 'openai',
-    model: 'text-embedding-ada-002',
+    provider: 'local',
+    model: 'text-embedding-local',
     cacheDir: '.embedding-cache'
   }
 };
@@ -183,13 +183,12 @@ export default {
 ### Environment Variables
 ```bash
 # Vector provider selection
-FOREST_VECTOR_PROVIDER=chroma
-CHROMA_URL=http://localhost:8000
-CHROMA_COLLECTION=forest_vectors
+FOREST_VECTOR_PROVIDER=sqlitevec
+SQLITE_VECTOR_DB=forest_vectors.sqlite
+SQLITE_VECTOR_TABLE=forest_vectors
 
 # Embedding service
-OPENAI_API_KEY=your_openai_key
-FOREST_EMBEDDING_MODEL=text-embedding-ada-002
+LOCAL_EMBEDDING_MODEL=text-embedding-local
 
 # Cache configuration
 VECTOR_CACHE_MAX=5000

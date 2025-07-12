@@ -1,0 +1,29 @@
+{
+  "projects": [
+    {
+      "id": "transition_career_product_9h1k",
+      "goal": "Transition to a career in product management",
+      "created_at": "2025-07-11T01:34:48.200Z",
+      "last_accessed": "2025-07-11T01:34:48.206Z"
+    },
+    {
+      "id": "transition_career_product_x89y",
+      "goal": "Transition to a career in product management leveraging my experience as creator of the Forest Suite AI learning system",
+      "created_at": "2025-07-11T02:21:16.198Z",
+      "last_accessed": "2025-07-11T02:21:16.209Z"
+    },
+    {
+      "id": "land_senior_product_xecm",
+      "goal": "Land a Senior Product Manager role at a tech company within 6 months by leveraging my Forest Suite creation as a flagship case study and developing complementary PM skills",
+      "created_at": "2025-07-11T02:21:24.070Z",
+      "last_accessed": "2025-07-11T02:21:24.080Z"
+    },
+    {
+      "id": "build_comprehensive_product_xjhh",
+      "goal": "Build a comprehensive Product Manager portfolio showcasing Forest Suite creation and develop job search strategy for senior PM roles",
+      "created_at": "2025-07-11T02:21:30.725Z",
+      "last_accessed": "2025-07-11T02:21:30.735Z"
+    }
+  ],
+  "activeProject": "build_comprehensive_product_xjhh"
+}

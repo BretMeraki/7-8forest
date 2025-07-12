@@ -34,13 +34,16 @@ export const toolSchemas = {
   current_status_forest: {
     required: [],
   },
+  generate_daily_schedule_forest: {
+    required: [],
+  },
   sync_forest_memory_forest: {
     required: [],
   },
-  get_health_status_forest: {
-    required: [],
+  ask_truthful_claude_forest: {
+    required: ['prompt'],
   },
-  get_landing_page_forest: {
+  get_health_status_forest: {
     required: [],
   },
   // Onboarding flow tools
@@ -55,23 +58,6 @@ export const toolSchemas = {
   },
   complete_onboarding_forest: {
     required: ['final_confirmation'],
-  },
-  // System management tools
-  factory_reset_forest: {
-    required: ['confirm_deletion'],
-  },
-  get_current_config: {
-    required: [],
-  },
-  // Diagnostic tools
-  verify_system_health_forest: {
-    required: [],
-  },
-  verify_function_exists_forest: {
-    required: ['function_name'],
-  },
-  run_diagnostic_verification_forest: {
-    required: [],
   },
   // Ambiguous Desires functionality is now integrated into existing tools
 };

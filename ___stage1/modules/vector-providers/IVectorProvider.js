@@ -11,7 +11,6 @@
  *   - getStats()
  *   - flush()
  *   - close()
- *   - ping()
  *
  * Configuration Options:
  *   - local vs remote deployment
@@ -52,7 +51,6 @@ class IVectorProvider {
     async getStats() { throw new Error('Not implemented'); }
     async flush() { throw new Error('Not implemented'); }
     async close() { throw new Error('Not implemented'); }
-    async ping() { throw new Error('Not implemented'); }
 }
 
 export default IVectorProvider; 

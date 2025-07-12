@@ -1,0 +1,243 @@
+{
+  "projectId": "learn_python_programming_1dva",
+  "pathName": "general",
+  "created": "2025-07-11T20:08:47.391Z",
+  "lastUpdated": "2025-07-11T20:09:17.760Z",
+  "goal": "Learn Python programming fundamentals",
+  "context": "Testing parameter passing fix",
+  "complexity": {
+    "score": 6,
+    "level": "moderate",
+    "recommended_depth": 3,
+    "factors": [
+      "Technical domain adds significant complexity",
+      "Vague goals require exploration and clarification"
+    ],
+    "analysis": "Goal complexity: 6/10. Technical domain adds significant complexity, Vague goals require exploration and clarification."
+  },
+  "strategicBranches": [
+    {
+      "name": "Fundamentals Foundations",
+      "description": "Build strong foundations and core understanding",
+      "priority": 1,
+      "phase": "fundamentals_foundations",
+      "order": 1,
+      "estimatedDuration": "2-4 weeks",
+      "prerequisites": [],
+      "deliverables": [
+        "Progress in Fundamentals Foundations",
+        "Practical skills"
+      ],
+      "tasks": [],
+      "focus": "balanced",
+      "schema_generated": false,
+      "domain_adaptive": true,
+      "fallback_generated": true
+    },
+    {
+      "name": "Fundamentals Application",
+      "description": "Apply concepts in practical scenarios",
+      "priority": 2,
+      "phase": "fundamentals_application",
+      "order": 2,
+      "estimatedDuration": "2-4 weeks",
+      "prerequisites": [
+        "Fundamentals Foundations"
+      ],
+      "deliverables": [
+        "Progress in Fundamentals Application",
+        "Practical skills"
+      ],
+      "tasks": [],
+      "focus": "balanced",
+      "schema_generated": false,
+      "domain_adaptive": true,
+      "fallback_generated": true
+    },
+    {
+      "name": "Fundamentals Mastery",
+      "description": "Achieve proficiency and expertise",
+      "priority": 3,
+      "phase": "fundamentals_mastery",
+      "order": 3,
+      "estimatedDuration": "2-4 weeks",
+      "prerequisites": [
+        "Fundamentals Application"
+      ],
+      "deliverables": [
+        "Progress in Fundamentals Mastery",
+        "Practical skills"
+      ],
+      "tasks": [],
+      "focus": "balanced",
+      "schema_generated": false,
+      "domain_adaptive": true,
+      "fallback_generated": true
+    }
+  ],
+  "frontierNodes": [
+    {
+      "id": "fundamentals_foundations_intro_001",
+      "title": "Introduction to Fundamentals Foundations",
+      "description": "Get started with Build strong foundations and core understanding",
+      "phase": "fundamentals_foundations",
+      "difficulty": 2,
+      "estimatedDuration": 30,
+      "type": "learning",
+      "prerequisites": [],
+      "isComplete": false,
+      "order": 1,
+      "priority": 100,
+      "completed": false,
+      "generated": false
+    },
+    {
+      "id": "fundamentals_foundations_setup_002",
+      "title": "Set up environment for Fundamentals Foundations",
+      "description": "Configure your development environment and tools",
+      "phase": "fundamentals_foundations",
+      "difficulty": 3,
+      "estimatedDuration": 45,
+      "type": "setup",
+      "prerequisites": [],
+      "isComplete": false,
+      "order": 2,
+      "priority": 100,
+      "completed": false,
+      "generated": false
+    },
+    {
+      "id": "fundamentals_foundations_basics_003",
+      "title": "Core concepts of Fundamentals Foundations",
+      "description": "Learn the fundamental concepts and principles",
+      "phase": "fundamentals_foundations",
+      "difficulty": 3,
+      "estimatedDuration": 60,
+      "type": "study",
+      "prerequisites": [
+        "fundamentals_foundations_intro_001"
+      ],
+      "isComplete": false,
+      "order": 3,
+      "priority": 100,
+      "completed": false,
+      "generated": false
+    }
+  ],
+  "completedNodes": [],
+  "level1_goalContext": {
+    "type": "CLAUDE_INTELLIGENCE_REQUEST",
+    "requestId": "req_1752264503335_tgn2my9ct",
+    "prompt": {
+      "system": "Analyze this goal to understand the specific domain, user context, constraints, and success criteria. \n      Focus on domain-specific requirements and avoid generic learning approaches. \n      Identify the specific field (e.g., AI/ML, cybersecurity, programming, photography) and tailor the analysis accordingly.",
+      "user": "You are an expert learning system that creates goal-specific, contextually appropriate learning paths.\n\nIMPORTANT: Generate content that is SPECIFIC to the goal and subject matter. Avoid generic terms like \"Foundation\", \"Research\", \"Capability\". Instead, use terminology that reflects the actual subject matter.\n\n**Goal Analysis:**\n- Primary Goal: Learn Python programming fundamentals\n- Complexity: low\n- Characteristics: \n- Requires Deep Decomposition: false\n- Benefits from Granularity: false\n\n**Input Data:**\n{\n  \"goal\": \"Learn Python programming fundamentals\",\n  \"initialContext\": {\n    \"learningStyle\": \"mixed\",\n    \"focusAreas\": [\n      \"basics\",\n      \"syntax\",\n      \"practice\"\n    ],\n    \"context\": \"Testing parameter passing fix\",\n    \"projectId\": \"learn_python_programming_1dva\",\n    \"pathName\": \"general\",\n    \"userConstraints\": {},\n    \"lifePreferences\": {},\n    \"urgency\": \"moderate\",\n    \"available_resources\": {\n      \"time\": \"flexible\",\n      \"budget\": \"moderate\",\n      \"tools\": \"standard\",\n      \"support\": \"self-directed\"\n    },\n    \"domain_context\": {\n      \"goal\": \"Learn Python programming fundamentals\",\n      \"context\": \"Testing parameter passing fix\",\n      \"constraints\": {},\n      \"focusAreas\": [],\n      \"learningStyle\": \"mixed\",\n      \"timeConstraints\": \"flexible\",\n      \"resourceConstraints\": \"standard\"\n    },\n    \"accumulated_context\": null,\n    \"context_evolution\": null,\n    \"enhanced_context\": null,\n    \"complexity_analysis\": null,\n    \"goalCharacteristics\": {\n      \"complexity\": \"low\",\n      \"score\": 0,\n      \"confidence\": 0.3,\n      \"characteristics\": [],\n      \"requiresDeepDecomposition\": false,\n      \"benefitsFromGranularity\": false\n    },\n    \"requireDomainSpecific\": true,\n    \"avoidGenericTemplates\": true,\n    \"progressiveDepth\": 3\n  }\n}\n\n**Required Response Schema:**\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"goal_analysis\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"primary_goal\": {\n          \"type\": \"string\"\n        },\n        \"goal_complexity\": {\n          \"type\": \"integer\",\n          \"minimum\": 1,\n          \"maximum\": 10\n        },\n        \"domain_type\": {\n          \"type\": \"string\"\n        },\n        \"domain_characteristics\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"success_criteria\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"timeline_assessment\": {\n          \"type\": \"string\"\n        },\n        \"complexity_factors\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    },\n    \"user_context\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"background_knowledge\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"available_resources\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"constraints\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"motivation_drivers\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"risk_factors\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    },\n    \"domain_boundaries\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"core_domain_elements\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"relevant_adjacent_domains\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"exploration_worthy_topics\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"irrelevant_domains\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    },\n    \"learning_approach\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"recommended_strategy\": {\n          \"type\": \"string\"\n        },\n        \"key_principles\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"potential_pain_points\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"success_enablers\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    }\n  },\n  \"required\": [\n    \"goal_analysis\",\n    \"user_context\",\n    \"domain_boundaries\",\n    \"learning_approach\"\n  ]\n}\n\n**Critical Instructions:**\n1. Use subject-specific terminology that reflects the actual goal content\n2. Create tasks that are specific to the actual goal objectives\n3. Focus on the user's specific context and constraints\n4. Provide actionable, practical content\n5. Adapt difficulty and approach to the goal's complexity level\n6. Consider the goal characteristics when structuring the response\n\nGenerate intelligent, goal-specific content that directly addresses the user's objective with contextual relevance.",
+      "schema": null,
+      "goal": "Learn Python programming fundamentals",
+      "context": {
+        "learningStyle": "mixed",
+        "focusAreas": [
+          "basics",
+          "syntax",
+          "practice"
+        ],
+        "context": "Testing parameter passing fix",
+        "projectId": "learn_python_programming_1dva",
+        "pathName": "general",
+        "userConstraints": {},
+        "lifePreferences": {},
+        "urgency": "moderate",
+        "available_resources": {
+          "time": "flexible",
+          "budget": "moderate",
+          "tools": "standard",
+          "support": "self-directed"
+        },
+        "domain_context": {
+          "goal": "Learn Python programming fundamentals",
+          "context": "Testing parameter passing fix",
+          "constraints": {},
+          "focusAreas": [],
+          "learningStyle": "mixed",
+          "timeConstraints": "flexible",
+          "resourceConstraints": "standard"
+        },
+        "accumulated_context": null,
+        "context_evolution": null,
+        "enhanced_context": null,
+        "complexity_analysis": null,
+        "goalCharacteristics": {
+          "complexity": "low",
+          "score": 0,
+          "confidence": 0.3,
+          "characteristics": [],
+          "requiresDeepDecomposition": false,
+          "benefitsFromGranularity": false
+        },
+        "requireDomainSpecific": true,
+        "avoidGenericTemplates": true,
+        "progressiveDepth": 3
+      }
+    },
+    "parameters": {
+      "maxTokens": 2000,
+      "temperature": 0.9
+    },
+    "processingInstructions": "Please process the following prompt with your full intelligence:\n- Provide thoughtful, comprehensive analysis\n- Use your complete reasoning capabilities\n- Consider the provided context in your analysis\n- Build upon previous insights where relevant",
+    "responseFormat": "text"
+  },
+  "level2_strategicBranches": {
+    "type": "CLAUDE_INTELLIGENCE_REQUEST",
+    "requestId": "req_1752264515964_xv5673fni",
+    "prompt": {
+      "system": "Generate goal-specific strategic learning phases for \"Learn Python programming fundamentals\". \n      Analyze the goal characteristics and create branches that are:\n      - Specific to the actual subject matter and objectives\n      - Appropriate for the complexity level (low)\n      - Tailored to the goal characteristics: \n      - Progressive in nature (building from fundamentals to advanced)\n      \n      Create 3-5 branches that are specific to this goal and domain, NOT generic phases like \"Foundation\" or \"Research\". \n      Use terminology that reflects the actual subject matter of the goal.",
+      "user": "You are an expert learning system that creates goal-specific, contextually appropriate learning paths.\n\nIMPORTANT: Generate content that is SPECIFIC to the goal and subject matter. Avoid generic terms like \"Foundation\", \"Research\", \"Capability\". Instead, use terminology that reflects the actual subject matter.\n\n**Goal Analysis:**\n- Primary Goal: Learn Python programming fundamentals\n- Complexity: low\n- Characteristics: \n- Requires Deep Decomposition: false\n- Benefits from Granularity: false\n\n**Input Data:**\n{\n  \"goal\": \"Learn Python programming fundamentals\",\n  \"goalContext\": {\n    \"type\": \"CLAUDE_INTELLIGENCE_REQUEST\",\n    \"requestId\": \"req_1752264503335_tgn2my9ct\",\n    \"prompt\": {\n      \"system\": \"Analyze this goal to understand the specific domain, user context, constraints, and success criteria. \\n      Focus on domain-specific requirements and avoid generic learning approaches. \\n      Identify the specific field (e.g., AI/ML, cybersecurity, programming, photography) and tailor the analysis accordingly.\",\n      \"user\": \"You are an expert learning system that creates goal-specific, contextually appropriate learning paths.\\n\\nIMPORTANT: Generate content that is SPECIFIC to the goal and subject matter. Avoid generic terms like \\\"Foundation\\\", \\\"Research\\\", \\\"Capability\\\". Instead, use terminology that reflects the actual subject matter.\\n\\n**Goal Analysis:**\\n- Primary Goal: Learn Python programming fundamentals\\n- Complexity: low\\n- Characteristics: \\n- Requires Deep Decomposition: false\\n- Benefits from Granularity: false\\n\\n**Input Data:**\\n{\\n  \\\"goal\\\": \\\"Learn Python programming fundamentals\\\",\\n  \\\"initialContext\\\": {\\n    \\\"learningStyle\\\": \\\"mixed\\\",\\n    \\\"focusAreas\\\": [\\n      \\\"basics\\\",\\n      \\\"syntax\\\",\\n      \\\"practice\\\"\\n    ],\\n    \\\"context\\\": \\\"Testing parameter passing fix\\\",\\n    \\\"projectId\\\": \\\"learn_python_programming_1dva\\\",\\n    \\\"pathName\\\": \\\"general\\\",\\n    \\\"userConstraints\\\": {},\\n    \\\"lifePreferences\\\": {},\\n    \\\"urgency\\\": \\\"moderate\\\",\\n    \\\"available_resources\\\": {\\n      \\\"time\\\": \\\"flexible\\\",\\n      \\\"budget\\\": \\\"moderate\\\",\\n      \\\"tools\\\": \\\"standard\\\",\\n      \\\"support\\\": \\\"self-directed\\\"\\n    },\\n    \\\"domain_context\\\": {\\n      \\\"goal\\\": \\\"Learn Python programming fundamentals\\\",\\n      \\\"context\\\": \\\"Testing parameter passing fix\\\",\\n      \\\"constraints\\\": {},\\n      \\\"focusAreas\\\": [],\\n      \\\"learningStyle\\\": \\\"mixed\\\",\\n      \\\"timeConstraints\\\": \\\"flexible\\\",\\n      \\\"resourceConstraints\\\": \\\"standard\\\"\\n    },\\n    \\\"accumulated_context\\\": null,\\n    \\\"context_evolution\\\": null,\\n    \\\"enhanced_context\\\": null,\\n    \\\"complexity_analysis\\\": null,\\n    \\\"goalCharacteristics\\\": {\\n      \\\"complexity\\\": \\\"low\\\",\\n      \\\"score\\\": 0,\\n      \\\"confidence\\\": 0.3,\\n      \\\"characteristics\\\": [],\\n      \\\"requiresDeepDecomposition\\\": false,\\n      \\\"benefitsFromGranularity\\\": false\\n    },\\n    \\\"requireDomainSpecific\\\": true,\\n    \\\"avoidGenericTemplates\\\": true,\\n    \\\"progressiveDepth\\\": 3\\n  }\\n}\\n\\n**Required Response Schema:**\\n{\\n  \\\"type\\\": \\\"object\\\",\\n  \\\"properties\\\": {\\n    \\\"goal_analysis\\\": {\\n      \\\"type\\\": \\\"object\\\",\\n      \\\"properties\\\": {\\n        \\\"primary_goal\\\": {\\n          \\\"type\\\": \\\"string\\\"\\n        },\\n        \\\"goal_complexity\\\": {\\n          \\\"type\\\": \\\"integer\\\",\\n          \\\"minimum\\\": 1,\\n          \\\"maximum\\\": 10\\n        },\\n        \\\"domain_type\\\": {\\n          \\\"type\\\": \\\"string\\\"\\n        },\\n        \\\"domain_characteristics\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"success_criteria\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"timeline_assessment\\\": {\\n          \\\"type\\\": \\\"string\\\"\\n        },\\n        \\\"complexity_factors\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        }\\n      }\\n    },\\n    \\\"user_context\\\": {\\n      \\\"type\\\": \\\"object\\\",\\n      \\\"properties\\\": {\\n        \\\"background_knowledge\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"available_resources\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"constraints\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"motivation_drivers\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"risk_factors\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        }\\n      }\\n    },\\n    \\\"domain_boundaries\\\": {\\n      \\\"type\\\": \\\"object\\\",\\n      \\\"properties\\\": {\\n        \\\"core_domain_elements\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"relevant_adjacent_domains\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"exploration_worthy_topics\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"irrelevant_domains\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        }\\n      }\\n    },\\n    \\\"learning_approach\\\": {\\n      \\\"type\\\": \\\"object\\\",\\n      \\\"properties\\\": {\\n        \\\"recommended_strategy\\\": {\\n          \\\"type\\\": \\\"string\\\"\\n        },\\n        \\\"key_principles\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"potential_pain_points\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"success_enablers\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        }\\n      }\\n    }\\n  },\\n  \\\"required\\\": [\\n    \\\"goal_analysis\\\",\\n    \\\"user_context\\\",\\n    \\\"domain_boundaries\\\",\\n    \\\"learning_approach\\\"\\n  ]\\n}\\n\\n**Critical Instructions:**\\n1. Use subject-specific terminology that reflects the actual goal content\\n2. Create tasks that are specific to the actual goal objectives\\n3. Focus on the user's specific context and constraints\\n4. Provide actionable, practical content\\n5. Adapt difficulty and approach to the goal's complexity level\\n6. Consider the goal characteristics when structuring the response\\n\\nGenerate intelligent, goal-specific content that directly addresses the user's objective with contextual relevance.\",\n      \"schema\": null,\n      \"goal\": \"Learn Python programming fundamentals\",\n      \"context\": {\n        \"learningStyle\": \"mixed\",\n        \"focusAreas\": [\n          \"basics\",\n          \"syntax\",\n          \"practice\"\n        ],\n        \"context\": \"Testing parameter passing fix\",\n        \"projectId\": \"learn_python_programming_1dva\",\n        \"pathName\": \"general\",\n        \"userConstraints\": {},\n        \"lifePreferences\": {},\n        \"urgency\": \"moderate\",\n        \"available_resources\": {\n          \"time\": \"flexible\",\n          \"budget\": \"moderate\",\n          \"tools\": \"standard\",\n          \"support\": \"self-directed\"\n        },\n        \"domain_context\": {\n          \"goal\": \"Learn Python programming fundamentals\",\n          \"context\": \"Testing parameter passing fix\",\n          \"constraints\": {},\n          \"focusAreas\": [],\n          \"learningStyle\": \"mixed\",\n          \"timeConstraints\": \"flexible\",\n          \"resourceConstraints\": \"standard\"\n        },\n        \"accumulated_context\": null,\n        \"context_evolution\": null,\n        \"enhanced_context\": null,\n        \"complexity_analysis\": null,\n        \"goalCharacteristics\": {\n          \"complexity\": \"low\",\n          \"score\": 0,\n          \"confidence\": 0.3,\n          \"characteristics\": [],\n          \"requiresDeepDecomposition\": false,\n          \"benefitsFromGranularity\": false\n        },\n        \"requireDomainSpecific\": true,\n        \"avoidGenericTemplates\": true,\n        \"progressiveDepth\": 3\n      }\n    },\n    \"parameters\": {\n      \"maxTokens\": 2000,\n      \"temperature\": 0.9\n    },\n    \"processingInstructions\": \"Please process the following prompt with your full intelligence:\\n- Provide thoughtful, comprehensive analysis\\n- Use your complete reasoning capabilities\\n- Consider the provided context in your analysis\\n- Build upon previous insights where relevant\",\n    \"responseFormat\": \"text\"\n  },\n  \"goalCharacteristics\": {\n    \"complexity\": \"low\",\n    \"score\": 0,\n    \"confidence\": 0.3,\n    \"characteristics\": [],\n    \"requiresDeepDecomposition\": false,\n    \"benefitsFromGranularity\": false\n  }\n}\n\n**Required Response Schema:**\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"strategic_branches\": {\n      \"type\": \"array\",\n      \"minItems\": 3,\n      \"maxItems\": 7,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\"\n          },\n          \"description\": {\n            \"type\": \"string\"\n          },\n          \"priority\": {\n            \"type\": \"integer\",\n            \"minimum\": 1\n          },\n          \"rationale\": {\n            \"type\": \"string\"\n          },\n          \"domain_focus\": {\n            \"type\": \"string\"\n          },\n          \"expected_outcomes\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"context_adaptations\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"pain_point_mitigations\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"exploration_opportunities\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          }\n        },\n        \"required\": [\n          \"name\",\n          \"description\",\n          \"priority\",\n          \"rationale\",\n          \"domain_focus\"\n        ]\n      }\n    },\n    \"progression_logic\": {\n      \"type\": \"string\"\n    },\n    \"alternative_paths\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    }\n  },\n  \"required\": [\n    \"strategic_branches\",\n    \"progression_logic\"\n  ]\n}\n\n**Critical Instructions:**\n1. Use subject-specific terminology that reflects the actual goal content\n2. Create tasks that are specific to the actual goal objectives\n3. Focus on the user's specific context and constraints\n4. Provide actionable, practical content\n5. Adapt difficulty and approach to the goal's complexity level\n6. Consider the goal characteristics when structuring the response\n\nGenerate intelligent, goal-specific content that directly addresses the user's objective with contextual relevance.",
+      "schema": null,
+      "goal": "Learn Python programming fundamentals",
+      "context": ""
+    },
+    "parameters": {
+      "maxTokens": 2000,
+      "temperature": 0.95
+    },
+    "processingInstructions": "Please process the following prompt with your full intelligence:\n- Provide thoughtful, comprehensive analysis\n- Use your complete reasoning capabilities",
+    "responseFormat": "text"
+  },
+  "level3_taskDecomposition": [
+    {
+      "type": "CLAUDE_INTELLIGENCE_REQUEST",
+      "requestId": "req_1752264527384_o7qr64pex",
+      "prompt": {
+        "system": "Break this strategic branch into practical, achievable tasks considering user's real-world constraints.",
+        "user": "You are an expert learning system that creates goal-specific, contextually appropriate learning paths.\n\nIMPORTANT: Generate content that is SPECIFIC to the goal and subject matter. Avoid generic terms like \"Foundation\", \"Research\", \"Capability\". Instead, use terminology that reflects the actual subject matter.\n\n**Goal Analysis:**\n- Primary Goal: Learning objective not specified\n- Complexity: low\n- Characteristics: unspecified\n- Requires Deep Decomposition: false\n- Benefits from Granularity: false\n\n**Input Data:**\n{\n  \"branchName\": \"Fundamentals Fundamentals\",\n  \"branchDescription\": \"Build fundamental understanding of Learn Python programming fundamentals\",\n  \"goalContext\": {\n    \"type\": \"CLAUDE_INTELLIGENCE_REQUEST\",\n    \"requestId\": \"req_1752264503335_tgn2my9ct\",\n    \"prompt\": {\n      \"system\": \"Analyze this goal to understand the specific domain, user context, constraints, and success criteria. \\n      Focus on domain-specific requirements and avoid generic learning approaches. \\n      Identify the specific field (e.g., AI/ML, cybersecurity, programming, photography) and tailor the analysis accordingly.\",\n      \"user\": \"You are an expert learning system that creates goal-specific, contextually appropriate learning paths.\\n\\nIMPORTANT: Generate content that is SPECIFIC to the goal and subject matter. Avoid generic terms like \\\"Foundation\\\", \\\"Research\\\", \\\"Capability\\\". Instead, use terminology that reflects the actual subject matter.\\n\\n**Goal Analysis:**\\n- Primary Goal: Learn Python programming fundamentals\\n- Complexity: low\\n- Characteristics: \\n- Requires Deep Decomposition: false\\n- Benefits from Granularity: false\\n\\n**Input Data:**\\n{\\n  \\\"goal\\\": \\\"Learn Python programming fundamentals\\\",\\n  \\\"initialContext\\\": {\\n    \\\"learningStyle\\\": \\\"mixed\\\",\\n    \\\"focusAreas\\\": [\\n      \\\"basics\\\",\\n      \\\"syntax\\\",\\n      \\\"practice\\\"\\n    ],\\n    \\\"context\\\": \\\"Testing parameter passing fix\\\",\\n    \\\"projectId\\\": \\\"learn_python_programming_1dva\\\",\\n    \\\"pathName\\\": \\\"general\\\",\\n    \\\"userConstraints\\\": {},\\n    \\\"lifePreferences\\\": {},\\n    \\\"urgency\\\": \\\"moderate\\\",\\n    \\\"available_resources\\\": {\\n      \\\"time\\\": \\\"flexible\\\",\\n      \\\"budget\\\": \\\"moderate\\\",\\n      \\\"tools\\\": \\\"standard\\\",\\n      \\\"support\\\": \\\"self-directed\\\"\\n    },\\n    \\\"domain_context\\\": {\\n      \\\"goal\\\": \\\"Learn Python programming fundamentals\\\",\\n      \\\"context\\\": \\\"Testing parameter passing fix\\\",\\n      \\\"constraints\\\": {},\\n      \\\"focusAreas\\\": [],\\n      \\\"learningStyle\\\": \\\"mixed\\\",\\n      \\\"timeConstraints\\\": \\\"flexible\\\",\\n      \\\"resourceConstraints\\\": \\\"standard\\\"\\n    },\\n    \\\"accumulated_context\\\": null,\\n    \\\"context_evolution\\\": null,\\n    \\\"enhanced_context\\\": null,\\n    \\\"complexity_analysis\\\": null,\\n    \\\"goalCharacteristics\\\": {\\n      \\\"complexity\\\": \\\"low\\\",\\n      \\\"score\\\": 0,\\n      \\\"confidence\\\": 0.3,\\n      \\\"characteristics\\\": [],\\n      \\\"requiresDeepDecomposition\\\": false,\\n      \\\"benefitsFromGranularity\\\": false\\n    },\\n    \\\"requireDomainSpecific\\\": true,\\n    \\\"avoidGenericTemplates\\\": true,\\n    \\\"progressiveDepth\\\": 3\\n  }\\n}\\n\\n**Required Response Schema:**\\n{\\n  \\\"type\\\": \\\"object\\\",\\n  \\\"properties\\\": {\\n    \\\"goal_analysis\\\": {\\n      \\\"type\\\": \\\"object\\\",\\n      \\\"properties\\\": {\\n        \\\"primary_goal\\\": {\\n          \\\"type\\\": \\\"string\\\"\\n        },\\n        \\\"goal_complexity\\\": {\\n          \\\"type\\\": \\\"integer\\\",\\n          \\\"minimum\\\": 1,\\n          \\\"maximum\\\": 10\\n        },\\n        \\\"domain_type\\\": {\\n          \\\"type\\\": \\\"string\\\"\\n        },\\n        \\\"domain_characteristics\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"success_criteria\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"timeline_assessment\\\": {\\n          \\\"type\\\": \\\"string\\\"\\n        },\\n        \\\"complexity_factors\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        }\\n      }\\n    },\\n    \\\"user_context\\\": {\\n      \\\"type\\\": \\\"object\\\",\\n      \\\"properties\\\": {\\n        \\\"background_knowledge\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"available_resources\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"constraints\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"motivation_drivers\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"risk_factors\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        }\\n      }\\n    },\\n    \\\"domain_boundaries\\\": {\\n      \\\"type\\\": \\\"object\\\",\\n      \\\"properties\\\": {\\n        \\\"core_domain_elements\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"relevant_adjacent_domains\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"exploration_worthy_topics\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"irrelevant_domains\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        }\\n      }\\n    },\\n    \\\"learning_approach\\\": {\\n      \\\"type\\\": \\\"object\\\",\\n      \\\"properties\\\": {\\n        \\\"recommended_strategy\\\": {\\n          \\\"type\\\": \\\"string\\\"\\n        },\\n        \\\"key_principles\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"potential_pain_points\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        },\\n        \\\"success_enablers\\\": {\\n          \\\"type\\\": \\\"array\\\",\\n          \\\"items\\\": {\\n            \\\"type\\\": \\\"string\\\"\\n          }\\n        }\\n      }\\n    }\\n  },\\n  \\\"required\\\": [\\n    \\\"goal_analysis\\\",\\n    \\\"user_context\\\",\\n    \\\"domain_boundaries\\\",\\n    \\\"learning_approach\\\"\\n  ]\\n}\\n\\n**Critical Instructions:**\\n1. Use subject-specific terminology that reflects the actual goal content\\n2. Create tasks that are specific to the actual goal objectives\\n3. Focus on the user's specific context and constraints\\n4. Provide actionable, practical content\\n5. Adapt difficulty and approach to the goal's complexity level\\n6. Consider the goal characteristics when structuring the response\\n\\nGenerate intelligent, goal-specific content that directly addresses the user's objective with contextual relevance.\",\n      \"schema\": null,\n      \"goal\": \"Learn Python programming fundamentals\",\n      \"context\": {\n        \"learningStyle\": \"mixed\",\n        \"focusAreas\": [\n          \"basics\",\n          \"syntax\",\n          \"practice\"\n        ],\n        \"context\": \"Testing parameter passing fix\",\n        \"projectId\": \"learn_python_programming_1dva\",\n        \"pathName\": \"general\",\n        \"userConstraints\": {},\n        \"lifePreferences\": {},\n        \"urgency\": \"moderate\",\n        \"available_resources\": {\n          \"time\": \"flexible\",\n          \"budget\": \"moderate\",\n          \"tools\": \"standard\",\n          \"support\": \"self-directed\"\n        },\n        \"domain_context\": {\n          \"goal\": \"Learn Python programming fundamentals\",\n          \"context\": \"Testing parameter passing fix\",\n          \"constraints\": {},\n          \"focusAreas\": [],\n          \"learningStyle\": \"mixed\",\n          \"timeConstraints\": \"flexible\",\n          \"resourceConstraints\": \"standard\"\n        },\n        \"accumulated_context\": null,\n        \"context_evolution\": null,\n        \"enhanced_context\": null,\n        \"complexity_analysis\": null,\n        \"goalCharacteristics\": {\n          \"complexity\": \"low\",\n          \"score\": 0,\n          \"confidence\": 0.3,\n          \"characteristics\": [],\n          \"requiresDeepDecomposition\": false,\n          \"benefitsFromGranularity\": false\n        },\n        \"requireDomainSpecific\": true,\n        \"avoidGenericTemplates\": true,\n        \"progressiveDepth\": 3\n      }\n    },\n    \"parameters\": {\n      \"maxTokens\": 2000,\n      \"temperature\": 0.9\n    },\n    \"processingInstructions\": \"Please process the following prompt with your full intelligence:\\n- Provide thoughtful, comprehensive analysis\\n- Use your complete reasoning capabilities\\n- Consider the provided context in your analysis\\n- Build upon previous insights where relevant\",\n    \"responseFormat\": \"text\"\n  },\n  \"userContext\": {\n    \"goal\": \"Learn Python programming fundamentals\",\n    \"learningHistoryCount\": 0,\n    \"lastUpdate\": \"2025-07-11T20:08:35.976Z\"\n  }\n}\n\n**Required Response Schema:**\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tasks\": {\n      \"type\": \"array\",\n      \"minItems\": 3,\n      \"maxItems\": 10,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": {\n            \"type\": \"string\"\n          },\n          \"description\": {\n            \"type\": \"string\"\n          },\n          \"estimated_duration\": {\n            \"type\": \"string\"\n          },\n          \"difficulty_level\": {\n            \"type\": \"integer\",\n            \"minimum\": 1,\n            \"maximum\": 5\n          },\n          \"prerequisites\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"success_criteria\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"context_considerations\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"potential_obstacles\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"alternative_approaches\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          }\n        },\n        \"required\": [\n          \"title\",\n          \"description\",\n          \"estimated_duration\",\n          \"difficulty_level\"\n        ]\n      }\n    },\n    \"decomposition_rationale\": {\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"tasks\",\n    \"decomposition_rationale\"\n  ]\n}\n\n**Critical Instructions:**\n1. Use subject-specific terminology that reflects the actual goal content\n2. Create tasks that are specific to the actual goal objectives\n3. Focus on the user's specific context and constraints\n4. Provide actionable, practical content\n5. Adapt difficulty and approach to the goal's complexity level\n6. Consider the goal characteristics when structuring the response\n\nGenerate intelligent, goal-specific content that directly addresses the user's objective with contextual relevance.",
+        "schema": null,
+        "context": ""
+      },
+      "parameters": {
+        "maxTokens": 2500,
+        "temperature": 0.85
+      },
+      "processingInstructions": "Please process the following prompt with your full intelligence:\n- Provide thoughtful, comprehensive analysis\n- Use your complete reasoning capabilities",
+      "responseFormat": "text"
+    }
+  ],
+  "availableDepth": 3,
+  "maxDepth": 6,
+  "canExpand": true,
+  "schemaGenerated": true,
+  "hierarchyMetadata": {
+    "total_depth": 3,
+    "total_branches": 0,
+    "total_tasks": 3,
+    "schema_intelligence": true,
+    "context_learning_enabled": true,
+    "generation_method": "pure_schema_driven",
+    "last_updated": "2025-07-11T20:09:17.760Z"
+  },
+  "generation_context": {
+    "method": "pure_schema_driven_intelligence",
+    "timestamp": "2025-07-11T20:08:47.391Z",
+    "schema_engine_version": "1.0.0",
+    "goal_achievement_context": true,
+    "awaiting_generation": false
+  }
+}

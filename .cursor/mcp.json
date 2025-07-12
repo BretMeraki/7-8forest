@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:\\Users\\schlansk\\.forest-data"
+      ]
+    },
+    "forest": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\schlansk\\Downloads\\7-3forest-main\\___stage1\\forest-mcp-server.js"
+      ],
+      "cwd": "C:\\Users\\schlansk\\Downloads\\7-3forest-main",
+      "env": {
+        "FOREST_DATA_DIR": "C:\\Users\\schlansk\\.forest-data",
+        "FOREST_VECTOR_PROVIDER": "sqlitevec"
+      }
+    }
+  }
+}

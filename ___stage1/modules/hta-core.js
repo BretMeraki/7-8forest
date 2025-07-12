@@ -265,7 +265,7 @@ export class HTACore {
             params: {
               prompt: branchPrompt,
               max_tokens: 4000,
-              temperature: 0.7,
+              temperature: 0.95,
               system: 'You are an expert learning strategist. Generate comprehensive, actionable learning paths.',
             }
           });
@@ -302,26 +302,59 @@ export class HTACore {
   }
 
   async buildHTATree(args) {
+    // Enhanced parameter debugging and validation
+    console.error('🔍 HTACore.buildHTATree called with args:', JSON.stringify(args, null, 2));
+    
     // Use activePath from config if not provided
     const activeProject = await this.projectManagement.getActiveProject();
     if (!activeProject || !activeProject.project_id) {
       throw new Error('No active project found. Please create a project using create_project_forest or switch to an existing project using switch_project_forest first.');
     }
     const projectId = activeProject.project_id;
+    console.error('✅ Active project found:', projectId);
+    
     const config = await this.dataPersistence.loadProjectData(projectId, 'config.json');
+    console.error('📁 Project config loaded:', config ? 'Found' : 'Not found');
+    if (config) {
+      console.error('📁 Config goal:', config.goal);
+      console.error('📁 Config context:', config.context);
+    }
+    
     const pathName = args.path_name || args.pathName || (config && config.activePath) || 'general';
     const learningStyle = args.learning_style || args.learningStyle || 'mixed';
     const focusAreas = args.focus_areas || args.focusAreas || [];
     const goalOverride = args.goal;
     const contextOverride = args.context;
-    // Parameter logging for debugging
-    console.error('HTACore.buildHTATree called with args:', args);
-    console.error('HTACore.buildHTATree extracted parameters:', {
-      pathName, learningStyle, focusAreas, goalOverride, contextOverride
-    });
+    
+    // Enhanced parameter logging for debugging
+    console.error('🔍 HTACore.buildHTATree parameter extraction:');
+    console.error('  - pathName:', pathName);
+    console.error('  - learningStyle:', learningStyle);
+    console.error('  - focusAreas:', focusAreas);
+    console.error('  - goalOverride:', goalOverride);
+    console.error('  - contextOverride:', contextOverride);
+    console.error('  - config.goal:', config?.goal);
+    console.error('  - config.context:', config?.context);
+    
     try {
       if (!this.projectManagement) {
         throw new Error('ProjectManagement instance is null or undefined in HTACore');
+      }
+
+      // Check if onboarding is complete before allowing HTA tree generation
+      const onboardingState = await this.dataPersistence.loadProjectData(projectId, 'onboarding_state.json');
+      if (!onboardingState || onboardingState.current_stage !== 'completed') {
+        return {
+          success: false,
+          content: [
+            {
+              type: 'text',
+              text: `**Gated Onboarding Required** 🔒\n\nAccording to the Forest documentation, HTA trees should only be generated after completing the 6-stage gated onboarding process to ensure comprehensive context gathering.\n\n**Current Status**: ${onboardingState?.current_stage || 'Not Started'}\n\n**Next Steps**: Use \`start_learning_journey_forest\` to begin the gated onboarding process.`,
+            },
+          ],
+          requires_onboarding: true,
+          current_stage: onboardingState?.current_stage || 'not_started',
+        };
       }
 
       const existingHTA = await this.loadPathHTA(projectId, pathName || 'general');
@@ -331,7 +364,7 @@ export class HTACore {
           content: [
             {
               type: 'text',
-              text: `**HTA Tree Already Exists**\n\n**Goal**: ${existingHTA.goal}\n**Complexity**: ${existingHTA.complexity?.score || 'Unknown'}/10\n**Tasks**: ${existingHTA.frontierNodes.length} generated\n**Created**: ${existingHTA.created}\n\n**Tree is ready!** Use \`get_next_task\` to continue your journey.\n\n**Note**: HTA trees are generated only once per project. Use branch evolution to expand specific areas as you learn.`,
+              text: `**HTA Tree Already Exists**\n\n**Goal**: ${existingHTA.goal}\n**Complexity**: ${existingHTA.complexity?.score || 'Unknown'}/10\n**Tasks**: ${existingHTA.frontierNodes.length} generated\n**Created**: ${existingHTA.created}\n\n**Tree is ready!** Use \`get_next_pipeline_forest\` to see your Next + Pipeline task presentation.\n\n**Note**: HTA trees are generated only once per project through the gated onboarding process. Use task evolution to expand specific areas as you learn.`,
             },
           ],
           existing_tree: true,
@@ -341,12 +374,37 @@ export class HTACore {
         };
       }
 
-      const goal = goalOverride || config.goal;
+      // Enhanced goal resolution with detailed debugging
+      console.error('🎯 Goal resolution process:');
+      console.error('  - goalOverride:', goalOverride);
+      console.error('  - config.goal:', config?.goal);
+      console.error('  - onboardingState.goal:', onboardingState?.goal);
+      
+      const goal = goalOverride || config?.goal || onboardingState?.goal;
+      console.error('  - Final resolved goal:', goal);
+      
       if (!goal) {
-        throw new Error('Goal must be provided either in project configuration or as a parameter. Use create_project_forest to set a project goal, or provide goal parameter in your tool call.');
+        console.error('❌ Goal resolution failed - no goal found in any source');
+        throw new Error('Goal must be provided either in project configuration or as a parameter. Use start_learning_journey_forest to set a project goal through gated onboarding.');
       }
-      const context = contextOverride || config.context || '';
-      const complexityAnalysis = await this.analyzeGoalComplexityAsync(goal, context);
+      
+      console.error('🌍 Context resolution process:');
+      console.error('  - contextOverride:', contextOverride);
+      console.error('  - config.context:', config?.context);
+      console.error('  - onboardingState.context:', onboardingState?.context);
+      
+      const context = contextOverride || config?.context || onboardingState?.context || '';
+      console.error('  - Final resolved context:', context);
+      
+      // Use comprehensive context from onboarding if available
+      const comprehensiveContext = onboardingState.aggregate_context || {
+        goal,
+        context,
+        complexity: onboardingState.complexity_analysis,
+        user_profile: onboardingState.user_profile || {}
+      };
+      
+      const complexityAnalysis = comprehensiveContext.complexity || await this.analyzeGoalComplexityAsync(goal, context);
 
       const htaData = {
         projectId,
@@ -354,121 +412,243 @@ export class HTACore {
         created: new Date().toISOString(),
         learningStyle,
         focusAreas,
-        goal: config.goal,
-        context: config.context || '',
+        goal: goal,
+        context: context,
         complexity: complexityAnalysis,
         strategicBranches: [],
         frontierNodes: [],
         completedNodes: [],
         collaborative_sessions: [],
+        // 6-Level HTA Architecture according to documentation
+        level1_goalContext: comprehensiveContext.goal_context || null,
+        level2_strategicBranches: null,
+        level3_taskDecomposition: null,
+        level4_microParticles: null,
+        level5_nanoActions: null,
+        level6_contextAdaptivePrimitives: null,
         hierarchyMetadata: {
-          total_depth: complexityAnalysis.recommended_depth,
+          total_depth: complexityAnalysis.recommended_depth || 3,
           total_branches: 0,
           total_sub_branches: 0,
           total_tasks: 0,
           branch_task_distribution: {},
+          schema_driven: true,
+          gated_onboarding_complete: true,
         },
         generation_context: {
-          method: 'deep_hierarchical_ai',
+          method: 'pure_schema_driven_with_gated_onboarding',
           timestamp: new Date().toISOString(),
-          goal: config.goal,
-          complexity_score: complexityAnalysis.score,
+          goal: goal,
+          complexity_score: complexityAnalysis.score || 5,
           awaiting_generation: true,
+          onboarding_context: comprehensiveContext,
         },
       };
 
-      // Try Claude generation first
-      if (this.claudeInterface && globalCircuitBreaker.canExecute()) {
+      // PRIMARY: Use Pure Schema-Driven HTA System with Enhanced 6-Level Progressive Architecture
+      if (this.pureSchemaHTA && htaData.frontierNodes.length === 0) {
         try {
-          const richContext = buildRichContext(
-            config,
-            complexityAnalysis,
-            learningStyle,
-            focusAreas
-          );
-          const constraintsPrompt = formatConstraintsForPrompt(config);
-          const branchPrompt = this.buildBranchGenerationPrompt(
-            complexityAnalysis,
-            config,
-            focusAreas,
-            learningStyle,
-            richContext,
-            constraintsPrompt
-          );
-
-          const claudeResponse = await globalCircuitBreaker.execute(async () => {
-            return await this.claudeInterface.request({
-              method: 'llm/completion',
-              params: {
-                prompt: branchPrompt,
-                max_tokens: 4000,
-                temperature: 0.7,
-                system: 'You are an expert learning strategist. Generate comprehensive, actionable learning paths.'
-              }
-            });
-          });
-
-          if (claudeResponse && claudeResponse.strategic_branches) {
-            const frontierNodes = this.transformTasksToFrontierNodes(
-              claudeResponse.strategic_branches,
-              complexityAnalysis
-            );
-            htaData.strategicBranches = claudeResponse.strategic_branches;
-            htaData.frontierNodes = frontierNodes;
-            htaData.hierarchyMetadata.total_tasks = frontierNodes.length;
-            htaData.hierarchyMetadata.total_branches = claudeResponse.strategic_branches.length;
-            htaData.generation_context.awaiting_generation = false;
-          }
-        } catch (claudeError) {
-          console.warn('Claude generation failed, using skeleton tasks:', claudeError.message);
-        }
-      }
-
-      // Primary: Use Schema-Driven HTA System for superintelligent generation
-      if (htaData.frontierNodes.length === 0) {
-        try {
-          // Use pure schema-driven approach for strategic branches
-          const strategicBranches = await this.generateStrategicBranches(
-            config.goal,
-            complexityAnalysis,
-            focusAreas
-          );
+          console.log('🧠 Generating comprehensive HTA tree using Pure Schema-Driven Intelligence with Enhanced 6-Level Architecture');
+          console.error('🔍 Schema HTA parameters before generation:');
+          console.error('  - goal:', goal);
+          console.error('  - comprehensiveContext:', JSON.stringify(comprehensiveContext, null, 2));
           
-          // Generate schema-driven tasks
-          const skeletonTasks = await this.generateSkeletonTasks(
-            complexityAnalysis,
-            config,
-            focusAreas,
-            learningStyle
-          );
+          // Generate complete 6-level HTA tree foundation
+          const schemaHTATree = await this.pureSchemaHTA.generateHTATree(goal, comprehensiveContext);
+          console.error('✅ Schema HTA tree generated successfully');
+          console.error('🔍 Generated tree structure:', Object.keys(schemaHTATree || {}));
+          
+          // Extract Level 1: Goal Context
+          htaData.level1_goalContext = schemaHTATree.level1_goalContext;
+          console.log('✅ Level 1 (Goal Context) generated');
+          
+          // Extract Level 2: Strategic Branches
+          htaData.level2_strategicBranches = schemaHTATree.level2_strategicBranches;
+          console.log('✅ Level 2 (Strategic Branches) generated');
+          
+          // Convert strategic branches to HTA format
+          if (schemaHTATree.level2_strategicBranches?.strategic_branches) {
+            htaData.strategicBranches = schemaHTATree.level2_strategicBranches.strategic_branches.map(branch => ({
+              name: branch.name,
+              description: branch.description,
+              priority: branch.priority,
+              domain_focus: branch.domain_focus,
+              rationale: branch.rationale,
+              expected_outcomes: branch.expected_outcomes || [],
+              context_adaptations: branch.context_adaptations || [],
+              pain_point_mitigations: branch.pain_point_mitigations || [],
+              exploration_opportunities: branch.exploration_opportunities || [],
+              tasks: [],
+              schema_generated: true
+            }));
+          }
+          
+          // Generate COMPREHENSIVE Level 3 Task Decomposition for each strategic branch
+          const allTasks = [];
+          let taskCounter = 1;
+          
+          for (const branch of htaData.strategicBranches) {
+            console.log(`🔄 Processing branch: ${branch.name}`);
+            
+            // Level 3: Comprehensive Task Decomposition
+            const taskDecomposition = await this.pureSchemaHTA.generateTaskDecomposition(
+              branch.name,
+              branch.description,
+              htaData.level1_goalContext,
+              comprehensiveContext
+            );
+            
+            if (taskDecomposition.tasks) {
+              // Create comprehensive tasks with progressive decomposition capabilities
+              for (const task of taskDecomposition.tasks) {
+                console.log(`  📋 Creating comprehensive task: ${task.title}`);
+                
+                // Determine decomposition depth based on task complexity and importance
+                const shouldDecomposeDeep = task.difficulty_level >= 3 || 
+                                          taskCounter <= 3 || // First 3 tasks get deep decomposition
+                                          task.prerequisites?.length > 0;
+                
+                // Level 4: Generate Micro-Particles (conditional based on complexity)
+                let microParticles = null;
+                if (shouldDecomposeDeep) {
+                  microParticles = await this.pureSchemaHTA.generateMicroParticles(
+                    task.title,
+                    task.description,
+                    htaData.level1_goalContext,
+                    comprehensiveContext
+                  );
+                  console.log(`    🔬 Generated ${microParticles.micro_particles?.length || 0} micro-particles for ${task.title}`);
+                }
+                
+                // Level 5: Generate Nano-Actions (for critical tasks only)
+                const nanoActions = [];
+                if (shouldDecomposeDeep && microParticles?.micro_particles?.length > 0) {
+                  // Generate nano-actions for the most critical micro-particles
+                  const criticalMicroParticles = microParticles.micro_particles
+                    .sort((a, b) => b.difficulty - a.difficulty)
+                    .slice(0, Math.min(3, microParticles.micro_particles.length));
+                  
+                  for (const microParticle of criticalMicroParticles) {
+                    const nanoAction = await this.pureSchemaHTA.generateNanoActions(
+                      microParticle.title,
+                      microParticle.description,
+                      htaData.level1_goalContext,
+                      comprehensiveContext
+                    );
+                    nanoActions.push(nanoAction);
+                  }
+                  console.log(`    ⚡ Generated ${nanoActions.length} nano-action sets for ${task.title}`);
+                }
+                
+                // Level 6: Generate Context-Adaptive Primitives (for the most complex tasks)
+                let contextAdaptivePrimitives = null;
+                if (shouldDecomposeDeep && nanoActions.length > 0 && task.difficulty_level >= 4) {
+                  const firstNanoAction = nanoActions[0].nano_actions?.[0];
+                  if (firstNanoAction) {
+                    contextAdaptivePrimitives = await this.pureSchemaHTA.generateContextAdaptivePrimitives(
+                      firstNanoAction.action_title,
+                      firstNanoAction.specific_steps?.join(', ') || 'Action steps',
+                      htaData.level1_goalContext,
+                      comprehensiveContext
+                    );
+                    console.log(`    🎯 Generated context-adaptive primitives for ${task.title}`);
+                  }
+                }
+                
+                // Create comprehensive task with intelligent decomposition
+                const comprehensiveTask = {
+                  id: `${branch.name.toLowerCase().replace(/\s+/g, '_')}_${taskCounter.toString().padStart(3, '0')}`,
+                  title: task.title,
+                  description: task.description,
+                  difficulty: task.difficulty_level || 2,
+                  duration: task.estimated_duration || '25 minutes',
+                  branch: branch.name,
+                  priority: branch.priority * 100 + taskCounter * 10,
+                  prerequisites: task.prerequisites || [],
+                  learningOutcome: task.success_criteria?.join(', ') || `Progress in ${branch.name}`,
+                  generated: true,
+                  schema_driven: true,
+                  completed: false,
+                  
+                  // Progressive 6-Level HTA Architecture Data
+                  level3_taskDecomposition: taskDecomposition,
+                  level4_microParticles: microParticles,
+                  level5_nanoActions: nanoActions,
+                  level6_contextAdaptivePrimitives: contextAdaptivePrimitives,
+                  
+                  // Enhanced metadata
+                  context_considerations: task.context_considerations || [],
+                  potential_obstacles: task.potential_obstacles || [],
+                  alternative_approaches: task.alternative_approaches || [],
+                  
+                  // Granularity indicators and decomposition flags
+                  has_micro_particles: microParticles?.micro_particles?.length > 0,
+                  has_nano_actions: nanoActions.length > 0,
+                  has_context_primitives: contextAdaptivePrimitives !== null,
+                  decomposition_depth: contextAdaptivePrimitives ? 6 : nanoActions.length > 0 ? 5 : microParticles?.micro_particles?.length > 0 ? 4 : 3,
+                  can_decompose_further: !shouldDecomposeDeep, // Flag for progressive decomposition
+                  decomposition_complexity: task.difficulty_level || 2
+                };
+                
+                allTasks.push(comprehensiveTask);
+                taskCounter++;
+              }
+            }
+          }
+          
+          // Enhanced metadata with comprehensive statistics
+          htaData.frontierNodes = allTasks;
+          htaData.hierarchyMetadata.total_tasks = allTasks.length;
+          htaData.hierarchyMetadata.total_branches = htaData.strategicBranches.length;
+          htaData.hierarchyMetadata.average_decomposition_depth = allTasks.reduce((sum, task) => sum + task.decomposition_depth, 0) / allTasks.length;
+          htaData.hierarchyMetadata.tasks_with_micro_particles = allTasks.filter(task => task.has_micro_particles).length;
+          htaData.hierarchyMetadata.tasks_with_nano_actions = allTasks.filter(task => task.has_nano_actions).length;
+          htaData.hierarchyMetadata.tasks_with_context_primitives = allTasks.filter(task => task.has_context_primitives).length;
+          htaData.hierarchyMetadata.tasks_ready_for_decomposition = allTasks.filter(task => task.can_decompose_further).length;
+          
+          htaData.generation_context.awaiting_generation = false;
+          htaData.generation_context.method = 'pure_schema_driven_progressive_6_level';
+          htaData.generation_context.decomposition_stats = {
+            total_levels_generated: 6,
+            average_depth: htaData.hierarchyMetadata.average_decomposition_depth,
+            deep_decomposition_coverage: `${Math.round((htaData.hierarchyMetadata.tasks_with_context_primitives / allTasks.length) * 100)}%`,
+            progressive_decomposition_ready: htaData.hierarchyMetadata.tasks_ready_for_decomposition
+          };
+          
+          console.log(`🧠 Generated ${htaData.frontierNodes.length} comprehensive tasks using Enhanced 6-Level HTA Intelligence`);
+          console.log(`📊 Decomposition Stats: Avg depth ${htaData.hierarchyMetadata.average_decomposition_depth.toFixed(1)}, ${htaData.hierarchyMetadata.tasks_with_context_primitives} tasks with full 6-level decomposition`);
+          console.log(`🚀 Progressive Decomposition: ${htaData.hierarchyMetadata.tasks_ready_for_decomposition} tasks ready for deeper decomposition as needed`);
+          
+        } catch (schemaError) {
+          console.warn('Schema-driven generation failed, using enhanced fallback:', schemaError.message);
+          
+          // Enhanced fallback still using onboarding context
+          const strategicBranches = await this.generateStrategicBranches(goal, complexityAnalysis, focusAreas);
+          const skeletonTasks = await this.generateSkeletonTasks(complexityAnalysis, config, focusAreas, learningStyle);
           
           htaData.strategicBranches = strategicBranches;
           htaData.frontierNodes = Array.isArray(skeletonTasks)
-            ? skeletonTasks.map(task => ({
-                ...task,
-                completed: task.completed || false
-              }))
+            ? skeletonTasks.map(task => ({ ...task, completed: false }))
             : [];
           htaData.hierarchyMetadata.total_tasks = htaData.frontierNodes.length;
           htaData.hierarchyMetadata.total_branches = strategicBranches.length;
           htaData.generation_context.awaiting_generation = false;
-          htaData.generation_context.method = 'pure_schema_driven';
-          
-          console.log(`🧠 Generated ${htaData.frontierNodes.length} tasks using Pure Schema-Driven HTA Intelligence`);
-        } catch (schemaError) {
-          console.warn('Schema-driven generation failed, using basic fallback:', schemaError.message);
-          
-          // Ultimate fallback to simple generation
-          const basicBranches = this.generateBasicFallbackBranches(config.goal);
-          const basicTasks = this.generateBasicFallbackTasks(config.goal, complexityAnalysis, focusAreas);
-          
-          htaData.strategicBranches = basicBranches;
-          htaData.frontierNodes = basicTasks.map(task => ({ ...task, completed: false }));
-          htaData.hierarchyMetadata.total_tasks = basicTasks.length;
-          htaData.hierarchyMetadata.total_branches = basicBranches.length;
-          htaData.generation_context.awaiting_generation = false;
-          htaData.generation_context.method = 'basic_fallback';
+          htaData.generation_context.method = 'enhanced_fallback_with_onboarding';
         }
+      }
+      
+      // Fallback if no schema system available
+      if (htaData.frontierNodes.length === 0) {
+        console.warn('No schema-driven system available, using basic fallback');
+        const basicBranches = this.generateBasicFallbackBranches(goal);
+        const basicTasks = this.generateBasicFallbackTasks(goal, complexityAnalysis, focusAreas);
+        
+        htaData.strategicBranches = basicBranches;
+        htaData.frontierNodes = basicTasks.map(task => ({ ...task, completed: false }));
+        htaData.hierarchyMetadata.total_tasks = basicTasks.length;
+        htaData.hierarchyMetadata.total_branches = basicBranches.length;
+        htaData.generation_context.awaiting_generation = false;
+        htaData.generation_context.method = 'basic_fallback';
       }
 
       // Save to traditional persistence
@@ -516,13 +696,15 @@ export class HTACore {
         content: [
           {
             type: 'text',
-            text: `**HTA Tree Generated Successfully!**\n\n**Goal**: ${htaData.goal}\n**Complexity**: ${htaData.complexity.score}/10 (${htaData.complexity.level})\n**Tasks Generated**: ${htaData.frontierNodes.length}\n**Strategic Branches**: ${htaData.strategicBranches.length}\n**Vector Storage**: ${vectorStorageStatus.success ? '✅ Saved' : '⚠️ Not Saved'} (${vectorStorageStatus.provider || 'unknown'})\n\n**Next Steps**: Use \`get_next_task\` to begin your learning journey!\n\n**Tree Structure**:\n${this.formatTreeSummary(htaData)}`,
+            text: `**HTA Tree Generated Successfully!** 🌲\n\n**Goal**: ${htaData.goal}\n**Complexity**: ${htaData.complexity.score}/10 (${htaData.complexity.level})\n**Tasks Generated**: ${htaData.frontierNodes.length}\n**Strategic Branches**: ${htaData.strategicBranches.length}\n**6-Level Architecture**: ${htaData.generation_context.method.includes('6_level') ? '✅ Enabled' : '⚠️ Fallback'}\n**Vector Storage**: ${vectorStorageStatus.success ? '✅ Saved' : '⚠️ Not Saved'} (${vectorStorageStatus.provider || 'unknown'})\n\n**Next Steps**: Use \`get_next_pipeline_forest\` to see your Next + Pipeline task presentation!\n\n**Tree Structure**:\n${this.formatTreeSummary(htaData)}\n\n**Note**: This tree was generated using the gated onboarding process for optimal context and quality.`,
           },
         ],
         tasks_count: htaData.frontierNodes.length,
         complexity: htaData.complexity,
         strategic_branches: htaData.strategicBranches.length,
         vectorStorage: vectorStorageStatus,
+        six_level_architecture: htaData.generation_context.method.includes('6_level'),
+        gated_onboarding_complete: true,
       };
     } catch (error) {
       console.error('HTACore.buildHTATree failed:', error);
@@ -531,7 +713,7 @@ export class HTACore {
         content: [
           {
             type: 'text',
-            text: `**HTA Tree Generation Failed**\n\nError: ${error.message}\n\nPlease check your project configuration and try again.`,
+            text: `**HTA Tree Generation Failed**\n\nError: ${error.message}\n\nPlease check your project configuration and try again. If this persists, ensure you've completed the gated onboarding process first.`,
           },
         ],
         error: error.message,
@@ -816,6 +998,161 @@ export class HTACore {
     return `${duration} minutes`;
   }
 
+  /**
+   * Progressive 6-Level Decomposition - Decompose tasks further as needed
+   * This method can be called to decompose tasks that initially only had Level 3 generation
+   */
+  async progressivelyDecomposeTask(projectId, taskId, targetLevel = 6, userContext = {}) {
+    try {
+      // Load the HTA tree to find the task
+      const htaData = await this.loadPathHTA(projectId, 'general');
+      if (!htaData || !htaData.frontierNodes) {
+        throw new Error('No HTA tree found for progressive decomposition');
+      }
+      
+      const task = htaData.frontierNodes.find(t => t.id === taskId);
+      if (!task) {
+        throw new Error(`Task ${taskId} not found in HTA tree`);
+      }
+      
+      const originalLevel = task.decomposition_depth || 3;
+      if (originalLevel >= targetLevel) {
+        return {
+          success: true,
+          message: `Task ${taskId} already decomposed to level ${originalLevel}`,
+          task: task
+        };
+      }
+      
+      console.log(`🔄 Progressively decomposing task "${task.title}" from level ${originalLevel} to level ${targetLevel}`);
+      
+      // Level 4: Generate Micro-Particles if not already present
+      if (originalLevel < 4 && targetLevel >= 4) {
+        const microParticles = await this.pureSchemaHTA.generateMicroParticles(
+          task.title,
+          task.description,
+          htaData.level1_goalContext,
+          userContext
+        );
+        task.level4_microParticles = microParticles;
+        task.has_micro_particles = microParticles?.micro_particles?.length > 0;
+        console.log(`    🔬 Generated ${microParticles.micro_particles?.length || 0} micro-particles`);
+      }
+      
+      // Level 5: Generate Nano-Actions if not already present
+      if (originalLevel < 5 && targetLevel >= 5 && task.level4_microParticles?.micro_particles?.length > 0) {
+        const nanoActions = [];
+        const criticalMicroParticles = task.level4_microParticles.micro_particles
+          .sort((a, b) => b.difficulty - a.difficulty)
+          .slice(0, Math.min(3, task.level4_microParticles.micro_particles.length));
+        
+        for (const microParticle of criticalMicroParticles) {
+          const nanoAction = await this.pureSchemaHTA.generateNanoActions(
+            microParticle.title,
+            microParticle.description,
+            htaData.level1_goalContext,
+            userContext
+          );
+          nanoActions.push(nanoAction);
+        }
+        
+        task.level5_nanoActions = nanoActions;
+        task.has_nano_actions = nanoActions.length > 0;
+        console.log(`    ⚡ Generated ${nanoActions.length} nano-action sets`);
+      }
+      
+      // Level 6: Generate Context-Adaptive Primitives if not already present
+      if (originalLevel < 6 && targetLevel >= 6 && task.level5_nanoActions?.length > 0) {
+        const firstNanoAction = task.level5_nanoActions[0].nano_actions?.[0];
+        if (firstNanoAction) {
+          const contextAdaptivePrimitives = await this.pureSchemaHTA.generateContextAdaptivePrimitives(
+            firstNanoAction.action_title,
+            firstNanoAction.specific_steps?.join(', ') || 'Action steps',
+            htaData.level1_goalContext,
+            userContext
+          );
+          task.level6_contextAdaptivePrimitives = contextAdaptivePrimitives;
+          task.has_context_primitives = contextAdaptivePrimitives !== null;
+          console.log(`    🎯 Generated context-adaptive primitives`);
+        }
+      }
+      
+      // Update decomposition metadata
+      task.decomposition_depth = Math.max(originalLevel, targetLevel);
+      task.can_decompose_further = task.decomposition_depth < 6;
+      task.last_decomposition_update = new Date().toISOString();
+      
+      // Save the updated HTA tree
+      await this.saveHTAData(projectId, 'general', htaData);
+      
+      console.log(`✅ Task "${task.title}" successfully decomposed to level ${task.decomposition_depth}`);
+      
+      return {
+        success: true,
+        message: `Task "${task.title}" decomposed from level ${originalLevel} to level ${task.decomposition_depth}`,
+        task: task,
+        decomposition_stats: {
+          original_level: originalLevel,
+          new_level: task.decomposition_depth,
+          has_micro_particles: task.has_micro_particles,
+          has_nano_actions: task.has_nano_actions,
+          has_context_primitives: task.has_context_primitives
+        }
+      };
+      
+    } catch (error) {
+      console.error('Progressive decomposition failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        task_id: taskId
+      };
+    }
+  }
+
+  /**
+   * Get decomposition details for a specific task
+   */
+  async getTaskDecompositionDetails(projectId, taskId) {
+    try {
+      const htaData = await this.loadPathHTA(projectId, 'general');
+      if (!htaData || !htaData.frontierNodes) {
+        throw new Error('No HTA tree found');
+      }
+      
+      const task = htaData.frontierNodes.find(t => t.id === taskId);
+      if (!task) {
+        throw new Error(`Task ${taskId} not found`);
+      }
+      
+      return {
+        success: true,
+        task_id: taskId,
+        title: task.title,
+        current_level: task.decomposition_depth || 3,
+        can_decompose_further: task.can_decompose_further,
+        decomposition_data: {
+          level3_tasks: task.level3_taskDecomposition ? 'Present' : 'Not available',
+          level4_micro_particles: task.level4_microParticles ? `${task.level4_microParticles.micro_particles?.length || 0} micro-particles` : 'Not generated',
+          level5_nano_actions: task.level5_nanoActions ? `${task.level5_nanoActions.length} nano-action sets` : 'Not generated',
+          level6_primitives: task.level6_contextAdaptivePrimitives ? 'Context-adaptive primitives available' : 'Not generated'
+        },
+        detailed_data: {
+          micro_particles: task.level4_microParticles,
+          nano_actions: task.level5_nanoActions,
+          context_primitives: task.level6_contextAdaptivePrimitives
+        }
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        task_id: taskId
+      };
+    }
+  }
+
   transformTasksToFrontierNodes(strategicBranches, complexityAnalysis) {
     const frontierNodes = [];
     let taskId = 1;
@@ -999,7 +1336,7 @@ Return JSON format:
           {
             id: `${firstBranch.phase || 'foundation'}_intro_001`,
             title: `Introduction to ${firstBranch.name}`,
-            description: `Get started with ${firstBranch.description}`,
+            description: `Begin learning ${firstBranch.name} concepts and fundamentals`,
             phase: firstBranch.phase || 'foundation',
             branchId: firstBranch.id,
             difficulty: 2,

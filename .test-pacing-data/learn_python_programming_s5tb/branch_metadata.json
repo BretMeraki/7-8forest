@@ -1,0 +1,29 @@
+{
+  "branches": [
+    {
+      "name": "Application Foundations",
+      "priority": 1,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Application Application",
+      "priority": 2,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Application Mastery",
+      "priority": 3,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Application Implementation",
+      "priority": 4,
+      "task_count": 0,
+      "vectorized": true
+    }
+  ],
+  "last_vectorized": "2025-07-11T00:54:25.694Z"
+}

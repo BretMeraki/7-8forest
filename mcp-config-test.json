@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "forest-filtered": {
+      "command": "node",
+      "args": ["___stage1/forest-mcp-server.js"],
+      "cwd": "/Users/bretmeraki/Downloads/7-3forest-main/claude-workspace",
+      "env": {
+        "FOREST_DATA_DIR": "/Users/bretmeraki/Downloads/7-3forest-main/.forest-data",
+        "FOREST_VECTOR_PROVIDER": "sqlitevec",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}

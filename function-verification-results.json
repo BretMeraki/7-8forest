@@ -1,0 +1,138 @@
+{
+  "timestamp": "2025-07-12T01:13:06.049Z",
+  "tests": [
+    {
+      "name": "Diagnostic Verifier Import",
+      "status": "PASS",
+      "details": {
+        "info": "Module imported successfully"
+      },
+      "timestamp": "2025-07-12T01:13:06.056Z"
+    },
+    {
+      "name": "Diagnostic Verifier Creation",
+      "status": "PASS",
+      "details": {
+        "info": "Instance created"
+      },
+      "timestamp": "2025-07-12T01:13:06.057Z"
+    },
+    {
+      "name": "Verify createProject Function",
+      "status": "PASS",
+      "details": {
+        "info": "createProject exists: true"
+      },
+      "timestamp": "2025-07-12T01:13:06.064Z"
+    },
+    {
+      "name": "Verify initialize Function",
+      "status": "PASS",
+      "details": {
+        "info": "initialize exists: true"
+      },
+      "timestamp": "2025-07-12T01:13:06.090Z"
+    },
+    {
+      "name": "Verify Non-Existent Function",
+      "status": "PASS",
+      "details": {
+        "info": "nonExistentFunction123 exists: false"
+      },
+      "timestamp": "2025-07-12T01:13:06.093Z"
+    },
+    {
+      "name": "Verify File Exists",
+      "status": "PASS",
+      "details": {
+        "info": "File exists: true"
+      },
+      "timestamp": "2025-07-12T01:13:06.093Z"
+    },
+    {
+      "name": "Comprehensive Verification",
+      "status": "PASS",
+      "details": {
+        "info": "Comprehensive check completed"
+      },
+      "timestamp": "2025-07-12T01:13:06.203Z"
+    },
+    {
+      "name": "Diagnostic Helper Import",
+      "status": "PASS",
+      "details": {
+        "info": "Module imported successfully"
+      },
+      "timestamp": "2025-07-12T01:13:06.206Z"
+    },
+    {
+      "name": "Diagnostic Helper Creation",
+      "status": "PASS",
+      "details": {
+        "info": "Instance created"
+      },
+      "timestamp": "2025-07-12T01:13:06.206Z"
+    },
+    {
+      "name": "Helper Function Verification",
+      "status": "PASS",
+      "details": {
+        "info": "Function exists: true, Severity: LOW"
+      },
+      "timestamp": "2025-07-12T01:13:06.208Z"
+    },
+    {
+      "name": "Diagnostic Handlers Import",
+      "status": "PASS",
+      "details": {
+        "info": "Module imported successfully"
+      },
+      "timestamp": "2025-07-12T01:13:06.210Z"
+    },
+    {
+      "name": "Diagnostic Handlers Creation",
+      "status": "PASS",
+      "details": {
+        "info": "Instance created with mock helper"
+      },
+      "timestamp": "2025-07-12T01:13:06.211Z"
+    },
+    {
+      "name": "Handlers Function Verification",
+      "status": "PASS",
+      "details": {
+        "info": "Function verification result: true"
+      },
+      "timestamp": "2025-07-12T01:13:06.212Z"
+    },
+    {
+      "name": "Path Format 1",
+      "status": "PASS",
+      "details": {
+        "info": "Path: ___stage1/modules/project-management.js, Result: true"
+      },
+      "timestamp": "2025-07-12T01:13:06.213Z"
+    },
+    {
+      "name": "Path Format 2",
+      "status": "PASS",
+      "details": {
+        "info": "Path: ./___stage1/modules/project-management.js, Result: true"
+      },
+      "timestamp": "2025-07-12T01:13:06.214Z"
+    },
+    {
+      "name": "Path Format 3",
+      "status": "PASS",
+      "details": {
+        "info": "Path: C:\\Users\\schlansk\\Downloads\\7-3forest-main\\___stage1\\modules\\project-management.js, Result: true"
+      },
+      "timestamp": "2025-07-12T01:13:06.215Z"
+    }
+  ],
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "total": 16
+  }
+}

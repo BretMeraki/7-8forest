@@ -1,0 +1,11 @@
+{
+  "projects": [
+    {
+      "id": "learn_python_programming_s5tb",
+      "goal": "Learn Python programming fundamentals and build a web application",
+      "created_at": "2025-07-11T00:53:20.879Z",
+      "last_accessed": "2025-07-11T00:53:20.887Z"
+    }
+  ],
+  "activeProject": "learn_python_programming_s5tb"
+}

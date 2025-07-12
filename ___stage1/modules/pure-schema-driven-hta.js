@@ -28,18 +28,39 @@ export class PureSchemaHTASystem {
   }
 
   /**
-   * Generate complete 6-level HTA tree - pure LLM intelligence with domain focus
+   * Generate HTA tree with progressive depth - intelligent balance of completeness and efficiency
    */
   async generateHTATree(goal, initialContext = {}) {
-    // Enhanced context for better domain detection
+    // Enhanced parameter validation and debugging
+    console.error('🧠 PureSchemaHTASystem.generateHTATree called with:');
+    console.error('  - goal:', goal);
+    console.error('  - goal type:', typeof goal);
+    console.error('  - goal defined:', goal !== undefined);
+    console.error('  - initialContext:', JSON.stringify(initialContext, null, 2));
+    
+    if (!goal) {
+      console.error('❌ CRITICAL: Goal is undefined or null in PureSchemaHTASystem.generateHTATree');
+      throw new Error('Goal parameter is required but was undefined or null');
+    }
+    
+    // Enhanced context for better goal analysis
     const enhancedContext = {
       ...initialContext,
-      domainDetection: this.detectDomain(goal),
+      goalCharacteristics: this.analyzeGoalCharacteristics(goal),
       requireDomainSpecific: true,
-      avoidGenericTemplates: true
+      avoidGenericTemplates: true,
+      progressiveDepth: initialContext.progressiveDepth || this.determineOptimalDepth(goal, initialContext)
     };
+    
+    console.error('✅ Enhanced context prepared:', {
+      goalCharacteristics: enhancedContext.goalCharacteristics,
+      progressiveDepth: enhancedContext.progressiveDepth
+    });
 
     // Level 1: Goal Achievement Context Analysis
+    console.error('🎯 Generating Level 1: Goal Achievement Context Analysis');
+    console.error('  - About to call generateLevelContent with goal:', goal);
+    
     const goalContext = await this.generateLevelContent(
       'goalContext',
       { goal, initialContext: enhancedContext },
@@ -47,73 +68,336 @@ export class PureSchemaHTASystem {
       Focus on domain-specific requirements and avoid generic learning approaches. 
       Identify the specific field (e.g., AI/ML, cybersecurity, programming, photography) and tailor the analysis accordingly.`
     );
+    
+    console.error('✅ Level 1 Goal Context generated successfully');
 
-    // Level 2: Strategic Branches with domain emphasis
+    // Level 2: Strategic Branches with goal-specific emphasis
     const strategicBranches = await this.generateLevelContent(
       'strategicBranches',
-      { goal, goalContext, domainContext: enhancedContext.domainDetection },
-      `Generate domain-specific strategic learning phases for "${goal}". 
-      Use domain-appropriate terminology and branch names. For example:
-      - AI/ML: "Mathematical Foundations", "Algorithm Understanding", "Model Implementation"
-      - Cybersecurity: "Security Fundamentals", "Threat Analysis", "Defense Strategies"
-      - Programming: "Language Mastery", "Problem-Solving Patterns", "Project Development"
+      { goal, goalContext, goalCharacteristics: enhancedContext.goalCharacteristics },
+      `Generate goal-specific strategic learning phases for "${goal}". 
+      Analyze the goal characteristics and create branches that are:
+      - Specific to the actual subject matter and objectives
+      - Appropriate for the complexity level (${enhancedContext.goalCharacteristics.complexity})
+      - Tailored to the goal characteristics: ${enhancedContext.goalCharacteristics.characteristics.join(', ')}
+      - Progressive in nature (building from fundamentals to advanced)
       
-      Create 3-5 branches that are specific to this domain and goal, NOT generic phases like "Foundation" or "Research".`
+      Create 3-5 branches that are specific to this goal and domain, NOT generic phases like "Foundation" or "Research". 
+      Use terminology that reflects the actual subject matter of the goal.`
     );
 
     // Initialize context tracking
     this.initializeContextTracking(goal, goalContext);
 
-    return {
+    // Progressive depth generation based on complexity and user needs
+    const result = {
       goal,
       level1_goalContext: goalContext,
       level2_strategicBranches: strategicBranches,
       userContext: this.getContextSnapshot(),
       domainBoundaries: this.getDomainBoundaries(),
-      domainDetection: enhancedContext.domainDetection,
+      goalCharacteristics: enhancedContext.goalCharacteristics,
       generated: new Date().toISOString(),
-      schemaVersion: '2.0-domain-adaptive'
+      schemaVersion: '2.0-progressive'
+    };
+
+    // Generate additional levels based on progressive depth setting
+    // Ensure goal is included in enhanced context for all levels
+    const enhancedContextWithGoal = {
+      ...enhancedContext,
+      goal: goal
+    };
+    
+    if (enhancedContext.progressiveDepth >= 3) {
+      result.level3_taskDecomposition = await this.generateProgressiveTaskDecomposition(
+        strategicBranches, goalContext, enhancedContextWithGoal
+      );
+    }
+
+    if (enhancedContext.progressiveDepth >= 4) {
+      result.level4_microParticles = await this.generateProgressiveMicroParticles(
+        result.level3_taskDecomposition, goalContext, enhancedContextWithGoal
+      );
+    }
+
+    if (enhancedContext.progressiveDepth >= 5) {
+      result.level5_nanoActions = await this.generateProgressiveNanoActions(
+        result.level4_microParticles, goalContext, enhancedContextWithGoal
+      );
+    }
+
+    if (enhancedContext.progressiveDepth >= 6) {
+      result.level6_contextAdaptivePrimitives = await this.generateProgressiveContextAdaptivePrimitives(
+        result.level5_nanoActions, goalContext, enhancedContextWithGoal
+      );
+    }
+
+    // Mark what levels are available for on-demand generation
+    result.availableDepth = enhancedContext.progressiveDepth;
+    result.maxDepth = 6;
+    result.canExpand = enhancedContext.progressiveDepth < 6;
+
+    return result;
+  }
+
+  /**
+   * Analyze goal characteristics for domain-agnostic complexity assessment
+   */
+  analyzeGoalCharacteristics(goal) {
+    console.error('🔍 analyzeGoalCharacteristics called with goal:', goal);
+    
+    if (!goal || typeof goal !== 'string') {
+      console.error('⚠️  WARNING: Goal is undefined or not a string in analyzeGoalCharacteristics');
+      return { complexity: 'low', confidence: 0.1, characteristics: ['unspecified'], score: 0, requiresDeepDecomposition: false, benefitsFromGranularity: false };
+    }
+    
+    const goalLower = goal.toLowerCase();
+    const characteristics = [];
+    let complexityScore = 0;
+    
+    // Technical complexity indicators
+    const technicalIndicators = [
+      'implement', 'build', 'develop', 'create', 'design', 'architect',
+      'system', 'framework', 'algorithm', 'model', 'application'
+    ];
+    
+    // Mastery/depth indicators
+    const masteryIndicators = [
+      'master', 'expert', 'advanced', 'professional', 'comprehensive',
+      'deep', 'thorough', 'complete', 'full understanding'
+    ];
+    
+    // Process/methodology indicators
+    const processIndicators = [
+      'methodology', 'process', 'workflow', 'pipeline', 'procedure',
+      'strategy', 'approach', 'method', 'technique'
+    ];
+    
+    // Multi-step/complex indicators
+    const complexityIndicators = [
+      'complex', 'multi-step', 'integrate', 'combine', 'synthesize',
+      'optimize', 'scale', 'production', 'enterprise'
+    ];
+    
+    // Creative/exploratory indicators
+    const creativeIndicators = [
+      'creative', 'artistic', 'explore', 'discover', 'understand',
+      'learn about', 'basics', 'introduction', 'overview'
+    ];
+    
+    // Analyze indicators
+    if (technicalIndicators.some(indicator => goalLower.includes(indicator))) {
+      characteristics.push('technical');
+      complexityScore += 2;
+    }
+    
+    if (masteryIndicators.some(indicator => goalLower.includes(indicator))) {
+      characteristics.push('mastery-focused');
+      complexityScore += 3;
+    }
+    
+    if (processIndicators.some(indicator => goalLower.includes(indicator))) {
+      characteristics.push('process-oriented');
+      complexityScore += 2;
+    }
+    
+    if (complexityIndicators.some(indicator => goalLower.includes(indicator))) {
+      characteristics.push('high-complexity');
+      complexityScore += 3;
+    }
+    
+    if (creativeIndicators.some(indicator => goalLower.includes(indicator))) {
+      characteristics.push('exploratory');
+      complexityScore += 1;
+    }
+    
+    // Determine overall complexity
+    let complexity = 'low';
+    if (complexityScore >= 6) complexity = 'high';
+    else if (complexityScore >= 3) complexity = 'medium';
+    
+    return {
+      complexity,
+      score: complexityScore,
+      confidence: Math.min(0.9, 0.3 + (complexityScore * 0.1)),
+      characteristics,
+      requiresDeepDecomposition: complexityScore >= 5,
+      benefitsFromGranularity: characteristics.includes('technical') || characteristics.includes('mastery-focused')
     };
   }
 
   /**
-   * Detect domain from goal for better prompting
+   * Determine optimal depth for progressive generation based on goal complexity and user context
    */
-  detectDomain(goal) {
-    if (!goal) return { domain: 'general', confidence: 0.1 };
+  determineOptimalDepth(goal, context) {
+    const characteristics = this.analyzeGoalCharacteristics(goal);
+    let baseDepth = 3; // Start at Task Decomposition
+
+    // Increase depth for mastery or technical goals
+    if (characteristics.benefitsFromGranularity) {
+      baseDepth = 4;
+    }
+
+    // Adjust for high complexity
+    if (characteristics.complexity === 'high') {
+      baseDepth += 1;
+    }
+
+    // Adjust depth based on urgency
+    if (context.urgency === 'high') {
+      baseDepth = Math.max(2, baseDepth - 1); // Reduce depth for urgent goals
+    }
+
+    // Adjust for detailed planners
+    if (context.detailedPlanning) {
+      baseDepth = Math.min(6, baseDepth + 1);
+    }
+
+    return baseDepth;
+  }
+
+  /**
+   * Generate Level 3: Task Decomposition for strategic branches (Progressive)
+   */
+  async generateProgressiveTaskDecomposition(strategicBranches, goalContext, enhancedContext) {
+    console.error('🔧 generateProgressiveTaskDecomposition called with:');
+    console.error('  - strategicBranches:', JSON.stringify(strategicBranches, null, 2));
+    console.error('  - goalContext:', JSON.stringify(goalContext, null, 2));
+    console.error('  - enhancedContext:', JSON.stringify(enhancedContext, null, 2));
     
-    const goalLower = goal.toLowerCase();
+    // Extract goal from multiple sources to ensure it's never undefined
+    const goalText = this.extractGoalFromContext(enhancedContext, goalContext);
+    console.error('  - Extracted goal:', goalText);
     
-    const domains = [
-      {
-        name: 'ai_ml',
-        keywords: ['artificial intelligence', 'machine learning', 'neural network', 'deep learning', 'ai', 'ml', 'cnn', 'rnn', 'transformer'],
-        confidence: 0.9
-      },
-      {
-        name: 'cybersecurity',
-        keywords: ['cybersecurity', 'security', 'penetration', 'vulnerability', 'hacking', 'encryption', 'firewall'],
-        confidence: 0.9
-      },
-      {
-        name: 'programming',
-        keywords: ['programming', 'coding', 'development', 'software', 'javascript', 'python', 'java', 'react', 'node'],
-        confidence: 0.85
-      },
-      {
-        name: 'photography',
-        keywords: ['photography', 'photo', 'camera', 'lens', 'composition', 'lighting'],
-        confidence: 0.85
+    // Handle different strategic branches structures defensively
+    let branches = [];
+    
+    if (strategicBranches && strategicBranches.strategic_branches && Array.isArray(strategicBranches.strategic_branches)) {
+      branches = strategicBranches.strategic_branches;
+    } else if (strategicBranches && Array.isArray(strategicBranches)) {
+      branches = strategicBranches;
+    } else if (strategicBranches && typeof strategicBranches === 'object') {
+      // Check for other possible array properties
+      const possibleArrays = Object.values(strategicBranches).filter(val => Array.isArray(val));
+      if (possibleArrays.length > 0) {
+        branches = possibleArrays[0];
+      } else {
+        // Fallback: create a basic branch structure with domain-specific terms
+        const goalTerms = goalText.toLowerCase().split(' ');
+        const mainSubject = goalTerms[goalTerms.length - 1] || goalTerms[0] || 'subject';
+        const capitalizedSubject = mainSubject.charAt(0).toUpperCase() + mainSubject.slice(1);
+        
+        branches = [{
+          name: `${capitalizedSubject} Fundamentals`,
+          description: `Build fundamental understanding of ${goalText}`,
+          domain_adaptive: true
+        }];
       }
-    ];
-    
-    for (const domain of domains) {
-      if (domain.keywords.some(keyword => goalLower.includes(keyword))) {
-        return { domain: domain.name, confidence: domain.confidence, keywords_matched: domain.keywords.filter(k => goalLower.includes(k)) };
-      }
+    } else {
+      // Ultimate fallback - extract domain-specific terms from goal
+      const goalTerms = goalText.toLowerCase().split(' ');
+      const mainSubject = goalTerms[goalTerms.length - 1] || goalTerms[0] || 'subject';
+      const capitalizedSubject = mainSubject.charAt(0).toUpperCase() + mainSubject.slice(1);
+      
+      branches = [{
+        name: `${capitalizedSubject} Fundamentals`,
+        description: `Build fundamental understanding of ${goalText}`,
+        domain_adaptive: true
+      }];
     }
     
-    return { domain: 'general', confidence: 0.3 };
+    // Generate tasks for first 1-2 branches to start, not all branches
+    const branchesToProcess = branches.slice(0, Math.min(2, branches.length));
+    
+    // Enhanced context with goal included
+    const contextWithGoal = {
+      ...this.getContextSnapshot(),
+      goal: goalText
+    };
+    
+    return await Promise.all(branchesToProcess.map(branch => 
+      this.generateTaskDecomposition(branch.name || branch.title || "Learning Task", 
+                                   branch.description || "Build knowledge and skills", 
+                                   goalContext, contextWithGoal)
+    ));
+  }
+
+  /**
+   * Generate Level 4: Micro-Particles (Progressive)
+   */
+  async generateProgressiveMicroParticles(taskDecomposition, goalContext, enhancedContext) {
+    // Extract goal to ensure it's available
+    const goalText = this.extractGoalFromContext(enhancedContext, goalContext);
+    
+    // Handle taskDecomposition defensively
+    const tasks = Array.isArray(taskDecomposition) ? taskDecomposition : [];
+    
+    // Generate micro-particles for first few tasks only
+    const tasksToProcess = tasks.slice(0, Math.min(3, tasks.length));
+    
+    // Enhanced context with goal included
+    const contextWithGoal = {
+      ...this.getContextSnapshot(),
+      goal: goalText
+    };
+    
+    return await Promise.all(tasksToProcess.map(task => 
+      this.generateMicroParticles(task.title || task.name || "Learning Task", 
+                                task.description || "Complete task", 
+                                goalContext, contextWithGoal)
+    ));
+  }
+
+  /**
+   * Generate Level 5: Nano-Actions (Progressive)
+   */
+  async generateProgressiveNanoActions(microParticles, goalContext, enhancedContext) {
+    // Extract goal to ensure it's available
+    const goalText = this.extractGoalFromContext(enhancedContext, goalContext);
+    
+    // Handle microParticles defensively
+    const particles = Array.isArray(microParticles) ? microParticles : [];
+    
+    // Generate nano-actions for first few micro-particles only
+    const particlesToProcess = particles.slice(0, Math.min(2, particles.length));
+    
+    // Enhanced context with goal included
+    const contextWithGoal = {
+      ...this.getContextSnapshot(),
+      goal: goalText
+    };
+    
+    return await Promise.all(particlesToProcess.map(particle =>
+      this.generateNanoActions(particle.title || particle.name || "Learning Action", 
+                             particle.description || "Complete micro-task", 
+                             goalContext, contextWithGoal)
+    ));
+  }
+
+  /**
+   * Generate Level 6: Context-Adaptive Primitives (Progressive)
+   */
+  async generateProgressiveContextAdaptivePrimitives(nanoActions, goalContext, enhancedContext) {
+    // Extract goal to ensure it's available
+    const goalText = this.extractGoalFromContext(enhancedContext, goalContext);
+    
+    // Handle nanoActions defensively
+    const actions = Array.isArray(nanoActions) ? nanoActions : [];
+    
+    // Generate primitives for first nano-action only
+    const actionsToProcess = actions.slice(0, 1);
+    
+    // Enhanced context with goal included
+    const contextWithGoal = {
+      ...this.getContextSnapshot(),
+      goal: goalText
+    };
+    
+    return await Promise.all(actionsToProcess.map(action =>
+      this.generateContextAdaptivePrimitives(action.title || action.name || "Learning Primitive", 
+                                           action.description || "Execute action", 
+                                           goalContext, contextWithGoal)
+    ));
   }
 
   /**
@@ -122,9 +406,12 @@ export class PureSchemaHTASystem {
   async generateTaskDecomposition(branchName, branchDescription, goalContext, currentUserContext) {
     const refinedContext = await this.refineContextBasedOnLearning(currentUserContext);
     
+    // Extract goal to ensure it's available for prompt building
+    const goalText = this.extractGoalFromContext(refinedContext, goalContext);
+    
     return await this.generateLevelContent(
       'taskDecomposition',
-      { branchName, branchDescription, goalContext, userContext: refinedContext },
+      { branchName, branchDescription, goalContext, userContext: refinedContext, goal: goalText },
       "Break this strategic branch into practical, achievable tasks considering user's real-world constraints."
     );
   }
@@ -135,9 +422,12 @@ export class PureSchemaHTASystem {
   async generateMicroParticles(taskTitle, taskDescription, goalContext, currentUserContext) {
     const refinedContext = await this.refineContextBasedOnLearning(currentUserContext);
     
+    // Extract goal to ensure it's available for prompt building
+    const goalText = this.extractGoalFromContext(refinedContext, goalContext);
+    
     return await this.generateLevelContent(
       'microParticles',
-      { taskTitle, taskDescription, goalContext, userContext: refinedContext },
+      { taskTitle, taskDescription, goalContext, userContext: refinedContext, goal: goalText },
       "Create foolproof micro-tasks that are so small they cannot fail, with clear validation criteria."
     );
   }
@@ -148,9 +438,12 @@ export class PureSchemaHTASystem {
   async generateNanoActions(microTitle, microDescription, goalContext, currentUserContext) {
     const refinedContext = await this.refineContextBasedOnLearning(currentUserContext);
     
+    // Extract goal to ensure it's available for prompt building
+    const goalText = this.extractGoalFromContext(refinedContext, goalContext);
+    
     return await this.generateLevelContent(
       'nanoActions',
-      { microTitle, microDescription, goalContext, userContext: refinedContext },
+      { microTitle, microDescription, goalContext, userContext: refinedContext, goal: goalText },
       "Break this micro-task into granular execution steps accounting for tool switching and context changes."
     );
   }
@@ -161,11 +454,76 @@ export class PureSchemaHTASystem {
   async generateContextAdaptivePrimitives(nanoTitle, nanoDescription, goalContext, currentUserContext) {
     const refinedContext = await this.refineContextBasedOnLearning(currentUserContext);
     
+    // Extract goal to ensure it's available for prompt building
+    const goalText = this.extractGoalFromContext(refinedContext, goalContext);
+    
     return await this.generateLevelContent(
       'contextAdaptivePrimitives',
-      { nanoTitle, nanoDescription, goalContext, userContext: refinedContext },
+      { nanoTitle, nanoDescription, goalContext, userContext: refinedContext, goal: goalText },
       "Create fundamental actions that adapt to different user constraints and situations."
     );
+  }
+
+  /**
+   * Expand existing tree to deeper levels on-demand
+   */
+  async expandTreeDepth(existingTree, targetDepth, specificBranch = null) {
+    const currentDepth = existingTree.availableDepth || 2;
+    
+    if (targetDepth <= currentDepth) {
+      return existingTree; // Already at or beyond target depth
+    }
+    
+    const goalContext = existingTree.level1_goalContext;
+    const enhancedContext = {
+      progressiveDepth: targetDepth,
+      expandingExisting: true,
+      specificBranch
+    };
+    
+    // Expand level by level
+    for (let depth = currentDepth + 1; depth <= targetDepth; depth++) {
+      switch (depth) {
+        case 3:
+          if (!existingTree.level3_taskDecomposition) {
+            existingTree.level3_taskDecomposition = await this.generateProgressiveTaskDecomposition(
+              existingTree.level2_strategicBranches, goalContext, enhancedContext
+            );
+          }
+          break;
+          
+        case 4:
+          if (!existingTree.level4_microParticles && existingTree.level3_taskDecomposition) {
+            existingTree.level4_microParticles = await this.generateProgressiveMicroParticles(
+              existingTree.level3_taskDecomposition, goalContext, enhancedContext
+            );
+          }
+          break;
+          
+        case 5:
+          if (!existingTree.level5_nanoActions && existingTree.level4_microParticles) {
+            existingTree.level5_nanoActions = await this.generateProgressiveNanoActions(
+              existingTree.level4_microParticles, goalContext, enhancedContext
+            );
+          }
+          break;
+          
+        case 6:
+          if (!existingTree.level6_contextAdaptivePrimitives && existingTree.level5_nanoActions) {
+            existingTree.level6_contextAdaptivePrimitives = await this.generateProgressiveContextAdaptivePrimitives(
+              existingTree.level5_nanoActions, goalContext, enhancedContext
+            );
+          }
+          break;
+      }
+    }
+    
+    // Update tree metadata
+    existingTree.availableDepth = targetDepth;
+    existingTree.canExpand = targetDepth < 6;
+    existingTree.lastExpanded = new Date().toISOString();
+    
+    return existingTree;
   }
 
   /**
@@ -202,8 +560,26 @@ export class PureSchemaHTASystem {
    * Universal content generation method - all intelligence from LLM
    */
   async generateLevelContent(schemaKey, inputData, systemMessage) {
+    console.error(`🔧 generateLevelContent called for schema: ${schemaKey}`);
+    console.error('  - inputData:', JSON.stringify(inputData, null, 2));
+    console.error('  - inputData.goal:', inputData.goal);
+    console.error('  - systemMessage:', systemMessage);
+    
     const schema = this.schemas[schemaKey];
     const prompt = this.buildUniversalPrompt(inputData, schema);
+    
+    console.error('🚀 Making LLM request to intelligence bridge');
+    console.error('  - prompt length:', prompt.length);
+    console.error('  - method: llm/completion');
+    console.error('  - max_tokens:', this.getTokenLimitForSchema(schemaKey));
+    console.error('  - temperature:', this.getTemperatureForSchema(schemaKey));
+    
+    // Add intelligent pacing for HTA tree generation quality assurance
+    const shouldPace = this.shouldApplyIntelligentPacing(schemaKey, inputData);
+    if (shouldPace) {
+      console.error('🎯 Applying intelligent pacing for quality HTA generation');
+      await this.applyIntelligentPacing(schemaKey, inputData);
+    }
     
     const response = await this.llmInterface.request({
       method: 'llm/completion',
@@ -211,24 +587,55 @@ export class PureSchemaHTASystem {
         prompt: prompt,
         max_tokens: this.getTokenLimitForSchema(schemaKey),
         temperature: this.getTemperatureForSchema(schemaKey),
-        system: systemMessage
+        system: systemMessage,
+        // Add goal explicitly to params for bridge debugging
+        goal: inputData.goal,
+        context: inputData.context || inputData.initialContext || '',
+        user_goal: inputData.goal,
+        learning_goal: inputData.goal
       }
     });
+    
+    console.error('✅ LLM response received');
+    console.error('  - response type:', typeof response);
+    console.error('  - response keys:', Object.keys(response || {}));
 
     return this.validateAndFormatResponse(response, schema, schemaKey);
   }
 
   /**
-   * Build universal prompt - domain-adaptive with explicit instructions
+   * Build universal prompt - goal-adaptive with explicit instructions
    */
   buildUniversalPrompt(inputData, schema) {
-    const domainGuidance = this.generateDomainGuidance(inputData.goal);
+    console.error('🏗️ buildUniversalPrompt called with:');
+    console.error('  - inputData.goal:', inputData.goal);
+    console.error('  - inputData keys:', Object.keys(inputData));
     
-    return `You are an expert learning system that creates domain-specific, contextually appropriate learning paths. 
+    const goalCharacteristics = inputData.goalCharacteristics || this.analyzeGoalCharacteristics(inputData.goal);
+    
+    console.error('  - goalCharacteristics:', goalCharacteristics);
+    
+    // Extract goal from various possible sources
+    const actualGoal = inputData.goal || inputData.user_goal || inputData.learning_goal || 
+                       inputData.initialContext?.goal || inputData.context?.goal || 
+                       'Learning objective not specified';
+    
+    console.error('  - actualGoal resolved to:', actualGoal);
+    
+    if (actualGoal === 'Learning objective not specified') {
+      console.error('⚠️ WARNING: Goal could not be resolved from any source');
+    }
+    
+    const prompt = `You are an expert learning system that creates goal-specific, contextually appropriate learning paths.
 
-IMPORTANT: Generate content that is SPECIFIC to the domain and goal. Avoid generic terms like "Foundation", "Research", "Capability". Instead, use domain-specific terminology.
+IMPORTANT: Generate content that is SPECIFIC to the goal and subject matter. Avoid generic terms like "Foundation", "Research", "Capability". Instead, use terminology that reflects the actual subject matter.
 
-${domainGuidance}
+**Goal Analysis:**
+- Primary Goal: ${actualGoal}
+- Complexity: ${goalCharacteristics.complexity}
+- Characteristics: ${goalCharacteristics.characteristics.join(', ')}
+- Requires Deep Decomposition: ${goalCharacteristics.requiresDeepDecomposition}
+- Benefits from Granularity: ${goalCharacteristics.benefitsFromGranularity}
 
 **Input Data:**
 ${JSON.stringify(inputData, null, 2)}
@@ -237,51 +644,191 @@ ${JSON.stringify(inputData, null, 2)}
 ${JSON.stringify(schema, null, 2)}
 
 **Critical Instructions:**
-1. Use domain-specific branch names (e.g., "Mathematical Foundations" for AI, "Security Fundamentals" for cybersecurity)
-2. Create tasks that are specific to the actual goal (e.g., "master CNNs for medical imaging" not "learn fundamentals")
+1. Use subject-specific terminology that reflects the actual goal content
+2. Create tasks that are specific to the actual goal objectives
 3. Focus on the user's specific context and constraints
 4. Provide actionable, practical content
-5. Adapt difficulty and approach to the user's experience level
+5. Adapt difficulty and approach to the goal's complexity level
+6. Consider the goal characteristics when structuring the response
 
-Generate intelligent, domain-specific content that directly addresses the user's goal with contextual relevance.`;
+Generate intelligent, goal-specific content that directly addresses the user's objective with contextual relevance.`;
+    
+    console.error('  - final prompt length:', prompt.length);
+    
+    return prompt;
   }
 
   /**
-   * Generate domain-specific guidance for prompting
+   * Intelligent Pacing System - Ensures HTA tree generation takes 25-30 seconds
+   * This provides users with confidence in the sophisticated analysis being performed
    */
-  generateDomainGuidance(goal) {
-    if (!goal) return '';
+  shouldApplyIntelligentPacing(schemaKey, inputData) {
+    // Apply pacing for core HTA generation levels
+    const pacingSchemas = ['goalContext', 'strategicBranches', 'taskDecomposition'];
+    const isCorePacingSchema = pacingSchemas.includes(schemaKey);
     
-    const goalLower = goal.toLowerCase();
+    // Apply pacing if it's a core schema or if goal complexity is high
+    const goalCharacteristics = inputData.goalCharacteristics || this.analyzeGoalCharacteristics(inputData.goal);
+    const isComplexGoal = goalCharacteristics.complexity === 'high' || goalCharacteristics.score >= 6;
     
-    if (/artificial intelligence|machine learning|neural network|deep learning|ai|ml|cnn|rnn|transformer/i.test(goalLower)) {
-      return `**DOMAIN: AI/Machine Learning**
-Focus on: Mathematical foundations, algorithm understanding, model implementation, practical applications.
-Example branches: "Mathematical Foundations", "Neural Network Architecture", "Model Training & Validation", "Real-World Applications".`;
-    }
-    
-    if (/cybersecurity|security|penetration|vulnerability|hacking|encryption|firewall/i.test(goalLower)) {
-      return `**DOMAIN: Cybersecurity**
-Focus on: Security principles, threat analysis, defense strategies, practical implementation.
-Example branches: "Security Fundamentals", "Threat Analysis & Assessment", "Defense Implementation", "Advanced Security Techniques".`;
-    }
-    
-    if (/programming|coding|development|software|javascript|python|java|react|node/i.test(goalLower)) {
-      return `**DOMAIN: Programming/Software Development**
-Focus on: Language mastery, problem-solving patterns, project development, deployment.
-Example branches: "Language Mastery", "Problem-Solving Patterns", "Project Development", "Production Deployment".`;
-    }
-    
-    if (/photography|photo|camera|lens|composition|lighting/i.test(goalLower)) {
-      return `**DOMAIN: Photography**
-Focus on: Technical skills, artistic composition, lighting, post-processing.
-Example branches: "Camera Fundamentals", "Composition Techniques", "Lighting Mastery", "Post-Processing Skills".`;
-    }
-    
-    return `**DOMAIN: Custom Learning Path**
-Analyze the goal to identify the specific domain and create appropriate domain-specific branches.
-Avoid generic terms - be specific to the actual subject matter.`;
+    return isCorePacingSchema || isComplexGoal;
   }
+
+  /**
+   * Apply intelligent pacing with progress indicators
+   */
+  async applyIntelligentPacing(schemaKey, inputData) {
+    const pacingConfig = this.getPacingConfigForSchema(schemaKey);
+    
+    // Show progress indicators based on schema type
+    const progressMessages = this.getProgressMessages(schemaKey, inputData);
+    
+    for (let i = 0; i < progressMessages.length; i++) {
+      console.error(`⏳ ${progressMessages[i]}`);
+      
+      // Apply intelligent delay based on schema complexity
+      const delay = this.calculateIntelligentDelay(schemaKey, i, progressMessages.length);
+      await this.sleep(delay);
+    }
+  }
+
+  /**
+   * Get pacing configuration for different schema types
+   */
+  getPacingConfigForSchema(schemaKey) {
+    const configs = {
+      goalContext: {
+        baseDelay: 2000,    // 2 seconds
+        complexityMultiplier: 1.5,
+        totalTargetTime: 8000 // 8 seconds
+      },
+      strategicBranches: {
+        baseDelay: 3000,    // 3 seconds
+        complexityMultiplier: 2.0,
+        totalTargetTime: 12000 // 12 seconds
+      },
+      taskDecomposition: {
+        baseDelay: 2500,    // 2.5 seconds
+        complexityMultiplier: 1.8,
+        totalTargetTime: 10000 // 10 seconds
+      },
+      microParticles: {
+        baseDelay: 1500,    // 1.5 seconds
+        complexityMultiplier: 1.2,
+        totalTargetTime: 5000 // 5 seconds
+      },
+      nanoActions: {
+        baseDelay: 1000,    // 1 second
+        complexityMultiplier: 1.0,
+        totalTargetTime: 3000 // 3 seconds
+      },
+      contextAdaptivePrimitives: {
+        baseDelay: 800,     // 0.8 seconds
+        complexityMultiplier: 1.0,
+        totalTargetTime: 2000 // 2 seconds
+      }
+    };
+    
+    return configs[schemaKey] || configs.goalContext;
+  }
+
+  /**
+   * Get progress messages for different schema types
+   */
+  getProgressMessages(schemaKey, inputData) {
+    const goalText = inputData.goal || 'your learning objective';
+    
+    const messages = {
+      goalContext: [
+        `Analyzing goal complexity and domain requirements for "${goalText}"`,
+        'Identifying key success factors and potential obstacles',
+        'Mapping user constraints and available resources',
+        'Establishing learning approach and strategic framework'
+      ],
+      strategicBranches: [
+        `Generating domain-specific strategic learning phases for "${goalText}"`,
+        'Analyzing optimal progression pathways and dependencies',
+        'Adapting branch structure to goal complexity and user context',
+        'Validating strategic coherence and learning effectiveness',
+        'Finalizing strategic branch architecture'
+      ],
+      taskDecomposition: [
+        'Breaking down strategic phases into actionable tasks',
+        'Optimizing task granularity and difficulty progression',
+        'Establishing clear success criteria and validation methods',
+        'Integrating context-specific considerations'
+      ],
+      microParticles: [
+        'Decomposing tasks into granular micro-actions',
+        'Ensuring foolproof execution steps',
+        'Establishing clear validation checkpoints'
+      ],
+      nanoActions: [
+        'Creating step-by-step execution procedures',
+        'Accounting for tool switches and context changes'
+      ],
+      contextAdaptivePrimitives: [
+        'Generating context-adaptive execution primitives',
+        'Optimizing for different user situations'
+      ]
+    };
+    
+    return messages[schemaKey] || messages.goalContext;
+  }
+
+  /**
+   * Calculate intelligent delay based on schema complexity and progress
+   */
+  calculateIntelligentDelay(schemaKey, stepIndex, totalSteps) {
+    const config = this.getPacingConfigForSchema(schemaKey);
+    
+    // Distribute total target time across steps with some variation
+    const baseStepTime = config.totalTargetTime / totalSteps;
+    
+    // Add some variation - earlier steps take a bit longer (analysis phase)
+    const progressFactor = stepIndex === 0 ? 1.3 : 
+                          stepIndex === totalSteps - 1 ? 0.8 : 1.0;
+    
+    // Add some randomness to feel more natural (±20%)
+    const randomFactor = 0.8 + (Math.random() * 0.4);
+    
+    return Math.floor(baseStepTime * progressFactor * randomFactor);
+  }
+
+  /**
+   * Sleep utility for intelligent pacing
+   */
+  async sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Extract goal from multiple context sources to prevent undefined issues
+   */
+  extractGoalFromContext(enhancedContext, goalContext) {
+    // Try multiple sources for goal extraction
+    const possibleGoals = [
+      enhancedContext?.goal,
+      goalContext?.goal,
+      goalContext?.prompt?.goal,
+      goalContext?.parameters?.goal,
+      this.userContext?.get('goal'),
+      enhancedContext?.initialContext?.goal,
+      enhancedContext?.context?.goal
+    ];
+    
+    const extractedGoal = possibleGoals.find(goal => goal && typeof goal === 'string' && goal.trim().length > 0);
+    
+    if (extractedGoal) {
+      console.error('✅ Goal successfully extracted:', extractedGoal);
+      return extractedGoal;
+    }
+    
+    console.error('⚠️  WARNING: Could not extract goal from any context source');
+    console.error('Available sources:', possibleGoals);
+    return 'learning objective';
+  }
+
 
   /**
    * Refine context based on accumulated learning
@@ -653,24 +1200,215 @@ Avoid generic terms - be specific to the actual subject matter.`;
 
   getTemperatureForSchema(schemaKey) {
     const temperatures = {
-      goalContext: 0.2,        // Lower for more consistent domain analysis
-      strategicBranches: 0.1,  // Much lower to ensure domain-specific branches
-      taskDecomposition: 0.15, // Lower for more consistent task naming
-      microParticles: 0.2,
-      nanoActions: 0.15,
-      contextAdaptivePrimitives: 0.1,
-      contextMining: 0.2,
-      domainRelevance: 0.2,
-      painPointValidation: 0.2,
-      treeEvolution: 0.25
+      goalContext: 0.9,        // High creativity for diverse goal analysis approaches
+      strategicBranches: 0.95, // Maximum creativity for unique learning pathways
+      taskDecomposition: 0.85, // High variability for creative task generation
+      microParticles: 0.9,     // Creative micro-task approaches
+      nanoActions: 0.8,        // Varied execution strategies
+      contextAdaptivePrimitives: 0.85, // Creative adaptation methods
+      contextMining: 0.9,      // Creative context insights
+      domainRelevance: 0.85,   // Varied relevance assessments
+      painPointValidation: 0.8, // Creative problem identification
+      treeEvolution: 0.95      // Maximum creativity for evolution strategies
     };
-    return temperatures[schemaKey] || 0.15; // Default lower temperature
+    return temperatures[schemaKey] || 0.85; // Default high temperature for creativity
   }
 
   validateAndFormatResponse(response, schema, schemaKey) {
-    // Basic validation that response matches schema structure
-    // In production, use proper JSON schema validator
+    console.error('🔍 validateAndFormatResponse called for schema:', schemaKey);
+    console.error('  - response type:', typeof response);
+    console.error('  - response keys:', Object.keys(response || {}));
+    
+    // Handle missing or invalid responses
+    if (!response || typeof response !== 'object') {
+      console.error('⚠️ Invalid response, generating fallback');
+      return this.generateFallbackResponse(schemaKey);
+    }
+    
+    // Clean strategic branches responses to prevent goal text corruption
+    if (schemaKey === 'strategicBranches' && response.strategic_branches) {
+      response.strategic_branches = response.strategic_branches.map(branch => {
+        // Clean branch names that might contain redundant goal text
+        if (branch.name && typeof branch.name === 'string') {
+          branch.name = this.cleanBranchName(branch.name);
+        }
+        
+        // Clean branch descriptions that might contain redundant goal text
+        if (branch.description && typeof branch.description === 'string') {
+          branch.description = this.cleanBranchDescription(branch.description);
+        }
+        
+        return branch;
+      });
+    }
+    
+    // Clean task decomposition responses
+    if (schemaKey === 'taskDecomposition' && response.tasks) {
+      response.tasks = response.tasks.map(task => {
+        // Clean task titles that might contain redundant goal text
+        if (task.title && typeof task.title === 'string') {
+          task.title = this.cleanTaskTitle(task.title);
+        }
+        
+        // Clean task descriptions that might contain redundant goal text
+        if (task.description && typeof task.description === 'string') {
+          task.description = this.cleanTaskDescription(task.description);
+        }
+        
+        return task;
+      });
+    }
+    
+    console.error('✅ Response validated and cleaned');
     return response;
+  }
+  
+  /**
+   * Generate fallback response for failed schema validation
+   */
+  generateFallbackResponse(schemaKey) {
+    console.error('🔄 Generating fallback response for schema:', schemaKey);
+    
+    if (schemaKey === 'strategicBranches') {
+      return {
+        strategic_branches: [
+          {
+            name: 'Fundamentals',
+            description: 'Build foundational knowledge and understanding',
+            priority: 1,
+            rationale: 'Essential groundwork for successful learning',
+            domain_focus: 'theoretical',
+            expected_outcomes: ['Core understanding', 'Strong foundation'],
+            context_adaptations: ['Adapt to user pace'],
+            pain_point_mitigations: ['Break down complex concepts'],
+            exploration_opportunities: ['Discover related areas']
+          },
+          {
+            name: 'Application',
+            description: 'Apply concepts in practical scenarios',
+            priority: 2,
+            rationale: 'Practice reinforces learning',
+            domain_focus: 'hands-on',
+            expected_outcomes: ['Practical skills', 'Real-world experience'],
+            context_adaptations: ['Adjust complexity'],
+            pain_point_mitigations: ['Provide examples'],
+            exploration_opportunities: ['Explore use cases']
+          },
+          {
+            name: 'Mastery',
+            description: 'Achieve proficiency and expertise',
+            priority: 3,
+            rationale: 'Deepen understanding and capabilities',
+            domain_focus: 'mixed',
+            expected_outcomes: ['Expert-level skills', 'Independent capability'],
+            context_adaptations: ['Challenge appropriately'],
+            pain_point_mitigations: ['Provide advanced support'],
+            exploration_opportunities: ['Explore advanced topics']
+          }
+        ],
+        progression_logic: 'Sequential progression from basics to mastery',
+        alternative_paths: ['Accelerated track', 'Hands-on focus', 'Theory-first approach']
+      };
+    }
+    
+    // Return basic fallback for other schemas
+    return {
+      fallback: true,
+      schema: schemaKey,
+      message: 'Generated fallback response due to validation failure'
+    };
+  }
+  
+  /**
+   * Clean branch name to remove redundant goal text
+   */
+  cleanBranchName(branchName) {
+    if (!branchName || typeof branchName !== 'string') {
+      return 'Learning Branch';
+    }
+    
+    // Remove common redundant patterns
+    const cleanName = branchName
+      .replace(/^(Build strong foundations in|Apply|Achieve proficiency in|Master|Implement and build using|Master the methodology and process for)\s+/i, '')
+      .replace(/\s+(Build strong foundations in|Apply|Achieve proficiency in|Master|Implement and build using|Master the methodology and process for)\s+/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // If the cleaned name is too short or empty, use the original
+    if (cleanName.length < 3) {
+      return branchName;
+    }
+    
+    return cleanName;
+  }
+  
+  /**
+   * Clean branch description to remove redundant goal text
+   */
+  cleanBranchDescription(description) {
+    if (!description || typeof description !== 'string') {
+      return 'Learning activities and tasks';
+    }
+    
+    // Remove common redundant patterns
+    const cleanDescription = description
+      .replace(/^(Build strong foundations in|Apply concepts in|Achieve proficiency in|Master advanced concepts in|Implement and build using|Master the methodology and process for)\s+/i, '')
+      .replace(/\s+(Build strong foundations in|Apply concepts in|Achieve proficiency in|Master advanced concepts in|Implement and build using|Master the methodology and process for)\s+/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // If the cleaned description is too short, create a meaningful one
+    if (cleanDescription.length < 5) {
+      return 'Learning activities and tasks';
+    }
+    
+    return cleanDescription;
+  }
+  
+  /**
+   * Clean task title to remove redundant goal text
+   */
+  cleanTaskTitle(title) {
+    if (!title || typeof title !== 'string') {
+      return 'Learning Task';
+    }
+    
+    // Remove common redundant patterns
+    const cleanTitle = title
+      .replace(/^(Build strong foundations in|Apply|Achieve proficiency in|Master|Implement and build using|Master the methodology and process for)\s+/i, '')
+      .replace(/\s+(Build strong foundations in|Apply|Achieve proficiency in|Master|Implement and build using|Master the methodology and process for)\s+/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // If the cleaned title is too short, use the original
+    if (cleanTitle.length < 3) {
+      return title;
+    }
+    
+    return cleanTitle;
+  }
+  
+  /**
+   * Clean task description to remove redundant goal text
+   */
+  cleanTaskDescription(description) {
+    if (!description || typeof description !== 'string') {
+      return 'Complete this learning task';
+    }
+    
+    // Remove common redundant patterns
+    const cleanDescription = description
+      .replace(/^(Build strong foundations in|Apply concepts in|Achieve proficiency in|Master advanced concepts in|Implement and build using|Master the methodology and process for)\s+/i, '')
+      .replace(/\s+(Build strong foundations in|Apply concepts in|Achieve proficiency in|Master advanced concepts in|Implement and build using|Master the methodology and process for)\s+/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // If the cleaned description is too short, create a meaningful one
+    if (cleanDescription.length < 5) {
+      return 'Complete this learning task';
+    }
+    
+    return cleanDescription;
   }
 
   initializeContextTracking(goal, goalContext) {

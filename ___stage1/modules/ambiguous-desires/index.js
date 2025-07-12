@@ -43,6 +43,67 @@ export class AmbiguousDesiresManager {
   }
 
   /**
+   * Initialize the ambiguous desires manager and resume active dialogues
+   */
+  async initialize(projectId = null) {
+    try {
+      // Resume active dialogues for current project
+      if (projectId) {
+        await this.clarificationDialogue.resumeActiveDialogues(projectId);
+      } else {
+        // If no specific project, try to resume for active project
+        try {
+          const activeProject = await this.projectManagement.getActiveProject();
+          if (activeProject && activeProject.project_id) {
+            await this.clarificationDialogue.resumeActiveDialogues(activeProject.project_id);
+          }
+        } catch (error) {
+          console.log('No active project found, skipping dialogue resumption');
+        }
+      }
+      
+      console.log('AmbiguousDesiresManager initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize AmbiguousDesiresManager:', error.message);
+    }
+  }
+
+  /**
+   * Get status of ambiguous desire system including active dialogues
+   */
+  async getAmbiguousDesireStatus(projectId) {
+    try {
+      const activeDialogues = this.clarificationDialogue.getActiveDialogues(projectId);
+      const convergenceData = this.convergenceDetector.getCachedConvergence(projectId);
+      const uncertaintyState = await this.adaptiveEvolution.loadUncertaintyState(projectId);
+      
+      return {
+        success: true,
+        content: [
+          {
+            type: 'text',
+            text: `**🔍 Ambiguous Desire System Status**\n\n**Active Dialogues**: ${activeDialogues.length}\n${activeDialogues.map(d => `• ${d.id} (Round ${d.currentRound}): "${d.originalGoal.substring(0, 50)}..."`).join('\n')}\n\n**Convergence Cache**: ${convergenceData ? 'Available' : 'None'}\n**Uncertainty State**: ${uncertaintyState ? 'Tracked' : 'None'}\n\n**System Status**: Operational`
+          }
+        ],
+        activeDialogues,
+        convergenceData,
+        uncertaintyState
+      };
+    } catch (error) {
+      return {
+        success: false,
+        content: [
+          {
+            type: 'text',
+            text: `**System Status Error**: ${error.message}`
+          }
+        ],
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Assess if a goal needs clarification
    */
   async assessGoalClarity(goal, context = '') {

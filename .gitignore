@@ -19,6 +19,20 @@ coverage/
 dist/
 build/
 
+# Cache directories
+.embedding-cache/
+.forest-vectors/
+.nyc_output/
+.serena/
+
 # Misc
 .env
 *.local
+
+# API Keys and sensitive data
+*.key
+*api-key*
+*-credentials.json
+
+# Clean workspace for Claude
+claude-workspace/

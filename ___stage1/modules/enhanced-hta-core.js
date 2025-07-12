@@ -29,6 +29,12 @@ export class EnhancedHTACore extends HTACore {
     // Expose vector store from parent class vector integration
     this.vectorStore = null;
     
+    // Initialize Gated Onboarding Flow
+    this.gatedOnboardingFlow = null; // Will be initialized when needed
+    
+    // Initialize Next + Pipeline Presenter
+    this.nextPipelinePresenter = null; // Will be initialized when needed
+    
     console.error('✅ Enhanced HTA Core initialized with Schema-Driven Intelligence');
   }
 
@@ -50,6 +56,50 @@ export class EnhancedHTACore extends HTACore {
       console.error('⚠️ Vector store initialization failed:', error.message);
       return null;
     }
+  }
+
+  /**
+   * Initialize gated onboarding flow (lazy initialization)
+   */
+  async initializeGatedOnboarding() {
+    if (!this.gatedOnboardingFlow) {
+      const { GatedOnboardingFlow } = await import('./gated-onboarding-flow.js');
+      this.gatedOnboardingFlow = new GatedOnboardingFlow(
+        this.dataPersistence,
+        this.projectManagement,
+        this, // Enhanced HTA Core as htaCore
+        this.claudeInterface,
+        this.vectorStore
+      );
+      console.error('✅ Gated Onboarding Flow initialized');
+    }
+    return this.gatedOnboardingFlow;
+  }
+
+  /**
+   * Initialize Next + Pipeline Presenter (lazy initialization)
+   */
+  async initializeNextPipelinePresenter() {
+    if (!this.nextPipelinePresenter) {
+      const { NextPipelinePresenter } = await import('./next-pipeline-presenter.js');
+      const { TaskStrategyCore } = await import('./task-strategy-core.js');
+      
+      // Initialize task strategy core if not available
+      const taskStrategyCore = new TaskStrategyCore(
+        this.dataPersistence,
+        this.projectManagement,
+        this.claudeInterface
+      );
+      
+      this.nextPipelinePresenter = new NextPipelinePresenter(
+        this.dataPersistence,
+        this.vectorStore,
+        taskStrategyCore,
+        this // Enhanced HTA Core as htaCore
+      );
+      console.error('✅ Next Pipeline Presenter initialized');
+    }
+    return this.nextPipelinePresenter;
   }
 
   /**
@@ -84,7 +134,7 @@ export class EnhancedHTACore extends HTACore {
       // Initialize Goal Achievement Context Engine
       await this.goalAchievementContext.initialize();
 
-      // Build initial context for schema engine
+      // Build initial context for schema engine with accumulated context if available
       const initialContext = {
         learningStyle,
         focusAreas,
@@ -95,7 +145,12 @@ export class EnhancedHTACore extends HTACore {
         lifePreferences: config.life_structure_preferences || {},
         urgency: this.assessUrgency(args, config),
         available_resources: this.assessAvailableResources(config),
-        domain_context: await this.buildDomainContext(goal, context, config)
+        domain_context: await this.buildDomainContext(goal, context, config),
+        // CONTEXT SNOWBALL: Include accumulated context from gated onboarding
+        accumulated_context: args.accumulated_context || null,
+        context_evolution: args.context_evolution || null,
+        enhanced_context: args.enhanced_context || null,
+        complexity_analysis: args.complexity_analysis || null
       };
 
       // Generate HTA tree using Pure Schema-Driven Intelligence
@@ -109,19 +164,33 @@ export class EnhancedHTACore extends HTACore {
         config,
         initialContext
       );
-      
-      // Ensure we have strategic branches and frontier nodes
+
+      // Validate progressive generation - only check what should be generated
+      if (htaData.availableDepth >= 3 && (!htaData.level3_taskDecomposition || !htaData.level3_taskDecomposition.length)) {
+        console.warn('Level 3 tasks not generated as expected');
+      }
+      if (htaData.availableDepth >= 4 && (!htaData.level4_microParticles || !htaData.level4_microParticles.length)) {
+        console.warn('Level 4 micro-particles not generated as expected');
+      }
+      if (htaData.availableDepth >= 5 && (!htaData.level5_nanoActions || !htaData.level5_nanoActions.length)) {
+        console.warn('Level 5 nano-actions not generated as expected');
+      }
+      if (htaData.availableDepth >= 6 && (!htaData.level6_contextAdaptivePrimitives || !htaData.level6_contextAdaptivePrimitives.length)) {
+        console.warn('Level 6 context-adaptive primitives not generated as expected');
+      }
+
+      // Ensure strategic branches and frontier nodes
       if (!htaData.strategicBranches || htaData.strategicBranches.length === 0) {
         // If schema engine failed, try again with more explicit context
         const retryResult = await this.retrySchemaGeneration(goal, initialContext);
         if (retryResult && retryResult.strategicBranches && retryResult.strategicBranches.length > 0) {
           htaData.strategicBranches = retryResult.strategicBranches;
         } else {
-          // Only as absolute last resort, use domain-adaptive fallback
-          htaData.strategicBranches = await this.generateDomainAdaptiveBranches(goal, initialContext);
+          // Only as absolute last resort, use goal-adaptive fallback
+          htaData.strategicBranches = await this.generateGoalAdaptiveBranches(goal, initialContext);
         }
       }
-      
+
       // Ensure frontier nodes are generated
       htaData = this.ensureFrontierNodes(htaData);
 
@@ -274,6 +343,163 @@ export class EnhancedHTACore extends HTACore {
   }
 
   /**
+   * Expand existing HTA tree to deeper levels on-demand
+   */
+  async expandHTATreeDepth(projectId, pathName, targetDepth, specificBranch = null) {
+    try {
+      const existingHTA = await this.loadPathHTA(projectId, pathName);
+      if (!existingHTA) {
+        throw new Error('No HTA tree found to expand');
+      }
+
+      // Use schema engine to expand the tree
+      const expandedTree = await this.schemaEngine.expandTreeDepth(
+        existingHTA,
+        targetDepth,
+        specificBranch
+      );
+
+      // Update the HTA data format with new levels
+      const updatedHTAData = await this.convertSchemaTreeToHTAFormat(
+        expandedTree,
+        projectId,
+        pathName,
+        {}, // config not needed for expansion
+        { expandingExisting: true }
+      );
+
+      // Save the expanded tree
+      await this.saveEnhancedHTAData(projectId, pathName, updatedHTAData);
+
+      return {
+        success: true,
+        expandedToDepth: targetDepth,
+        canExpandFurther: targetDepth < 6,
+        newLevelsGenerated: targetDepth - (existingHTA.availableDepth || 2)
+      };
+
+    } catch (error) {
+      console.error('Tree expansion failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Start gated onboarding flow for comprehensive context gathering
+   */
+  async startGatedOnboarding(initialGoal, userContext = {}) {
+    try {
+      const onboardingFlow = await this.initializeGatedOnboarding();
+      return await onboardingFlow.startNewProject(initialGoal, userContext);
+    } catch (error) {
+      console.error('Gated onboarding initialization failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        stage: 'initialization',
+        gate_status: 'error'
+      };
+    }
+  }
+
+  /**
+   * Continue gated onboarding flow
+   */
+  async continueGatedOnboarding(projectId, stage, inputData = {}) {
+    try {
+      const onboardingFlow = await this.initializeGatedOnboarding();
+      
+      switch (stage) {
+        case 'context_gathering':
+          return await onboardingFlow.gatherContext(projectId, inputData);
+        case 'questionnaire':
+          return await onboardingFlow.startDynamicQuestionnaire(projectId);
+        case 'questionnaire_response':
+          return await onboardingFlow.processQuestionnaireResponse(
+            projectId, 
+            inputData.questionId, 
+            inputData.response
+          );
+        case 'complexity_analysis':
+          return await onboardingFlow.performComplexityAnalysis(projectId);
+        case 'hta_generation':
+          return await onboardingFlow.generateHTATree(projectId);
+        case 'strategic_framework':
+          return await onboardingFlow.buildStrategicFramework(projectId);
+        default:
+          throw new Error(`Unknown onboarding stage: ${stage}`);
+      }
+    } catch (error) {
+      console.error('Gated onboarding continuation failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        stage,
+        gate_status: 'error'
+      };
+    }
+  }
+
+  /**
+   * Get gated onboarding status
+   */
+  async getGatedOnboardingStatus(projectId) {
+    try {
+      const onboardingFlow = await this.initializeGatedOnboarding();
+      return await onboardingFlow.getOnboardingStatus(projectId);
+    } catch (error) {
+      console.error('Failed to get onboarding status:', error);
+      return {
+        success: false,
+        error: error.message,
+        stage: 'unknown',
+        gate_status: 'error'
+      };
+    }
+  }
+
+  /**
+   * Generate Next + Pipeline presentation
+   */
+  async generateNextPipeline(projectId, userContext = {}) {
+    try {
+      const pipelinePresenter = await this.initializeNextPipelinePresenter();
+      return await pipelinePresenter.generateNextPipeline(projectId, userContext);
+    } catch (error) {
+      console.error('Next pipeline generation failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**Pipeline Generation Error**\n\nError: ${error.message}\n\nPlease try again or use \`get_next_task_forest\` for a single task.`
+        }],
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Evolve pipeline based on progress and context
+   */
+  async evolvePipeline(projectId, triggers = {}, context = {}) {
+    try {
+      const pipelinePresenter = await this.initializeNextPipelinePresenter();
+      return await pipelinePresenter.evolvePipeline(projectId, triggers, context);
+    } catch (error) {
+      console.error('Pipeline evolution failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**Pipeline Evolution Error**\n\nError: ${error.message}\n\nPipeline evolution failed. Please try regenerating the pipeline.`
+        }],
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Assess domain relevance for exploration
    */
   async assessExplorationRelevance(userTopic, projectId, pathName) {
@@ -347,6 +573,13 @@ export class EnhancedHTACore extends HTACore {
       // Schema intelligence data
       level1_goalContext: goalContext,
       level2_strategicBranches: strategicBranches,
+      level3_taskDecomposition: schemaTree.level3_taskDecomposition,
+      level4_microParticles: schemaTree.level4_microParticles,
+      level5_nanoActions: schemaTree.level5_nanoActions,
+      level6_contextAdaptivePrimitives: schemaTree.level6_contextAdaptivePrimitives,
+      availableDepth: schemaTree.availableDepth || 2,
+      maxDepth: schemaTree.maxDepth || 6,
+      canExpand: schemaTree.canExpand !== false,
       schemaGenerated: true,
       domainBoundaries: goalContext.domain_boundaries,
       learningApproach: goalContext.learning_approach,
@@ -387,13 +620,13 @@ export class EnhancedHTACore extends HTACore {
       }
       
       // Generate 2-4 initial tasks per branch using schema intelligence
-      const taskCount = Math.min(4, Math.max(2, Math.floor(complexityAnalysis.score / 2)));
+      const taskCount = Math.min(25, Math.max(15, complexityAnalysis.score * 3));
       
       for (let i = 0; i < taskCount; i++) {
         const task = {
           id: `${branchName.toLowerCase().replace(/\s+/g, '_')}_${taskId}`,
-          title: `${this.getProgressiveTaskName(i, taskCount)} ${branchName}`,
-          description: `${branchDescription} - Phase ${i + 1}`,
+          title: `${this.getProgressiveTaskName(i, taskCount)} ${this.getCleanBranchName(branchName)}`,
+          description: `${this.getCleanTaskDescription(branchDescription, i + 1)}`,
           difficulty: Math.min(5, Math.max(1, Math.floor(complexityAnalysis.score / 2) + (i * 0.5))),
           duration: this.calculateContextAwareDuration(complexityAnalysis.score, i, initialContext),
           branch: branchName,
@@ -563,6 +796,52 @@ export class EnhancedHTACore extends HTACore {
     return progressTerms[Math.min(termIndex, progressTerms.length - 1)];
   }
 
+  /**
+   * Clean branch name to prevent goal text redundancy
+   */
+  getCleanBranchName(branchName) {
+    if (!branchName || typeof branchName !== 'string') {
+      return 'Learning Branch';
+    }
+    
+    // Remove common redundant patterns
+    const cleanName = branchName
+      .replace(/^(Build strong foundations in|Apply|Achieve proficiency in|Master|Implement and build using|Master the methodology and process for)\s+/i, '')
+      .replace(/\s+(Build strong foundations in|Apply|Achieve proficiency in|Master|Implement and build using|Master the methodology and process for)\s+/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // If the cleaned name is too short or empty, use the original
+    if (cleanName.length < 3) {
+      return branchName;
+    }
+    
+    return cleanName;
+  }
+
+  /**
+   * Clean task description to prevent goal text redundancy
+   */
+  getCleanTaskDescription(branchDescription, phaseNumber) {
+    if (!branchDescription || typeof branchDescription !== 'string') {
+      return `Learning activity - Phase ${phaseNumber}`;
+    }
+    
+    // Remove common redundant patterns and goal text repetition
+    const cleanDescription = branchDescription
+      .replace(/^(Build strong foundations in|Apply concepts in|Achieve proficiency in|Master advanced concepts in|Implement and build using|Master the methodology and process for)\s+/i, '')
+      .replace(/\s+(Build strong foundations in|Apply concepts in|Achieve proficiency in|Master advanced concepts in|Implement and build using|Master the methodology and process for)\s+/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // If the cleaned description is too short, create a meaningful one
+    if (cleanDescription.length < 5) {
+      return `Learning activity - Phase ${phaseNumber}`;
+    }
+    
+    return `${cleanDescription} - Phase ${phaseNumber}`;
+  }
+
   calculateContextAwareDuration(complexityScore, taskIndex, context) {
     const baseDuration = 25; // minutes
     const complexityMultiplier = 1 + (complexityScore - 3) * 0.2;
@@ -593,15 +872,21 @@ export class EnhancedHTACore extends HTACore {
   }
 
   formatSuccessResponse(htaData) {
+    const depthInfo = this.getDepthDescription(htaData.availableDepth || 2);
+    const expansionInfo = htaData.canExpand ? `\n**Expansion Available**: Can expand to ${htaData.maxDepth} levels on-demand` : '';
+    
     return {
       success: true,
       content: [{
         type: 'text',
-        text: `**Enhanced HTA Tree Generated Successfully!** ✨\n\n**Goal**: ${htaData.goal}\n**Complexity**: ${htaData.complexity.score}/10 (${htaData.complexity.level})\n**Tasks Generated**: ${htaData.frontierNodes.length}\n**Strategic Branches**: ${htaData.strategicBranches.length}\n**Intelligence**: Pure Schema-Driven + Context Learning\n**Domain Boundaries**: ${Object.keys(htaData.domainBoundaries || {}).length} identified\n\n**Next Steps**: Use \`get_next_task\` to begin your intelligent learning journey!\n\n**Enhanced Features**:\n- Context-aware task generation\n- Domain-intelligent exploration\n- Real-time learning adaptation\n- 6-level granular decomposition available`
+        text: `**Enhanced HTA Tree Generated Successfully!** ✨\n\n**Goal**: ${htaData.goal}\n**Complexity**: ${htaData.complexity.score}/10 (${htaData.complexity.level})\n**Tasks Generated**: ${htaData.frontierNodes.length}\n**Strategic Branches**: ${htaData.strategicBranches.length}\n**Current Depth**: ${htaData.availableDepth}/${htaData.maxDepth} levels (${depthInfo})\n**Intelligence**: Pure Schema-Driven + Context Learning\n**Domain Boundaries**: ${Object.keys(htaData.domainBoundaries || {}).length} identified${expansionInfo}\n\n**Next Steps**: Use \`get_next_task\` to begin your intelligent learning journey!\n\n**Enhanced Features**:\n- Progressive depth generation (efficient yet comprehensive)\n- Context-aware task generation\n- Domain-intelligent exploration\n- Real-time learning adaptation\n- On-demand granular decomposition`
       }],
       tasks_count: htaData.frontierNodes.length,
       complexity: htaData.complexity,
       strategic_branches: htaData.strategicBranches.length,
+      available_depth: htaData.availableDepth,
+      max_depth: htaData.maxDepth,
+      can_expand: htaData.canExpand,
       schema_enhanced: true,
       context_learning: true,
       domain_boundaries: htaData.domainBoundaries
@@ -634,11 +919,11 @@ export class EnhancedHTACore extends HTACore {
         failedAttempt: true,
         requireDomainSpecificBranches: true,
         avoidGenericTemplates: true,
-        examples: {
-          AI: ['Mathematical Foundations', 'Neural Network Architecture', 'Model Training & Validation'],
-          cybersecurity: ['Security Fundamentals', 'Threat Analysis', 'Penetration Testing'],
-          photography: ['Camera Fundamentals', 'Composition Techniques', 'Post-Processing Mastery'],
-          programming: ['Language Syntax', 'Problem-Solving Patterns', 'Real-World Applications']
+        retryInstructions: {
+          emphasize: 'Use domain-specific terminology that directly relates to the goal',
+          avoid: 'Generic terms like Foundation, Research, Implementation',
+          focus: 'Create branch names that reflect the actual subject matter and objectives',
+          example_approach: 'If goal is about X, create branches like "X Theory", "X Application", "X Mastery" rather than generic phases'
         }
       };
       
@@ -675,47 +960,45 @@ export class EnhancedHTACore extends HTACore {
   }
 
   /**
-   * Generate domain-adaptive branches as absolute last resort
+   * Generate goal-adaptive branches as absolute last resort
    */
-  async generateDomainAdaptiveBranches(goal, context) {
-    console.error('[EnhancedHTA] Using domain-adaptive fallback generation');
+  async generateGoalAdaptiveBranches(goal, context) {
+    console.error('[EnhancedHTA] Using goal-adaptive fallback generation');
     
-    // Extract domain hints from goal
-    const domainHints = this.extractDomainHints(goal);
+    // Use domain-agnostic goal characteristics analysis
+    const characteristics = this.schemaEngine.analyzeGoalCharacteristics(goal);
     const branches = [];
     
-    // Generate domain-specific branches based on goal analysis
-    if (domainHints.isAI || domainHints.isMachineLearning) {
+    // Generate branches based on goal characteristics
+    const goalWords = goal.toLowerCase().split(' ');
+    const mainTopic = goalWords[goalWords.length - 1] || 'this skill';
+    const capitalizedTopic = this.capitalize(mainTopic);
+    
+    // Base branches that work for any goal
+    branches.push(
+      { name: `${capitalizedTopic} Foundations`, description: `Establish foundational knowledge and core understanding`, priority: 1 },
+      { name: `${capitalizedTopic} Application`, description: `Apply concepts in practical scenarios`, priority: 2 },
+      { name: `${capitalizedTopic} Mastery`, description: `Achieve proficiency and expertise`, priority: 3 }
+    );
+    
+    // Add complexity-specific branches
+    if (characteristics.complexity === 'high') {
       branches.push(
-        { name: 'Mathematical Foundations', description: `Master the mathematical concepts underlying ${goal}`, priority: 1 },
-        { name: 'Algorithmic Understanding', description: `Understand key algorithms and techniques for ${goal}`, priority: 2 },
-        { name: 'Practical Implementation', description: `Build and train models for ${goal}`, priority: 3 },
-        { name: 'Advanced Applications', description: `Apply ${goal} to real-world problems`, priority: 4 }
+        { name: `Advanced ${capitalizedTopic}`, description: `Master advanced concepts and techniques`, priority: 4 },
+        { name: `${capitalizedTopic} Innovation`, description: `Innovate and extend beyond current practices`, priority: 5 }
       );
-    } else if (domainHints.isCybersecurity) {
+    }
+    
+    // Add characteristic-specific branches
+    if (characteristics.characteristics.includes('technical')) {
       branches.push(
-        { name: 'Security Fundamentals', description: `Learn core security principles for ${goal}`, priority: 1 },
-        { name: 'Threat Analysis', description: `Understand threats and vulnerabilities in ${goal}`, priority: 2 },
-        { name: 'Defense Strategies', description: `Implement security measures for ${goal}`, priority: 3 },
-        { name: 'Advanced Techniques', description: `Master advanced security techniques for ${goal}`, priority: 4 }
+        { name: `${capitalizedTopic} Implementation`, description: `Implement and build practical solutions`, priority: branches.length + 1 }
       );
-    } else if (domainHints.isProgramming) {
+    }
+    
+    if (characteristics.characteristics.includes('process-oriented')) {
       branches.push(
-        { name: 'Language Mastery', description: `Master the programming language for ${goal}`, priority: 1 },
-        { name: 'Problem-Solving Patterns', description: `Learn common patterns and best practices for ${goal}`, priority: 2 },
-        { name: 'Project Development', description: `Build complete projects using ${goal}`, priority: 3 },
-        { name: 'Advanced Optimization', description: `Optimize and scale ${goal} applications`, priority: 4 }
-      );
-    } else {
-      // Generic domain-adaptive approach
-      const goalWords = goal.toLowerCase().split(' ');
-      const mainTopic = goalWords[goalWords.length - 1] || 'this skill';
-      
-      branches.push(
-        { name: `${this.capitalize(mainTopic)} Foundations`, description: `Build strong foundations in ${goal}`, priority: 1 },
-        { name: `${this.capitalize(mainTopic)} Application`, description: `Apply ${goal} in practical scenarios`, priority: 2 },
-        { name: `${this.capitalize(mainTopic)} Mastery`, description: `Achieve proficiency in ${goal}`, priority: 3 },
-        { name: `${this.capitalize(mainTopic)} Innovation`, description: `Innovate and extend ${goal}`, priority: 4 }
+        { name: `${capitalizedTopic} Methodology`, description: `Master the methodology and systematic approach`, priority: branches.length + 1 }
       );
     }
     
@@ -735,26 +1018,146 @@ export class EnhancedHTACore extends HTACore {
     }));
   }
 
-  /**
-   * Extract domain hints from goal text
-   */
-  extractDomainHints(goal) {
-    const lowerGoal = goal.toLowerCase();
-    return {
-      isAI: /artificial intelligence|machine learning|neural network|deep learning|ai|ml|cnn|rnn|transformer/i.test(lowerGoal),
-      isMachineLearning: /machine learning|ml|data science|predictive|classification|regression|clustering/i.test(lowerGoal),
-      isCybersecurity: /cybersecurity|security|penetration|vulnerability|hacking|encryption|firewall/i.test(lowerGoal),
-      isProgramming: /programming|coding|development|software|javascript|python|java|react|node/i.test(lowerGoal),
-      isPhotography: /photography|photo|camera|lens|composition|lighting/i.test(lowerGoal),
-      isDesign: /design|ui|ux|graphic|visual|interface/i.test(lowerGoal)
-    };
-  }
 
   /**
    * Capitalize first letter of string
    */
   capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  /**
+   * Get human-readable description of current depth
+   */
+  getDepthDescription(depth) {
+    const descriptions = {
+      1: 'Goal Context Only',
+      2: 'Strategic Branches',
+      3: 'Task Decomposition',
+      4: 'Micro-Particles',
+      5: 'Nano-Actions',
+      6: 'Context-Adaptive Primitives'
+    };
+    return descriptions[depth] || 'Unknown';
+  }
+
+  /**
+   * Determine if user needs deeper decomposition based on their behavior
+   */
+  async shouldExpandDepth(projectId, pathName, userInteraction) {
+    try {
+      const existingHTA = await this.loadPathHTA(projectId, pathName);
+      if (!existingHTA) return false;
+
+      // Analyze user interaction patterns to determine if they need more granular tasks
+      const indicators = {
+        // User is struggling with task size
+        taskTooLarge: [
+          'too big', 'overwhelming', 'break down', 'smaller steps',
+          'dont know where to start', 'too complex', 'simpler'
+        ],
+        
+        // User wants more specific guidance
+        needsGuidance: [
+          'how exactly', 'specific steps', 'detailed instructions',
+          'what should I do', 'more specific', 'step by step'
+        ],
+        
+        // User is asking about implementation details
+        needsImplementation: [
+          'how to implement', 'what tools', 'which commands',
+          'exact process', 'technical details', 'specific approach'
+        ],
+        
+        // User is context-switching frequently
+        contextSwitching: [
+          'different approach', 'alternative method', 'another way',
+          'switch to', 'try different', 'change strategy'
+        ]
+      };
+
+      const interactionText = (userInteraction.message || '').toLowerCase();
+      let expansionScore = 0;
+
+      // Check for indicators
+      Object.entries(indicators).forEach(([category, keywords]) => {
+        const matches = keywords.filter(keyword => interactionText.includes(keyword));
+        if (matches.length > 0) {
+          expansionScore += matches.length;
+          console.log(`[DepthAnalysis] Found ${category} indicators: ${matches.join(', ')}`);
+        }
+      });
+
+      // Additional factors
+      const currentDepth = existingHTA.availableDepth || 2;
+      const maxUsefulDepth = this.determineMaxUsefulDepth(existingHTA.goal, userInteraction);
+      
+      // Recommend expansion if:
+      // 1. User shows signs of needing more granular tasks
+      // 2. Current depth is below maximum useful depth
+      // 3. User has completed several tasks successfully (ready for more detail)
+      const shouldExpand = (
+        expansionScore >= 2 && 
+        currentDepth < maxUsefulDepth &&
+        currentDepth < 6
+      );
+
+      if (shouldExpand) {
+        const recommendedDepth = Math.min(currentDepth + 1, maxUsefulDepth);
+        return {
+          shouldExpand: true,
+          recommendedDepth,
+          reason: `User interaction suggests need for more granular tasks (score: ${expansionScore})`,
+          indicators: Object.keys(indicators).filter(category => 
+            indicators[category].some(keyword => interactionText.includes(keyword))
+          )
+        };
+      }
+
+      return { shouldExpand: false, currentDepth, maxUsefulDepth };
+
+    } catch (error) {
+      console.error('Depth expansion analysis failed:', error);
+      return { shouldExpand: false, error: error.message };
+    }
+  }
+
+  /**
+   * Determine maximum useful depth based on goal characteristics and user context
+   */
+  determineMaxUsefulDepth(goal, userContext) {
+    // Use domain-agnostic goal characteristics analysis
+    const characteristics = this.analyzeGoalCharacteristics ? 
+      this.analyzeGoalCharacteristics(goal) : 
+      this.schemaEngine.analyzeGoalCharacteristics(goal);
+    
+    let maxDepth = 4; // Default reasonable maximum
+
+    // High complexity goals benefit from deeper decomposition
+    if (characteristics.complexity === 'high') {
+      maxDepth = 6;
+    }
+    
+    // Low complexity or exploratory goals may not need as much depth
+    else if (characteristics.complexity === 'low' || 
+             characteristics.characteristics.includes('exploratory')) {
+      maxDepth = 3;
+    }
+    
+    // Technical or mastery-focused goals benefit from micro-level decomposition
+    else if (characteristics.characteristics.includes('technical') || 
+             characteristics.characteristics.includes('mastery-focused')) {
+      maxDepth = 5;
+    }
+
+    // Adjust based on user experience level
+    if (userContext && userContext.experience === 'beginner') {
+      maxDepth = Math.min(maxDepth + 1, 6); // Beginners benefit from more granular steps
+    } else if (userContext && userContext.experience === 'expert') {
+      maxDepth = Math.max(maxDepth - 1, 2); // Experts need less granular breakdown
+    }
+
+    return maxDepth;
   }
 
 }

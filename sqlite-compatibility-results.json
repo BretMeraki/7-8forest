@@ -1,0 +1,154 @@
+{
+  "timestamp": "2025-07-12T00:02:35.681Z",
+  "tests": [
+    {
+      "name": "SQLite Provider Import",
+      "status": "PASS",
+      "details": {
+        "info": "Module imported successfully"
+      },
+      "timestamp": "2025-07-12T00:02:35.712Z"
+    },
+    {
+      "name": "Vector Store Initialization",
+      "status": "PASS",
+      "details": {
+        "info": "Provider initialized"
+      },
+      "timestamp": "2025-07-12T00:02:35.738Z"
+    },
+    {
+      "name": "ping() Method",
+      "status": "PASS",
+      "details": {
+        "info": "Vector store ping successful"
+      },
+      "timestamp": "2025-07-12T00:02:35.739Z"
+    },
+    {
+      "name": "getStats() Method",
+      "status": "PASS",
+      "details": {
+        "info": "Stats retrieved: 0 vectors"
+      },
+      "timestamp": "2025-07-12T00:02:35.740Z"
+    },
+    {
+      "name": "getCacheStats() Method",
+      "status": "PASS",
+      "details": {
+        "info": "Cache stats: 0/1000"
+      },
+      "timestamp": "2025-07-12T00:02:35.741Z"
+    },
+    {
+      "name": "Vector Operations",
+      "status": "PASS",
+      "details": {
+        "info": "Vector upsert and query successful (1 results)"
+      },
+      "timestamp": "2025-07-12T00:02:35.756Z"
+    },
+    {
+      "name": "Diagnostic Handlers Import",
+      "status": "PASS",
+      "details": {
+        "info": "Module imported successfully"
+      },
+      "timestamp": "2025-07-12T00:02:35.777Z"
+    },
+    {
+      "name": "Diagnostic Handlers Creation",
+      "status": "PASS",
+      "details": {
+        "info": "Instance created with SQLite vector store"
+      },
+      "timestamp": "2025-07-12T00:02:35.798Z"
+    },
+    {
+      "name": "getHealthStatus() Method",
+      "status": "PASS",
+      "details": {
+        "info": "Health check completed, vector store: healthy"
+      },
+      "timestamp": "2025-07-12T00:02:35.801Z"
+    },
+    {
+      "name": "getVectorStoreStatus() Method",
+      "status": "PASS",
+      "details": {
+        "info": "Vector store status: connected"
+      },
+      "timestamp": "2025-07-12T00:02:35.802Z"
+    },
+    {
+      "name": "Safe Vector Store Ping",
+      "status": "PASS",
+      "details": {
+        "info": "Safe ping result: true"
+      },
+      "timestamp": "2025-07-12T00:02:35.802Z"
+    },
+    {
+      "name": "Safe Vector Store Stats",
+      "status": "PASS",
+      "details": {
+        "info": "Safe stats result: received"
+      },
+      "timestamp": "2025-07-12T00:02:35.802Z"
+    },
+    {
+      "name": "file:// URL Import",
+      "status": "PASS",
+      "details": {
+        "info": "File URL protocol import successful"
+      },
+      "timestamp": "2025-07-12T00:02:35.805Z"
+    },
+    {
+      "name": "Windows Path Resolution",
+      "status": "PASS",
+      "details": {
+        "info": "Windows path resolved correctly"
+      },
+      "timestamp": "2025-07-12T00:02:35.806Z"
+    },
+    {
+      "name": "Relative Path Resolution",
+      "status": "PASS",
+      "details": {
+        "info": "Relative path resolution correct"
+      },
+      "timestamp": "2025-07-12T00:02:35.806Z"
+    },
+    {
+      "name": "Required Methods Available",
+      "status": "PASS",
+      "details": {
+        "info": "All 8 required methods available"
+      },
+      "timestamp": "2025-07-12T00:02:35.829Z"
+    },
+    {
+      "name": "ping() Return Type",
+      "status": "PASS",
+      "details": {
+        "info": "ping() returns: boolean (true)"
+      },
+      "timestamp": "2025-07-12T00:02:35.829Z"
+    },
+    {
+      "name": "getStats() Return Structure",
+      "status": "PASS",
+      "details": {
+        "info": "getStats() structure: valid"
+      },
+      "timestamp": "2025-07-12T00:02:35.830Z"
+    }
+  ],
+  "summary": {
+    "passed": 18,
+    "failed": 0,
+    "total": 18
+  }
+}

@@ -1,0 +1,393 @@
+2025-07-09T17:11:03.917Z Starting Forest MCP server initialization...
+2025-07-09T17:11:03.918Z [INFO] [CoreInitialization] Initialized with consolidated architecture
+2025-07-09T17:11:03.918Z [INFO] [CoreInitialization] Starting Forest system initialization...
+2025-07-09T17:11:03.918Z [DEBUG] [CoreInitialization] Starting phase: Core Infrastructure
+2025-07-09T17:11:03.918Z [LocalServer] Initialized with forest-mcp-server
+2025-07-09T17:11:03.918Z ✅ Enhanced HTA Core initialized with Schema-Driven Intelligence
+2025-07-09T17:11:03.919Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:11:03.919Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:11:03.919Z [Stage1CoreServer] Initialized with consolidated modules
+2025-07-09T17:11:03.919Z 🚀 Initializing Stage1 Core Server...
+2025-07-09T17:11:03.919Z 🔄 Initializing SQLite vector storage...
+2025-07-09T17:11:03.919Z Background processor started
+2025-07-09T17:11:03.919Z Background task hta-expansion-check scheduled every 300000ms
+2025-07-09T17:11:03.919Z [McpCore] Setting up MCP handlers...
+2025-07-09T17:11:03.919Z [McpCore] Tool router connected
+2025-07-09T17:11:03.922Z ✅ MCP handlers configured with 21 tools
+2025-07-09T17:11:03.922Z 📊 Initializing vector intelligence...
+2025-07-09T17:11:03.922Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:11:03.922Z [ForestDataVectorization] Testing vector store integrity...
+2025-07-09T17:11:03.922Z [ForestDataVectorization] ✅ Converted 384-dim vector to vector store-compatible format
+2025-07-09T17:11:03.924Z [ForestDataVectorization] ✅ vector store integrity test passed
+2025-07-09T17:11:03.924Z [ForestDataVectorization] Initialized with selective vectorization strategy
+2025-07-09T17:11:03.924Z ✅ Forest Data Vectorization ready
+2025-07-09T17:11:03.925Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:11:03.925Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:11:03.925Z ✅ HTA Vector Store initialized successfully
+2025-07-09T17:11:03.925Z ✅ Vector store connected to Enhanced HTA Core
+2025-07-09T17:11:03.925Z ✅ Vector intelligence ready
+2025-07-09T17:11:03.925Z ✅ Stage1 Core Server initialized successfully
+2025-07-09T17:11:03.925Z [DEBUG] [CoreInitialization] Phase completed: Core Infrastructure { duration: '7ms' }
+2025-07-09T17:11:03.925Z [DEBUG] [CoreInitialization] Starting phase: Module Validation
+2025-07-09T17:11:03.925Z [DEBUG] [CoreInitialization] Module validated: dataPersistence
+2025-07-09T17:11:03.925Z [DEBUG] [CoreInitialization] Module validated: projectManagement
+2025-07-09T17:11:03.925Z [DEBUG] [CoreInitialization] Module validated: htaCore
+2025-07-09T17:11:03.925Z [DEBUG] [CoreInitialization] Module validated: taskStrategyCore
+2025-07-09T17:11:03.926Z [DEBUG] [CoreInitialization] Module validated: coreIntelligence
+2025-07-09T17:11:03.926Z [DEBUG] [CoreInitialization] Module validated: memorySync
+2025-07-09T17:11:03.926Z [DEBUG] [CoreInitialization] Module validated: mcpCore
+2025-07-09T17:11:03.926Z [INFO] [CoreInitialization] All consolidated modules validated { moduleCount: 7, validModules: 7 }
+2025-07-09T17:11:03.926Z [DEBUG] [CoreInitialization] Phase completed: Module Validation { duration: '1ms' }
+2025-07-09T17:11:03.926Z [DEBUG] [CoreInitialization] Starting phase: Health Checks
+2025-07-09T17:11:03.926Z [INFO] [CoreInitialization] Health checks passed { checkCount: 3, healthyChecks: 3 }
+2025-07-09T17:11:03.926Z [DEBUG] [CoreInitialization] Phase completed: Health Checks { duration: '0ms' }
+2025-07-09T17:11:03.926Z [DEBUG] [CoreInitialization] Starting phase: Health Monitoring Integration
+2025-07-09T17:11:03.926Z [INFO] [CoreInitialization] Health monitoring integrated into core server
+2025-07-09T17:11:03.926Z [DEBUG] [CoreInitialization] Phase completed: Health Monitoring Integration { duration: '0ms' }
+2025-07-09T17:11:03.926Z [INFO] [CoreInitialization] Forest system initialized successfully { duration: '8ms', phases: 4 }
+2025-07-09T17:11:03.927Z [StdioTransport] Connected to server
+2025-07-09T17:11:03.927Z Forest MCP server started successfully.
+2025-07-09T17:16:03.925Z [DEBUG] [DataPersistence] Global data loaded { fileName: 'config.json' }
+2025-07-09T17:16:03.927Z [DEBUG] [DataPersistence] Project data loaded { projectId: 'cybersecurity_transition', fileName: 'config.json' }
+2025-07-09T17:16:03.929Z [DEBUG] [DataPersistence] Path data loaded { projectId: 'cybersecurity_transition', pathName: 'general', fileName: 'hta.json' }
+2025-07-09T17:16:03.929Z ✅ Loaded existing HTA data for cybersecurity_transition/general
+2025-07-09T17:21:03.941Z ✅ Loaded existing HTA data for cybersecurity_transition/general
+2025-07-09T17:26:03.944Z ✅ Loaded existing HTA data for cybersecurity_transition/general
+2025-07-09T17:27:59.420Z Starting Forest MCP server initialization...
+2025-07-09T17:27:59.421Z [INFO] [CoreInitialization] Initialized with consolidated architecture
+2025-07-09T17:27:59.421Z [INFO] [CoreInitialization] Starting Forest system initialization...
+2025-07-09T17:27:59.421Z [DEBUG] [CoreInitialization] Starting phase: Core Infrastructure
+2025-07-09T17:27:59.421Z [LocalServer] Initialized with forest-mcp-server
+2025-07-09T17:27:59.422Z ✅ Enhanced HTA Core initialized with Schema-Driven Intelligence
+2025-07-09T17:27:59.422Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:27:59.422Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:27:59.422Z [Stage1CoreServer] Initialized with consolidated modules
+2025-07-09T17:27:59.422Z 🚀 Initializing Stage1 Core Server...
+2025-07-09T17:27:59.422Z 🔄 Initializing SQLite vector storage...
+2025-07-09T17:27:59.422Z Background processor started
+2025-07-09T17:27:59.423Z Background task hta-expansion-check scheduled every 300000ms
+2025-07-09T17:27:59.423Z [McpCore] Setting up MCP handlers...
+2025-07-09T17:27:59.423Z [McpCore] Tool router connected
+2025-07-09T17:27:59.425Z ✅ MCP handlers configured with 21 tools
+2025-07-09T17:27:59.425Z 📊 Initializing vector intelligence...
+2025-07-09T17:27:59.425Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:27:59.425Z [ForestDataVectorization] Testing vector store integrity...
+2025-07-09T17:27:59.425Z [ForestDataVectorization] ✅ Converted 384-dim vector to vector store-compatible format
+2025-07-09T17:27:59.427Z [ForestDataVectorization] ✅ vector store integrity test passed
+2025-07-09T17:27:59.427Z [ForestDataVectorization] Initialized with selective vectorization strategy
+2025-07-09T17:27:59.427Z ✅ Forest Data Vectorization ready
+2025-07-09T17:27:59.427Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:27:59.428Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:27:59.428Z ✅ HTA Vector Store initialized successfully
+2025-07-09T17:27:59.428Z ✅ Vector store connected to Enhanced HTA Core
+2025-07-09T17:27:59.428Z ✅ Vector intelligence ready
+2025-07-09T17:27:59.428Z ✅ Stage1 Core Server initialized successfully
+2025-07-09T17:27:59.428Z [DEBUG] [CoreInitialization] Phase completed: Core Infrastructure { duration: '7ms' }
+2025-07-09T17:27:59.428Z [DEBUG] [CoreInitialization] Starting phase: Module Validation
+2025-07-09T17:27:59.428Z [DEBUG] [CoreInitialization] Module validated: dataPersistence
+2025-07-09T17:27:59.428Z [DEBUG] [CoreInitialization] Module validated: projectManagement
+2025-07-09T17:27:59.428Z [DEBUG] [CoreInitialization] Module validated: htaCore
+2025-07-09T17:27:59.428Z [DEBUG] [CoreInitialization] Module validated: taskStrategyCore
+2025-07-09T17:27:59.428Z [DEBUG] [CoreInitialization] Module validated: coreIntelligence
+2025-07-09T17:27:59.428Z [DEBUG] [CoreInitialization] Module validated: memorySync
+2025-07-09T17:27:59.429Z [DEBUG] [CoreInitialization] Module validated: mcpCore
+2025-07-09T17:27:59.429Z [INFO] [CoreInitialization] All consolidated modules validated { moduleCount: 7, validModules: 7 }
+2025-07-09T17:27:59.429Z [DEBUG] [CoreInitialization] Phase completed: Module Validation { duration: '1ms' }
+2025-07-09T17:27:59.429Z [DEBUG] [CoreInitialization] Starting phase: Health Checks
+2025-07-09T17:27:59.429Z [INFO] [CoreInitialization] Health checks passed { checkCount: 3, healthyChecks: 3 }
+2025-07-09T17:27:59.429Z [DEBUG] [CoreInitialization] Phase completed: Health Checks { duration: '0ms' }
+2025-07-09T17:27:59.429Z [DEBUG] [CoreInitialization] Starting phase: Health Monitoring Integration
+2025-07-09T17:27:59.429Z [INFO] [CoreInitialization] Health monitoring integrated into core server
+2025-07-09T17:27:59.429Z [DEBUG] [CoreInitialization] Phase completed: Health Monitoring Integration { duration: '0ms' }
+2025-07-09T17:27:59.430Z [INFO] [CoreInitialization] Forest system initialized successfully { duration: '8ms', phases: 4 }
+2025-07-09T17:27:59.430Z [StdioTransport] Connected to server
+2025-07-09T17:27:59.431Z Forest MCP server started successfully.
+2025-07-09T17:28:02.133Z Received SIGTERM, shutting down Forest MCP server...
+2025-07-09T17:28:02.133Z [INFO] [CoreInitialization] Starting graceful shutdown...
+2025-07-09T17:28:02.134Z [INFO] [Stage1CoreServer] Starting cleanup...
+2025-07-09T17:28:02.134Z Background task hta-expansion-check removed
+2025-07-09T17:28:02.134Z Background processor stopped
+2025-07-09T17:28:02.135Z [INFO] [Stage1CoreServer] Cleanup complete
+2025-07-09T17:28:02.135Z [INFO] [CoreInitialization] Forest system shutdown complete
+2025-07-09T17:28:02.136Z [DEBUG] [DataPersistence] Cache cleared undefined
+2025-07-09T17:28:02.136Z [DEBUG] [MemorySync] Sync queue cleared
+2025-07-09T17:28:02.136Z Shutdown complete.
+2025-07-09T17:31:03.946Z ✅ Loaded existing HTA data for cybersecurity_transition/general
+2025-07-09T17:36:03.948Z ✅ Loaded existing HTA data for cybersecurity_transition/general
+2025-07-09T17:41:03.925Z ✅ Loaded existing HTA data for cybersecurity_transition/general
+2025-07-09T17:43:03.835Z Received SIGTERM, shutting down Forest MCP server...
+2025-07-09T17:43:03.836Z [INFO] [CoreInitialization] Starting graceful shutdown...
+2025-07-09T17:43:03.837Z [INFO] [Stage1CoreServer] Starting cleanup...
+2025-07-09T17:43:03.837Z Background task hta-expansion-check removed
+2025-07-09T17:43:03.837Z Background processor stopped
+2025-07-09T17:43:03.838Z [INFO] [Stage1CoreServer] Cleanup complete
+2025-07-09T17:43:03.838Z [DEBUG] [DataPersistence] Cache cleared undefined
+2025-07-09T17:43:03.838Z [INFO] [CoreInitialization] Forest system shutdown complete
+2025-07-09T17:43:03.838Z [DEBUG] [MemorySync] Sync queue cleared
+2025-07-09T17:43:03.838Z Shutdown complete.
+2025-07-09T17:43:16.038Z Starting Forest MCP server initialization...
+2025-07-09T17:43:16.039Z [INFO] [CoreInitialization] Initialized with consolidated architecture
+2025-07-09T17:43:16.039Z [INFO] [CoreInitialization] Starting Forest system initialization...
+2025-07-09T17:43:16.039Z [DEBUG] [CoreInitialization] Starting phase: Core Infrastructure
+2025-07-09T17:43:16.039Z [LocalServer] Initialized with forest-mcp-server
+2025-07-09T17:43:16.040Z ✅ Enhanced HTA Core initialized with Schema-Driven Intelligence
+2025-07-09T17:43:16.040Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:43:16.040Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:43:16.040Z [Stage1CoreServer] Initialized with consolidated modules
+2025-07-09T17:43:16.040Z 🚀 Initializing Stage1 Core Server...
+2025-07-09T17:43:16.040Z 🔄 Initializing SQLite vector storage...
+2025-07-09T17:43:16.041Z Background processor started
+2025-07-09T17:43:16.041Z Background task hta-expansion-check scheduled every 300000ms
+2025-07-09T17:43:16.041Z [McpCore] Setting up MCP handlers...
+2025-07-09T17:43:16.041Z [McpCore] Tool router connected
+2025-07-09T17:43:16.043Z ✅ MCP handlers configured with 21 tools
+2025-07-09T17:43:16.043Z 📊 Initializing vector intelligence...
+2025-07-09T17:43:16.043Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:43:16.044Z [ForestDataVectorization] Testing vector store integrity...
+2025-07-09T17:43:16.044Z [ForestDataVectorization] ✅ Converted 384-dim vector to vector store-compatible format
+2025-07-09T17:43:16.046Z [ForestDataVectorization] ✅ vector store integrity test passed
+2025-07-09T17:43:16.046Z [ForestDataVectorization] Initialized with selective vectorization strategy
+2025-07-09T17:43:16.046Z ✅ Forest Data Vectorization ready
+2025-07-09T17:43:16.046Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:43:16.046Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:43:16.047Z ✅ HTA Vector Store initialized successfully
+2025-07-09T17:43:16.047Z ✅ Vector store connected to Enhanced HTA Core
+2025-07-09T17:43:16.047Z ✅ Vector intelligence ready
+2025-07-09T17:43:16.047Z ✅ Stage1 Core Server initialized successfully
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Phase completed: Core Infrastructure { duration: '8ms' }
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Starting phase: Module Validation
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Module validated: dataPersistence
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Module validated: projectManagement
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Module validated: htaCore
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Module validated: taskStrategyCore
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Module validated: coreIntelligence
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Module validated: memorySync
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Module validated: mcpCore
+2025-07-09T17:43:16.047Z [INFO] [CoreInitialization] All consolidated modules validated { moduleCount: 7, validModules: 7 }
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Phase completed: Module Validation { duration: '0ms' }
+2025-07-09T17:43:16.047Z [DEBUG] [CoreInitialization] Starting phase: Health Checks
+2025-07-09T17:43:16.048Z [INFO] [CoreInitialization] Health checks passed { checkCount: 3, healthyChecks: 3 }
+2025-07-09T17:43:16.048Z [DEBUG] [CoreInitialization] Phase completed: Health Checks { duration: '1ms' }
+2025-07-09T17:43:16.048Z [DEBUG] [CoreInitialization] Starting phase: Health Monitoring Integration
+2025-07-09T17:43:16.048Z [INFO] [CoreInitialization] Health monitoring integrated into core server
+2025-07-09T17:43:16.048Z [DEBUG] [CoreInitialization] Phase completed: Health Monitoring Integration { duration: '0ms' }
+2025-07-09T17:43:16.048Z [INFO] [CoreInitialization] Forest system initialized successfully { duration: '9ms', phases: 4 }
+2025-07-09T17:43:16.048Z [StdioTransport] Connected to server
+2025-07-09T17:43:16.049Z Forest MCP server started successfully.
+2025-07-09T17:52:33.712Z Starting Forest MCP server initialization...
+2025-07-09T17:52:33.713Z [INFO] [CoreInitialization] Initialized with consolidated architecture
+2025-07-09T17:52:33.713Z [INFO] [CoreInitialization] Starting Forest system initialization...
+2025-07-09T17:52:33.713Z [DEBUG] [CoreInitialization] Starting phase: Core Infrastructure
+2025-07-09T17:52:33.713Z [LocalServer] Initialized with forest-mcp-server
+2025-07-09T17:52:33.714Z ✅ Enhanced HTA Core initialized with Schema-Driven Intelligence
+2025-07-09T17:52:33.714Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:52:33.714Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:52:33.714Z [Stage1CoreServer] Initialized with consolidated modules
+2025-07-09T17:52:33.714Z 🚀 Initializing Stage1 Core Server...
+2025-07-09T17:52:33.714Z 🔄 Initializing SQLite vector storage...
+2025-07-09T17:52:33.714Z Background processor started
+2025-07-09T17:52:33.714Z Background task hta-expansion-check scheduled every 300000ms
+2025-07-09T17:52:33.715Z [McpCore] Setting up MCP handlers...
+2025-07-09T17:52:33.715Z [McpCore] Tool router connected
+2025-07-09T17:52:33.717Z ✅ MCP handlers configured with 21 tools
+2025-07-09T17:52:33.717Z 📊 Initializing vector intelligence...
+2025-07-09T17:52:33.717Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:52:33.717Z [ForestDataVectorization] Testing vector store integrity...
+2025-07-09T17:52:33.717Z [ForestDataVectorization] ✅ Converted 384-dim vector to vector store-compatible format
+2025-07-09T17:52:33.718Z [ForestDataVectorization] ✅ vector store integrity test passed
+2025-07-09T17:52:33.718Z [ForestDataVectorization] Initialized with selective vectorization strategy
+2025-07-09T17:52:33.718Z ✅ Forest Data Vectorization ready
+2025-07-09T17:52:33.719Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:52:33.719Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:52:33.719Z ✅ HTA Vector Store initialized successfully
+2025-07-09T17:52:33.719Z ✅ Vector store connected to Enhanced HTA Core
+2025-07-09T17:52:33.719Z ✅ Vector intelligence ready
+2025-07-09T17:52:33.719Z ✅ Stage1 Core Server initialized successfully
+2025-07-09T17:52:33.719Z [DEBUG] [CoreInitialization] Phase completed: Core Infrastructure { duration: '6ms' }
+2025-07-09T17:52:33.719Z [DEBUG] [CoreInitialization] Starting phase: Module Validation
+2025-07-09T17:52:33.719Z [DEBUG] [CoreInitialization] Module validated: dataPersistence
+2025-07-09T17:52:33.719Z [DEBUG] [CoreInitialization] Module validated: projectManagement
+2025-07-09T17:52:33.719Z [DEBUG] [CoreInitialization] Module validated: htaCore
+2025-07-09T17:52:33.719Z [DEBUG] [CoreInitialization] Module validated: taskStrategyCore
+2025-07-09T17:52:33.719Z [DEBUG] [CoreInitialization] Module validated: coreIntelligence
+2025-07-09T17:52:33.719Z [DEBUG] [CoreInitialization] Module validated: memorySync
+2025-07-09T17:52:33.720Z [DEBUG] [CoreInitialization] Module validated: mcpCore
+2025-07-09T17:52:33.720Z [INFO] [CoreInitialization] All consolidated modules validated { moduleCount: 7, validModules: 7 }
+2025-07-09T17:52:33.720Z [DEBUG] [CoreInitialization] Phase completed: Module Validation { duration: '1ms' }
+2025-07-09T17:52:33.720Z [DEBUG] [CoreInitialization] Starting phase: Health Checks
+2025-07-09T17:52:33.720Z [INFO] [CoreInitialization] Health checks passed { checkCount: 3, healthyChecks: 3 }
+2025-07-09T17:52:33.720Z [DEBUG] [CoreInitialization] Phase completed: Health Checks { duration: '0ms' }
+2025-07-09T17:52:33.720Z [DEBUG] [CoreInitialization] Starting phase: Health Monitoring Integration
+2025-07-09T17:52:33.720Z [INFO] [CoreInitialization] Health monitoring integrated into core server
+2025-07-09T17:52:33.720Z [DEBUG] [CoreInitialization] Phase completed: Health Monitoring Integration { duration: '0ms' }
+2025-07-09T17:52:33.720Z [INFO] [CoreInitialization] Forest system initialized successfully { duration: '7ms', phases: 4 }
+2025-07-09T17:52:33.720Z [StdioTransport] Connected to server
+2025-07-09T17:52:33.721Z Forest MCP server started successfully.
+2025-07-09T17:52:53.596Z Received SIGTERM, shutting down Forest MCP server...
+2025-07-09T17:52:53.597Z [INFO] [CoreInitialization] Starting graceful shutdown...
+2025-07-09T17:52:53.597Z [INFO] [Stage1CoreServer] Starting cleanup...
+2025-07-09T17:52:53.597Z Background task hta-expansion-check removed
+2025-07-09T17:52:53.597Z Background processor stopped
+2025-07-09T17:52:53.597Z [INFO] [Stage1CoreServer] Cleanup complete
+2025-07-09T17:52:53.597Z [INFO] [CoreInitialization] Forest system shutdown complete
+2025-07-09T17:52:53.597Z [DEBUG] [DataPersistence] Cache cleared undefined
+2025-07-09T17:52:53.597Z [DEBUG] [MemorySync] Sync queue cleared
+2025-07-09T17:52:53.597Z Shutdown complete.
+2025-07-09T17:53:00.090Z Starting Forest MCP server initialization...
+2025-07-09T17:53:00.091Z [INFO] [CoreInitialization] Initialized with consolidated architecture
+2025-07-09T17:53:00.091Z [INFO] [CoreInitialization] Starting Forest system initialization...
+2025-07-09T17:53:00.091Z [DEBUG] [CoreInitialization] Starting phase: Core Infrastructure
+2025-07-09T17:53:00.091Z [LocalServer] Initialized with forest-mcp-server
+2025-07-09T17:53:00.092Z ✅ Enhanced HTA Core initialized with Schema-Driven Intelligence
+2025-07-09T17:53:00.092Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:53:00.092Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:53:00.092Z [Stage1CoreServer] Initialized with consolidated modules
+2025-07-09T17:53:00.092Z 🚀 Initializing Stage1 Core Server...
+2025-07-09T17:53:00.092Z 🔄 Initializing SQLite vector storage...
+2025-07-09T17:53:00.092Z Background processor started
+2025-07-09T17:53:00.093Z Background task hta-expansion-check scheduled every 300000ms
+2025-07-09T17:53:00.093Z [McpCore] Setting up MCP handlers...
+2025-07-09T17:53:00.093Z [McpCore] Tool router connected
+2025-07-09T17:53:00.095Z ✅ MCP handlers configured with 21 tools
+2025-07-09T17:53:00.095Z 📊 Initializing vector intelligence...
+2025-07-09T17:53:00.095Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:53:00.095Z [ForestDataVectorization] Testing vector store integrity...
+2025-07-09T17:53:00.095Z [ForestDataVectorization] ✅ Converted 384-dim vector to vector store-compatible format
+2025-07-09T17:53:00.096Z [ForestDataVectorization] ✅ vector store integrity test passed
+2025-07-09T17:53:00.096Z [ForestDataVectorization] Initialized with selective vectorization strategy
+2025-07-09T17:53:00.096Z ✅ Forest Data Vectorization ready
+2025-07-09T17:53:00.097Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:53:00.097Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:53:00.097Z ✅ HTA Vector Store initialized successfully
+2025-07-09T17:53:00.097Z ✅ Vector store connected to Enhanced HTA Core
+2025-07-09T17:53:00.097Z ✅ Vector intelligence ready
+2025-07-09T17:53:00.097Z ✅ Stage1 Core Server initialized successfully
+2025-07-09T17:53:00.097Z [DEBUG] [CoreInitialization] Phase completed: Core Infrastructure { duration: '6ms' }
+2025-07-09T17:53:00.097Z [DEBUG] [CoreInitialization] Starting phase: Module Validation
+2025-07-09T17:53:00.097Z [DEBUG] [CoreInitialization] Module validated: dataPersistence
+2025-07-09T17:53:00.097Z [DEBUG] [CoreInitialization] Module validated: projectManagement
+2025-07-09T17:53:00.097Z [DEBUG] [CoreInitialization] Module validated: htaCore
+2025-07-09T17:53:00.097Z [DEBUG] [CoreInitialization] Module validated: taskStrategyCore
+2025-07-09T17:53:00.097Z [DEBUG] [CoreInitialization] Module validated: coreIntelligence
+2025-07-09T17:53:00.097Z [DEBUG] [CoreInitialization] Module validated: memorySync
+2025-07-09T17:53:00.097Z [DEBUG] [CoreInitialization] Module validated: mcpCore
+2025-07-09T17:53:00.098Z [INFO] [CoreInitialization] All consolidated modules validated { moduleCount: 7, validModules: 7 }
+2025-07-09T17:53:00.098Z [DEBUG] [CoreInitialization] Phase completed: Module Validation { duration: '1ms' }
+2025-07-09T17:53:00.098Z [DEBUG] [CoreInitialization] Starting phase: Health Checks
+2025-07-09T17:53:00.098Z [INFO] [CoreInitialization] Health checks passed { checkCount: 3, healthyChecks: 3 }
+2025-07-09T17:53:00.098Z [DEBUG] [CoreInitialization] Phase completed: Health Checks { duration: '0ms' }
+2025-07-09T17:53:00.098Z [DEBUG] [CoreInitialization] Starting phase: Health Monitoring Integration
+2025-07-09T17:53:00.098Z [INFO] [CoreInitialization] Health monitoring integrated into core server
+2025-07-09T17:53:00.098Z [DEBUG] [CoreInitialization] Phase completed: Health Monitoring Integration { duration: '0ms' }
+2025-07-09T17:53:00.098Z [INFO] [CoreInitialization] Forest system initialized successfully { duration: '7ms', phases: 4 }
+2025-07-09T17:53:00.098Z [StdioTransport] Connected to server
+2025-07-09T17:53:00.099Z Forest MCP server started successfully.
+2025-07-09T17:53:13.823Z Starting Forest MCP server initialization...
+2025-07-09T17:53:13.824Z [INFO] [CoreInitialization] Initialized with consolidated architecture
+2025-07-09T17:53:13.824Z [INFO] [CoreInitialization] Starting Forest system initialization...
+2025-07-09T17:53:13.825Z [DEBUG] [CoreInitialization] Starting phase: Core Infrastructure
+2025-07-09T17:53:13.825Z [LocalServer] Initialized with forest-mcp-server
+2025-07-09T17:53:13.825Z ✅ Enhanced HTA Core initialized with Schema-Driven Intelligence
+2025-07-09T17:53:13.825Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:53:13.825Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:53:13.825Z [Stage1CoreServer] Initialized with consolidated modules
+2025-07-09T17:53:13.826Z 🚀 Initializing Stage1 Core Server...
+2025-07-09T17:53:13.826Z 🔄 Initializing SQLite vector storage...
+2025-07-09T17:53:13.826Z Background processor started
+2025-07-09T17:53:13.826Z Background task hta-expansion-check scheduled every 300000ms
+2025-07-09T17:53:13.826Z [McpCore] Setting up MCP handlers...
+2025-07-09T17:53:13.826Z [McpCore] Tool router connected
+2025-07-09T17:53:13.828Z ✅ MCP handlers configured with 21 tools
+2025-07-09T17:53:13.828Z 📊 Initializing vector intelligence...
+2025-07-09T17:53:13.828Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:53:13.828Z [ForestDataVectorization] Testing vector store integrity...
+2025-07-09T17:53:13.828Z [ForestDataVectorization] ✅ Converted 384-dim vector to vector store-compatible format
+2025-07-09T17:53:13.829Z [ForestDataVectorization] ✅ vector store integrity test passed
+2025-07-09T17:53:13.829Z [ForestDataVectorization] Initialized with selective vectorization strategy
+2025-07-09T17:53:13.829Z ✅ Forest Data Vectorization ready
+2025-07-09T17:53:13.830Z [HTA-Vector] Using LocalJSON fallback provider
+2025-07-09T17:53:13.830Z [HTA-Vector] Provider initialized: LocalJSONProvider
+2025-07-09T17:53:13.830Z ✅ HTA Vector Store initialized successfully
+2025-07-09T17:53:13.831Z ✅ Vector store connected to Enhanced HTA Core
+2025-07-09T17:53:13.831Z ✅ Vector intelligence ready
+2025-07-09T17:53:13.831Z ✅ Stage1 Core Server initialized successfully
+2025-07-09T17:53:13.831Z [DEBUG] [CoreInitialization] Phase completed: Core Infrastructure { duration: '6ms' }
+2025-07-09T17:53:13.831Z [DEBUG] [CoreInitialization] Starting phase: Module Validation
+2025-07-09T17:53:13.831Z [DEBUG] [CoreInitialization] Module validated: dataPersistence
+2025-07-09T17:53:13.831Z [DEBUG] [CoreInitialization] Module validated: projectManagement
+2025-07-09T17:53:13.831Z [DEBUG] [CoreInitialization] Module validated: htaCore
+2025-07-09T17:53:13.831Z [DEBUG] [CoreInitialization] Module validated: taskStrategyCore
+2025-07-09T17:53:13.831Z [DEBUG] [CoreInitialization] Module validated: coreIntelligence
+2025-07-09T17:53:13.831Z [DEBUG] [CoreInitialization] Module validated: memorySync
+2025-07-09T17:53:13.831Z [DEBUG] [CoreInitialization] Module validated: mcpCore
+2025-07-09T17:53:13.832Z [INFO] [CoreInitialization] All consolidated modules validated { moduleCount: 7, validModules: 7 }
+2025-07-09T17:53:13.832Z [DEBUG] [CoreInitialization] Phase completed: Module Validation { duration: '1ms' }
+2025-07-09T17:53:13.832Z [DEBUG] [CoreInitialization] Starting phase: Health Checks
+2025-07-09T17:53:13.832Z [INFO] [CoreInitialization] Health checks passed { checkCount: 3, healthyChecks: 3 }
+2025-07-09T17:53:13.833Z [DEBUG] [CoreInitialization] Phase completed: Health Checks { duration: '0ms' }
+2025-07-09T17:53:13.833Z [DEBUG] [CoreInitialization] Starting phase: Health Monitoring Integration
+2025-07-09T17:53:13.833Z [INFO] [CoreInitialization] Health monitoring integrated into core server
+2025-07-09T17:53:13.833Z [DEBUG] [CoreInitialization] Phase completed: Health Monitoring Integration { duration: '0ms' }
+2025-07-09T17:53:13.834Z [INFO] [CoreInitialization] Forest system initialized successfully { duration: '9ms', phases: 4 }
+2025-07-09T17:53:13.834Z [StdioTransport] Connected to server
+2025-07-09T17:53:13.835Z Forest MCP server started successfully.
+2025-07-09T17:58:13.830Z [DEBUG] [DataPersistence] Global data loaded { fileName: 'config.json' }
+2025-07-09T17:58:13.832Z [DEBUG] [DataPersistence] Project data loaded { projectId: 'test_semantic_task_e7v4', fileName: 'config.json' }
+2025-07-09T17:58:13.833Z [DEBUG] [DataPersistence] Path data loaded { projectId: 'test_semantic_task_e7v4', pathName: 'general', fileName: 'hta.json' }
+2025-07-09T17:58:13.834Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T17:58:13.834Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:03:13.827Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:03:13.830Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:08:13.828Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:08:13.830Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:13:13.830Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:13:13.832Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:18:13.828Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:18:13.829Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:23:13.827Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:23:13.828Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:37:09.523Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:37:09.525Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:54:25.219Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:54:25.221Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:59:25.225Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T18:59:25.227Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:04:25.230Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:04:25.232Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:09:25.237Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:09:25.239Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:14:25.240Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:14:25.242Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:19:25.262Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:19:25.264Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:24:25.269Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:24:25.271Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:29:25.276Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:29:25.278Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:34:25.283Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:34:25.284Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:39:25.263Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:39:25.264Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:44:25.267Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:44:25.269Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:49:25.270Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:49:25.272Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:54:25.275Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T19:54:25.277Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:02:05.027Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:02:05.029Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:11:50.960Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:11:50.961Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:16:50.973Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:16:50.978Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:21:50.968Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:21:50.970Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:26:50.973Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-09T20:26:50.976Z ✅ Loaded existing HTA data for test_semantic_task_e7v4/general
+2025-07-12T12:48:33.796Z ✅ Core server imports OK
+2025-07-12T12:48:33.797Z Testing core initialization import...
+2025-07-12T12:48:33.797Z ✅ Core initialization imports OK
+2025-07-12T12:48:33.797Z Testing main server import...
+2025-07-12T12:48:33.798Z ✅ Main server imports OK
+2025-07-12T12:48:33.798Z 
+🎉 All critical imports successful!

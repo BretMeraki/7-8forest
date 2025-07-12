@@ -31,7 +31,8 @@ process.stdout.on('error', (err) => {
 import fs from 'fs';
 import path from 'path';
 
-const logFilePath = path.resolve(process.env.FOREST_DATA_DIR || '.forest-data', 'forest-mcp.log');
+// SECURITY: Log files must NEVER be in the data directory that Claude can access
+const logFilePath = path.resolve(process.env.FOREST_LOG_DIR || '/tmp/forest-logs', 'forest-mcp.log');
 
 const originalStderrWrite = process.stderr.write.bind(process.stderr);
 function safeLog(...args) {

@@ -1,0 +1,1320 @@
+{
+  "projectId": "transition_from_professional_ynpn",
+  "pathName": "general",
+  "created": "2025-07-10T22:38:54.020Z",
+  "lastUpdated": "2025-07-10T22:38:54.023Z",
+  "goal": "Transition from professional chef to freelance UX/UI designer within 8 months",
+  "context": "Background: 10 years as a professional chef in high-end restaurants, burned out from kitchen stress. \n    Has strong visual sense from food plating and presentation. Comfortable with technology but no formal design training. \n    Single parent with limited evening/weekend time. Budget constraints mean preferring free/low-cost learning resources. \n    Goal is to build a portfolio and land first freelance clients by month 8. Interested in designing for food/hospitality industry initially.",
+  "complexity": {
+    "score": 5,
+    "level": "moderate",
+    "factors": [
+      "Learning curve",
+      "Practice requirements"
+    ],
+    "recommended_depth": 3,
+    "analysis": "Progressive skill building with hands-on practice"
+  },
+  "strategicBranches": [
+    {
+      "name": "Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning",
+      "priority": 1,
+      "domain_focus": "Fundamental concepts and terminology",
+      "rationale": "Strong foundation enables all subsequent learning",
+      "expected_outcomes": [
+        "Core concept mastery",
+        "Basic terminology fluency"
+      ],
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "pain_point_mitigations": [
+        "Multiple learning resources"
+      ],
+      "exploration_opportunities": [
+        "Related concepts",
+        "Historical context"
+      ],
+      "tasks": [],
+      "focus": "balanced",
+      "schema_generated": true
+    },
+    {
+      "name": "Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning",
+      "priority": 2,
+      "domain_focus": "Hands-on application and skill development",
+      "rationale": "Practice transforms knowledge into skills",
+      "expected_outcomes": [
+        "Practical competency",
+        "Confident application"
+      ],
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "pain_point_mitigations": [
+        "Guided exercises and feedback"
+      ],
+      "exploration_opportunities": [
+        "Advanced techniques",
+        "Real-world projects"
+      ],
+      "tasks": [],
+      "focus": "hands-on",
+      "schema_generated": true
+    },
+    {
+      "name": "Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning",
+      "priority": 3,
+      "domain_focus": "Advanced application and synthesis",
+      "rationale": "Integration demonstrates true mastery",
+      "expected_outcomes": [
+        "Advanced proficiency",
+        "Independent problem solving"
+      ],
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "pain_point_mitigations": [
+        "Expert guidance and resources"
+      ],
+      "exploration_opportunities": [
+        "Specialized areas",
+        "Teaching others"
+      ],
+      "tasks": [],
+      "focus": "hands-on",
+      "schema_generated": true
+    }
+  ],
+  "frontierNodes": [
+    {
+      "id": "foundation_building_1",
+      "title": "Introduction to Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 1",
+      "difficulty": 2,
+      "duration": "35 minutes",
+      "branch": "Foundation Building",
+      "priority": 100,
+      "prerequisites": [],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_2",
+      "title": "Introduction to Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 2",
+      "difficulty": 2.5,
+      "duration": "46 minutes",
+      "branch": "Foundation Building",
+      "priority": 110,
+      "prerequisites": [
+        "foundation_building_1"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_3",
+      "title": "Introduction to Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 3",
+      "difficulty": 3,
+      "duration": "56 minutes",
+      "branch": "Foundation Building",
+      "priority": 120,
+      "prerequisites": [
+        "foundation_building_2"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_4",
+      "title": "Exploring Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 4",
+      "difficulty": 3.5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 130,
+      "prerequisites": [
+        "foundation_building_3"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_5",
+      "title": "Exploring Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 5",
+      "difficulty": 4,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 140,
+      "prerequisites": [
+        "foundation_building_4"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_6",
+      "title": "Exploring Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 6",
+      "difficulty": 4.5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 150,
+      "prerequisites": [
+        "foundation_building_5"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_7",
+      "title": "Understanding Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 7",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 160,
+      "prerequisites": [
+        "foundation_building_6"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_8",
+      "title": "Understanding Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 8",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 170,
+      "prerequisites": [
+        "foundation_building_7"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_9",
+      "title": "Understanding Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 9",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 180,
+      "prerequisites": [
+        "foundation_building_8"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_10",
+      "title": "Mastering Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 10",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 190,
+      "prerequisites": [
+        "foundation_building_9"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_11",
+      "title": "Mastering Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 11",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 200,
+      "prerequisites": [
+        "foundation_building_10"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_12",
+      "title": "Mastering Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 12",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 210,
+      "prerequisites": [
+        "foundation_building_11"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_13",
+      "title": "Advanced Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 13",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 220,
+      "prerequisites": [
+        "foundation_building_12"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_14",
+      "title": "Advanced Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 14",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 230,
+      "prerequisites": [
+        "foundation_building_13"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "foundation_building_15",
+      "title": "Advanced Foundation Building",
+      "description": "Establish core knowledge and understanding in General Learning - Phase 15",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Foundation Building",
+      "priority": 240,
+      "prerequisites": [
+        "foundation_building_14"
+      ],
+      "learningOutcome": "Progress in Foundation Building",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Fundamental concepts and terminology",
+      "context_adaptations": [
+        "Adjust depth based on background"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_16",
+      "title": "Introduction to Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 1",
+      "difficulty": 2,
+      "duration": "35 minutes",
+      "branch": "Practical Application",
+      "priority": 200,
+      "prerequisites": [],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_17",
+      "title": "Introduction to Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 2",
+      "difficulty": 2.5,
+      "duration": "46 minutes",
+      "branch": "Practical Application",
+      "priority": 210,
+      "prerequisites": [
+        "practical_application_16"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_18",
+      "title": "Introduction to Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 3",
+      "difficulty": 3,
+      "duration": "56 minutes",
+      "branch": "Practical Application",
+      "priority": 220,
+      "prerequisites": [
+        "practical_application_17"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_19",
+      "title": "Exploring Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 4",
+      "difficulty": 3.5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 230,
+      "prerequisites": [
+        "practical_application_18"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_20",
+      "title": "Exploring Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 5",
+      "difficulty": 4,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 240,
+      "prerequisites": [
+        "practical_application_19"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_21",
+      "title": "Exploring Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 6",
+      "difficulty": 4.5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 250,
+      "prerequisites": [
+        "practical_application_20"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_22",
+      "title": "Understanding Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 7",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 260,
+      "prerequisites": [
+        "practical_application_21"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_23",
+      "title": "Understanding Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 8",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 270,
+      "prerequisites": [
+        "practical_application_22"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_24",
+      "title": "Understanding Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 9",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 280,
+      "prerequisites": [
+        "practical_application_23"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_25",
+      "title": "Mastering Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 10",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 290,
+      "prerequisites": [
+        "practical_application_24"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_26",
+      "title": "Mastering Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 11",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 300,
+      "prerequisites": [
+        "practical_application_25"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_27",
+      "title": "Mastering Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 12",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 310,
+      "prerequisites": [
+        "practical_application_26"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_28",
+      "title": "Advanced Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 13",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 320,
+      "prerequisites": [
+        "practical_application_27"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_29",
+      "title": "Advanced Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 14",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 330,
+      "prerequisites": [
+        "practical_application_28"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "practical_application_30",
+      "title": "Advanced Practical Application",
+      "description": "Apply knowledge through hands-on practice in General Learning - Phase 15",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Practical Application",
+      "priority": 340,
+      "prerequisites": [
+        "practical_application_29"
+      ],
+      "learningOutcome": "Progress in Practical Application",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Hands-on application and skill development",
+      "context_adaptations": [
+        "Varied practice scenarios"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_31",
+      "title": "Introduction to Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 1",
+      "difficulty": 2,
+      "duration": "35 minutes",
+      "branch": "Mastery Integration",
+      "priority": 300,
+      "prerequisites": [],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_32",
+      "title": "Introduction to Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 2",
+      "difficulty": 2.5,
+      "duration": "46 minutes",
+      "branch": "Mastery Integration",
+      "priority": 310,
+      "prerequisites": [
+        "mastery_integration_31"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_33",
+      "title": "Introduction to Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 3",
+      "difficulty": 3,
+      "duration": "56 minutes",
+      "branch": "Mastery Integration",
+      "priority": 320,
+      "prerequisites": [
+        "mastery_integration_32"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_34",
+      "title": "Exploring Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 4",
+      "difficulty": 3.5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 330,
+      "prerequisites": [
+        "mastery_integration_33"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_35",
+      "title": "Exploring Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 5",
+      "difficulty": 4,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 340,
+      "prerequisites": [
+        "mastery_integration_34"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_36",
+      "title": "Exploring Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 6",
+      "difficulty": 4.5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 350,
+      "prerequisites": [
+        "mastery_integration_35"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_37",
+      "title": "Understanding Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 7",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 360,
+      "prerequisites": [
+        "mastery_integration_36"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_38",
+      "title": "Understanding Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 8",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 370,
+      "prerequisites": [
+        "mastery_integration_37"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_39",
+      "title": "Understanding Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 9",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 380,
+      "prerequisites": [
+        "mastery_integration_38"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_40",
+      "title": "Mastering Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 10",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 390,
+      "prerequisites": [
+        "mastery_integration_39"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_41",
+      "title": "Mastering Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 11",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 400,
+      "prerequisites": [
+        "mastery_integration_40"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_42",
+      "title": "Mastering Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 12",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 410,
+      "prerequisites": [
+        "mastery_integration_41"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_43",
+      "title": "Advanced Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 13",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 420,
+      "prerequisites": [
+        "mastery_integration_42"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_44",
+      "title": "Advanced Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 14",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 430,
+      "prerequisites": [
+        "mastery_integration_43"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    },
+    {
+      "id": "mastery_integration_45",
+      "title": "Advanced Mastery Integration",
+      "description": "Achieve advanced proficiency and integrate learning in General Learning - Phase 15",
+      "difficulty": 5,
+      "duration": "60 minutes",
+      "branch": "Mastery Integration",
+      "priority": 440,
+      "prerequisites": [
+        "mastery_integration_44"
+      ],
+      "learningOutcome": "Progress in Mastery Integration",
+      "generated": true,
+      "schema_generated": true,
+      "domain_focus": "Advanced application and synthesis",
+      "context_adaptations": [
+        "Tailor to specific interests"
+      ],
+      "completed": false
+    }
+  ],
+  "completedNodes": [],
+  "level1_goalContext": {
+    "goal_analysis": {
+      "primary_goal": "Transition from professional chef to freelance UX/UI designer within 8 months",
+      "goal_complexity": 5,
+      "domain_type": "General Learning",
+      "domain_characteristics": [
+        "exploratory",
+        "knowledge-building"
+      ],
+      "success_criteria": [
+        "Gain foundational knowledge",
+        "Develop practical skills"
+      ],
+      "timeline_assessment": "3-6 months for basic proficiency",
+      "complexity_factors": [
+        "Learning curve",
+        "Practice requirements"
+      ]
+    },
+    "user_context": {
+      "background_knowledge": [
+        "Basic understanding of topic"
+      ],
+      "available_resources": [
+        "Learning materials",
+        "Practice opportunities"
+      ],
+      "constraints": [
+        "Time limitations",
+        "Resource availability"
+      ],
+      "motivation_drivers": [
+        "Personal growth",
+        "Skill development"
+      ],
+      "risk_factors": [
+        "Maintaining motivation",
+        "Finding quality resources"
+      ]
+    },
+    "domain_boundaries": {
+      "core_domain_elements": [
+        "Core concepts",
+        "Practical application"
+      ],
+      "relevant_adjacent_domains": [
+        "Related fields",
+        "Supporting skills"
+      ],
+      "exploration_worthy_topics": [
+        "Advanced techniques",
+        "Real-world applications"
+      ],
+      "irrelevant_domains": [
+        "Unrelated fields"
+      ]
+    },
+    "learning_approach": {
+      "recommended_strategy": "Progressive skill building with hands-on practice",
+      "key_principles": [
+        "Start with basics",
+        "Practice regularly",
+        "Build progressively"
+      ],
+      "potential_pain_points": [
+        "Initial learning curve",
+        "Maintaining consistency"
+      ],
+      "success_enablers": [
+        "Regular practice",
+        "Clear milestones",
+        "Feedback loops"
+      ]
+    },
+    "mcp_bridge_info": {
+      "request_id": "req_1752187112514_ujryx1ey2",
+      "bridge_active": true,
+      "schema_type": "goalContext",
+      "generated_via": "Domain-Specific Intelligence"
+    }
+  },
+  "level2_strategicBranches": {
+    "strategic_branches": [
+      {
+        "name": "Foundation Building",
+        "description": "Establish core knowledge and understanding in General Learning",
+        "priority": 1,
+        "rationale": "Strong foundation enables all subsequent learning",
+        "domain_focus": "Fundamental concepts and terminology",
+        "expected_outcomes": [
+          "Core concept mastery",
+          "Basic terminology fluency"
+        ],
+        "context_adaptations": [
+          "Adjust depth based on background"
+        ],
+        "pain_point_mitigations": [
+          "Multiple learning resources"
+        ],
+        "exploration_opportunities": [
+          "Related concepts",
+          "Historical context"
+        ]
+      },
+      {
+        "name": "Practical Application",
+        "description": "Apply knowledge through hands-on practice in General Learning",
+        "priority": 2,
+        "rationale": "Practice transforms knowledge into skills",
+        "domain_focus": "Hands-on application and skill development",
+        "expected_outcomes": [
+          "Practical competency",
+          "Confident application"
+        ],
+        "context_adaptations": [
+          "Varied practice scenarios"
+        ],
+        "pain_point_mitigations": [
+          "Guided exercises and feedback"
+        ],
+        "exploration_opportunities": [
+          "Advanced techniques",
+          "Real-world projects"
+        ]
+      },
+      {
+        "name": "Mastery Integration",
+        "description": "Achieve advanced proficiency and integrate learning in General Learning",
+        "priority": 3,
+        "rationale": "Integration demonstrates true mastery",
+        "domain_focus": "Advanced application and synthesis",
+        "expected_outcomes": [
+          "Advanced proficiency",
+          "Independent problem solving"
+        ],
+        "context_adaptations": [
+          "Tailor to specific interests"
+        ],
+        "pain_point_mitigations": [
+          "Expert guidance and resources"
+        ],
+        "exploration_opportunities": [
+          "Specialized areas",
+          "Teaching others"
+        ]
+      }
+    ],
+    "progression_logic": "Foundation → Application → Mastery",
+    "alternative_paths": [
+      "Accelerated track",
+      "Extended foundation"
+    ],
+    "mcp_bridge_info": {
+      "request_id": "req_1752187122011_fba2ihh0a",
+      "bridge_active": true,
+      "schema_type": "strategicBranches",
+      "generated_via": "Domain-Specific Intelligence"
+    }
+  },
+  "level3_taskDecomposition": [
+    {
+      "content": "MCP Bridge working for taskDecomposition! 🎆",
+      "schema_type": "taskDecomposition",
+      "goal": "learning goal",
+      "mcp_bridge_info": {
+        "request_id": "req_1752187129517_13yqr9j6t",
+        "bridge_active": true,
+        "schema_type": "taskDecomposition",
+        "generated_via": "MCP Intelligence Bridge",
+        "demonstration_mode": true
+      },
+      "intelligence_status": {
+        "bridge_functional": true,
+        "prompt_generated": true,
+        "schema_provided": true,
+        "awaiting_claude_response": true
+      },
+      "note": "This demonstrates that your MCP Intelligence Bridge is working correctly and generating sophisticated prompts for Claude to process."
+    },
+    {
+      "content": "MCP Bridge working for taskDecomposition! 🎆",
+      "schema_type": "taskDecomposition",
+      "goal": "learning goal",
+      "mcp_bridge_info": {
+        "request_id": "req_1752187129519_5f69r2wlt",
+        "bridge_active": true,
+        "schema_type": "taskDecomposition",
+        "generated_via": "MCP Intelligence Bridge",
+        "demonstration_mode": true
+      },
+      "intelligence_status": {
+        "bridge_functional": true,
+        "prompt_generated": true,
+        "schema_provided": true,
+        "awaiting_claude_response": true
+      },
+      "note": "This demonstrates that your MCP Intelligence Bridge is working correctly and generating sophisticated prompts for Claude to process."
+    },
+    {
+      "content": "MCP Bridge working for taskDecomposition! 🎆",
+      "schema_type": "taskDecomposition",
+      "goal": "learning goal",
+      "mcp_bridge_info": {
+        "request_id": "req_1752187129520_a32edv87z",
+        "bridge_active": true,
+        "schema_type": "taskDecomposition",
+        "generated_via": "MCP Intelligence Bridge",
+        "demonstration_mode": true
+      },
+      "intelligence_status": {
+        "bridge_functional": true,
+        "prompt_generated": true,
+        "schema_provided": true,
+        "awaiting_claude_response": true
+      },
+      "note": "This demonstrates that your MCP Intelligence Bridge is working correctly and generating sophisticated prompts for Claude to process."
+    }
+  ],
+  "level4_microParticles": [
+    {
+      "content": "MCP Bridge working for microParticles! 🎆",
+      "schema_type": "microParticles",
+      "goal": "learning goal",
+      "mcp_bridge_info": {
+        "request_id": "req_1752187133033_in560bmfm",
+        "bridge_active": true,
+        "schema_type": "microParticles",
+        "generated_via": "MCP Intelligence Bridge",
+        "demonstration_mode": true
+      },
+      "intelligence_status": {
+        "bridge_functional": true,
+        "prompt_generated": true,
+        "schema_provided": true,
+        "awaiting_claude_response": true
+      },
+      "note": "This demonstrates that your MCP Intelligence Bridge is working correctly and generating sophisticated prompts for Claude to process."
+    },
+    {
+      "content": "MCP Bridge working for microParticles! 🎆",
+      "schema_type": "microParticles",
+      "goal": "learning goal",
+      "mcp_bridge_info": {
+        "request_id": "req_1752187133035_emmbibsgk",
+        "bridge_active": true,
+        "schema_type": "microParticles",
+        "generated_via": "MCP Intelligence Bridge",
+        "demonstration_mode": true
+      },
+      "intelligence_status": {
+        "bridge_functional": true,
+        "prompt_generated": true,
+        "schema_provided": true,
+        "awaiting_claude_response": true
+      },
+      "note": "This demonstrates that your MCP Intelligence Bridge is working correctly and generating sophisticated prompts for Claude to process."
+    },
+    {
+      "content": "MCP Bridge working for microParticles! 🎆",
+      "schema_type": "microParticles",
+      "goal": "learning goal",
+      "mcp_bridge_info": {
+        "request_id": "req_1752187133036_a47vx8k58",
+        "bridge_active": true,
+        "schema_type": "microParticles",
+        "generated_via": "MCP Intelligence Bridge",
+        "demonstration_mode": true
+      },
+      "intelligence_status": {
+        "bridge_functional": true,
+        "prompt_generated": true,
+        "schema_provided": true,
+        "awaiting_claude_response": true
+      },
+      "note": "This demonstrates that your MCP Intelligence Bridge is working correctly and generating sophisticated prompts for Claude to process."
+    }
+  ],
+  "availableDepth": 4,
+  "maxDepth": 6,
+  "canExpand": true,
+  "schemaGenerated": true,
+  "domainBoundaries": {
+    "core_domain_elements": [
+      "Core concepts",
+      "Practical application"
+    ],
+    "relevant_adjacent_domains": [
+      "Related fields",
+      "Supporting skills"
+    ],
+    "exploration_worthy_topics": [
+      "Advanced techniques",
+      "Real-world applications"
+    ],
+    "irrelevant_domains": [
+      "Unrelated fields"
+    ]
+  },
+  "learningApproach": {
+    "recommended_strategy": "Progressive skill building with hands-on practice",
+    "key_principles": [
+      "Start with basics",
+      "Practice regularly",
+      "Build progressively"
+    ],
+    "potential_pain_points": [
+      "Initial learning curve",
+      "Maintaining consistency"
+    ],
+    "success_enablers": [
+      "Regular practice",
+      "Clear milestones",
+      "Feedback loops"
+    ]
+  },
+  "hierarchyMetadata": {
+    "total_depth": 3,
+    "total_branches": 3,
+    "total_tasks": 45,
+    "schema_intelligence": true,
+    "context_learning_enabled": true,
+    "generation_method": "pure_schema_driven",
+    "last_updated": "2025-07-10T22:38:54.023Z"
+  },
+  "generation_context": {
+    "method": "pure_schema_driven_intelligence",
+    "timestamp": "2025-07-10T22:38:54.020Z",
+    "schema_engine_version": "1.0.0",
+    "goal_achievement_context": true,
+    "awaiting_generation": false
+  }
+}

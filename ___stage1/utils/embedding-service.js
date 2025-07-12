@@ -1,35 +1,22 @@
 // embedding-service.js
-// Minimal, pluggable embedding service.  If an OpenAI key is present we call
-// the /v1/embeddings endpoint; otherwise we fall back to a deterministic
-// pseudo-embedding so the rest of the pipeline never breaks.
+// Deterministic embedding service for Forest vector operations
+// Uses mathematical functions to generate consistent vector representations
 
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import fetch from 'node-fetch';
 import vectorConfig from '../config/vector-config.js';
 import fsPromises from 'fs/promises';
-
-const {
-  provider = 'openai',
-  model = 'text-embedding-ada-002',
-  cacheDir = '.embedding-cache',
-  batchSize = 32,
-} = vectorConfig.embedding || {};
-
-const OPENAI_URL = 'https://api.openai.com/v1/embeddings';
 
 const EMBEDDING_CACHE_DIR = vectorConfig.embedding.cacheDir || '.embedding-cache';
 
 class EmbeddingService {
   constructor() {
-    this.provider = vectorConfig.embedding.provider;
-    this.model = vectorConfig.embedding.model;
+    this.provider = 'deterministic';
     this.cacheDir = EMBEDDING_CACHE_DIR;
     this.cache = new Map();
-    this.batchSize = vectorConfig.embedding.batchSize || 32;
     
-    // LRU cache management for embeddings (smaller cache due to larger objects)
+    // LRU cache management for embeddings
     this.maxCacheSize = parseInt(process.env.EMBEDDING_CACHE_MAX) || 1000;
     this.cacheAccessOrder = new Map();
     this.accessCounter = 0;
@@ -71,11 +58,18 @@ class EmbeddingService {
     }
     // Generate embedding
     let embedding;
-    if (this.provider === 'openai') {
-      embedding = await this._embedOpenAI(text);
+    if (this.provider === 'openai' && process.env.OPENAI_API_KEY) {
+      try {
+        embedding = await this._embedOpenAI(text);
+      } catch (err) {
+        console.warn('[EmbeddingService] OpenAI failed, falling back to deterministic:', err.message);
+        embedding = this._deterministicVector(text, 1536);
+      }
     } else {
-      throw new Error(`EmbeddingService: Unknown provider: ${this.provider}`);
+      // Use deterministic embedding for all other cases
+      embedding = this._deterministicVector(text, 1536);
     }
+    
     // Cache result
     this._evictIfNeeded();
     this.cache.set(text, embedding);

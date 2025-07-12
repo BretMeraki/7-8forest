@@ -1,0 +1,23 @@
+{
+  "branches": [
+    {
+      "name": "Fundamentals Foundations",
+      "priority": 1,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Fundamentals Application",
+      "priority": 2,
+      "task_count": 0,
+      "vectorized": true
+    },
+    {
+      "name": "Fundamentals Mastery",
+      "priority": 3,
+      "task_count": 0,
+      "vectorized": true
+    }
+  ],
+  "last_vectorized": "2025-07-11T20:15:57.164Z"
+}

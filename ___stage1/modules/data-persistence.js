@@ -7,7 +7,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { FILE_NAMES, DEFAULT_PATHS } from './memory-sync.js';
-import { CacheManager } from './stubs/cache-manager.js';
+import { SQLiteCacheManager } from './stubs/sqlite-cache-manager.js';
 import { projectOperationManager } from './project-operation-manager.js';
 // Use stderr for logging to avoid interfering with MCP JSON-RPC on stdout
 const loggerModule = {
@@ -40,7 +40,7 @@ const dataDirGlobal = process.env.FOREST_DATA_DIR || path.join(os.homedir(), '.f
 export class DataPersistence {
   constructor(dataDir) {
     this.dataDir = dataDir || dataDirGlobal;
-    this.cache = new CacheManager();
+    this.cache = new SQLiteCacheManager();
     this.transactions = new Map(); // Active transactions
     this.logger = null; // Will be initialized lazily
   }
@@ -446,30 +446,49 @@ export class DataPersistence {
   getCacheStats() {
     return {
       size: this.cache.size,
-      hitRate: this.cache.getHitRate(),
-      memoryUsage: this.cache.getMemoryUsage(),
+      hitRate: typeof this.cache.getHitRate === 'function' ? this.cache.getHitRate() : 0,
+      memoryUsage: typeof this.cache.getMemoryUsage === 'function' ? this.cache.getMemoryUsage() : 'N/A',
     };
   }
   
   // Emergency debugging method for live cache inspection
-  debugCacheState(projectId = null) {
+  debugCacheState(projectId = null, cacheType = 'all') {
     const allKeys = Array.from(this.cache.keys());
     const stats = this.getCacheStats();
     
-    const result = {
-      timestamp: new Date().toISOString(),
-      cacheStats: stats,
-      totalKeys: allKeys.length,
-      allKeys: allKeys,
-    };
-    
+    let filteredKeys = allKeys;
     if (projectId) {
-      const projectKeys = allKeys.filter(key => 
+      filteredKeys = allKeys.filter(key => 
         key.startsWith(`project:${projectId}:`) || key.startsWith(`path:${projectId}:`)
       );
-      result.projectKeys = projectKeys;
-      result.projectKeyCount = projectKeys.length;
     }
+    
+    if (cacheType !== 'all') {
+      filteredKeys = filteredKeys.filter(key => key.includes(cacheType));
+    }
+    
+    // Build cache contents preview
+    const contents = {};
+    filteredKeys.slice(0, 10).forEach(key => {
+      const value = this.cache.get(key);
+      if (value && typeof value === 'object') {
+        contents[key] = `[Object] ${Object.keys(value).length} keys`;
+      } else {
+        contents[key] = typeof value === 'string' ? value.slice(0, 50) + '...' : String(value);
+      }
+    });
+    
+    const result = {
+      timestamp: new Date().toISOString(),
+      totalEntries: allKeys.length,
+      filteredEntries: filteredKeys.length,
+      memoryUsage: `${Math.round(JSON.stringify(Array.from(this.cache.entries())).length / 1024)}KB`,
+      hitRate: stats.hitRate || 0,
+      mostRecent: filteredKeys.length > 0 ? filteredKeys[filteredKeys.length - 1] : null,
+      contents,
+      projectId: projectId || 'all',
+      cacheType
+    };
     
     console.error('[DEBUG] [DataPersistence] Cache State Debug:', JSON.stringify(result, null, 2));
     return result;
@@ -482,6 +501,34 @@ export class DataPersistence {
     this.invalidateProjectCache(projectId);
     this.debugCacheState(projectId);
     return true;
+  }
+
+  // Emergency cache clearing for all cached data
+  emergencyClearCache() {
+    console.error('[EMERGENCY] [DataPersistence] Emergency cache clear for all data');
+    const beforeStats = this.getCacheStats();
+    this.debugCacheState();
+    this.cache.clear();
+    const afterStats = this.getCacheStats();
+    console.error('[EMERGENCY] [DataPersistence] Cache cleared successfully', {
+      before: beforeStats,
+      after: afterStats
+    });
+    return true;
+  }
+
+  // List all files in a project directory
+  async listProjectFiles(projectId) {
+    try {
+      const projectDir = path.join(this.dataDir, projectId);
+      const files = await fs.readdir(projectDir);
+      return files.filter(file => file.endsWith('.json'));
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
   }
 
   // ===== UTILITY METHODS =====

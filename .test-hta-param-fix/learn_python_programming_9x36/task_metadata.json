@@ -1,0 +1,31 @@
+{
+  "tasks": [
+    {
+      "id": "fundamentals_foundations_intro_001",
+      "completed": false,
+      "priority": 100,
+      "difficulty": 2,
+      "prerequisites": [],
+      "vectorized": true
+    },
+    {
+      "id": "fundamentals_foundations_setup_002",
+      "completed": false,
+      "priority": 100,
+      "difficulty": 3,
+      "prerequisites": [],
+      "vectorized": true
+    },
+    {
+      "id": "fundamentals_foundations_basics_003",
+      "completed": false,
+      "priority": 100,
+      "difficulty": 3,
+      "prerequisites": [
+        "fundamentals_foundations_intro_001"
+      ],
+      "vectorized": true
+    }
+  ],
+  "last_vectorized": "2025-07-11T20:15:57.217Z"
+}

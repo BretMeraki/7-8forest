@@ -8,15 +8,46 @@
 import { DiagnosticVerifier } from './diagnostic-verifier.js';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 export class ClaudeDiagnosticHelper {
   constructor(projectRoot = process.cwd()) {
+    // Detect Forest server directory when running through MCP
+    if (!projectRoot || projectRoot.includes('Claude') || projectRoot.includes('Anthropic')) {
+      // Try to find the Forest server directory
+      const possiblePaths = [
+        'C:\\Users\\schlansk\\Downloads\\7-3forest-main',
+        path.join(process.env.USERPROFILE || '', 'Downloads', '7-3forest-main'),
+        // Fallback to current working directory if Forest not found
+        process.cwd()
+      ];
+      
+      for (const testPath of possiblePaths) {
+        try {
+          // Check if this looks like the Forest server directory
+          const packageJsonPath = path.join(testPath, 'package.json');
+          const stage1Path = path.join(testPath, '___stage1');
+          const fs = require('fs');
+          if (fs.existsSync(packageJsonPath) && fs.existsSync(stage1Path)) {
+            projectRoot = testPath;
+            break;
+          }
+        } catch (error) {
+          // Continue to next path
+        }
+      }
+    }
+    
     // If running from ___stage1 directory, adjust to project root
     if (projectRoot.endsWith('___stage1')) {
       projectRoot = path.dirname(projectRoot);
     }
+    
     this.verifier = new DiagnosticVerifier(projectRoot);
     this.projectRoot = projectRoot;
+    
+    // Log the resolved project root for debugging
+    console.log(`[ClaudeDiagnosticHelper] Using project root: ${this.projectRoot}`);
   }
 
   /**
@@ -42,7 +73,8 @@ export class ClaudeDiagnosticHelper {
     // 3. Try to import and test the function
     try {
       const fullPath = path.resolve(this.projectRoot, filePath);
-      const module = await import(fullPath);
+      const fileUrl = pathToFileURL(fullPath).href;
+      const module = await import(fileUrl);
       
       // Check if it's a class method
       const hasClass = Object.keys(module).find(key => 
@@ -93,7 +125,8 @@ export class ClaudeDiagnosticHelper {
     // 2. Try actual import/export
     try {
       const fullPath = path.resolve(this.projectRoot, filePath);
-      const module = await import(fullPath);
+      const fileUrl = pathToFileURL(fullPath).href;
+      const module = await import(fileUrl);
       
       if (type === 'export') {
         verification.verificationResults.actuallyExported = itemName in module || 'default' in module;
@@ -212,7 +245,7 @@ export class ClaudeDiagnosticHelper {
 }
 
 // Example usage for the analyzeGoalComplexityAsync issue
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
   const helper = new ClaudeDiagnosticHelper();
   
   const reportedIssues = [

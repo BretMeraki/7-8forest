@@ -1,10 +1,18 @@
 module.exports = {
   testEnvironment: 'node',
   preset: null,
+  extensionsToTreatAsEsm: [],
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  },
   moduleNameMapper: {
     '^(\.{1,2}/.*)\.js$': '$1'
   },
-  transform: {},
+  transform: {
+    '^.+\.js$': ['babel-jest', { presets: [['@babel/preset-env', { targets: { node: 'current' } }]] }]
+  },
   moduleFileExtensions: ['js', 'mjs', 'cjs', 'json'],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [

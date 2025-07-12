@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Live Sandbox Test - Real MCP Tools with ChromaDB
+ * Live Sandbox Test - Real MCP Tools with SQLite Vector Store
  * Tests actual MCP server functionality in real-time
  */
 

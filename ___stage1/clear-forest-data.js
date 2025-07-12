@@ -256,7 +256,7 @@ class ForestDataCleaner {
 }
 
 // Run cleanup if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
   const cleaner = new ForestDataCleaner();
   await cleaner.clearAll();
 }

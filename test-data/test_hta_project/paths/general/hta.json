@@ -1,0 +1,75 @@
+{
+  "projectId": "test_hta_project",
+  "pathName": "general",
+  "created": "2025-07-03T23:19:25.227Z",
+  "learningStyle": "hands-on",
+  "focusAreas": [
+    "testing",
+    "validation"
+  ],
+  "goal": "Test HTA functionality",
+  "context": "",
+  "complexity": {
+    "score": 3,
+    "level": "simple",
+    "recommended_depth": 2,
+    "factors": [],
+    "analysis": "Goal complexity: 3/10 (simple). Recommended tree depth: 2 levels."
+  },
+  "strategicBranches": [
+    {
+      "name": "Foundation",
+      "description": "Build fundamental understanding and basic concepts for Test HTA functionality",
+      "priority": 1,
+      "phase": "Foundation",
+      "tasks": []
+    },
+    {
+      "name": "Research",
+      "description": "Research and explore deeper aspects of Test HTA functionality",
+      "priority": 2,
+      "phase": "Research",
+      "tasks": []
+    },
+    {
+      "name": "Capability",
+      "description": "Develop practical capabilities and skills for Test HTA functionality",
+      "priority": 3,
+      "phase": "Capability",
+      "tasks": []
+    },
+    {
+      "name": "Implementation",
+      "description": "Apply knowledge and implement solutions for Test HTA functionality",
+      "priority": 4,
+      "phase": "Implementation",
+      "tasks": []
+    },
+    {
+      "name": "Mastery",
+      "description": "Achieve mastery and advanced expertise in Test HTA functionality",
+      "priority": 5,
+      "phase": "Mastery",
+      "tasks": []
+    }
+  ],
+  "frontierNodes": [],
+  "completedNodes": [],
+  "collaborative_sessions": [],
+  "hierarchyMetadata": {
+    "total_depth": 2,
+    "total_branches": 0,
+    "total_sub_branches": 0,
+    "total_tasks": 0,
+    "branch_task_distribution": {},
+    "last_updated": "2025-07-03T23:19:25.232Z"
+  },
+  "generation_context": {
+    "method": "deep_hierarchical_ai",
+    "timestamp": "2025-07-03T23:19:25.227Z",
+    "goal": "Test HTA functionality",
+    "complexity_score": 3,
+    "awaiting_generation": false
+  },
+  "lastUpdated": "2025-07-03T23:19:25.232Z"
+}

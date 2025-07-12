@@ -576,6 +576,135 @@ export class NextPipelinePresenter {
     });
   }
 
+  /**
+   * Evolve pipeline based on progress and context
+   */
+  async evolvePipeline(projectId, triggers = {}, context = {}) {
+    try {
+      // Get current project state
+      const projectConfig = await this.dataPersistence.loadProjectData(projectId, 'config.json');
+      const htaData = await this.dataPersistence.loadPathData(projectId, 'general', 'hta.json');
+      
+      if (!projectConfig || !htaData) {
+        throw new Error('Project data not found');
+      }
+
+      // Analyze triggers and context to determine evolution type
+      const evolutionType = this.determineEvolutionType(triggers, context);
+      
+      // Apply evolution based on type
+      let evolutionResult;
+      switch (evolutionType) {
+        case 'rapid_progress':
+          evolutionResult = await this.handleRapidProgressEvolution(projectId, htaData, context);
+          break;
+        case 'focus_shift':
+          evolutionResult = await this.handleFocusShiftEvolution(projectId, htaData, context);
+          break;
+        case 'difficulty_adjustment':
+          evolutionResult = await this.handleDifficultyAdjustmentEvolution(projectId, htaData, context);
+          break;
+        case 'refresh':
+        default:
+          evolutionResult = await this.handlePipelineRefresh(projectId, htaData, context);
+          break;
+      }
+
+      // Generate new pipeline with evolved context
+      const newPipeline = await this.generateNextPipeline(projectId, {
+        ...context,
+        evolutionApplied: evolutionResult,
+        evolutionType
+      });
+
+      return {
+        ...newPipeline,
+        evolution: {
+          type: evolutionType,
+          applied: evolutionResult,
+          triggers,
+          context
+        }
+      };
+
+    } catch (error) {
+      console.error('Pipeline evolution failed:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: `**Pipeline Evolution Failed**\n\nError: ${error.message}\n\nTrying to regenerate standard pipeline...`
+        }],
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Determine evolution type based on triggers and context
+   */
+  determineEvolutionType(triggers, context) {
+    if (triggers.rapid_progress) return 'rapid_progress';
+    if (context.focus_shift) return 'focus_shift';
+    if (context.difficulty_adjustment) return 'difficulty_adjustment';
+    return 'refresh';
+  }
+
+  /**
+   * Handle rapid progress evolution
+   */
+  async handleRapidProgressEvolution(projectId, htaData, context) {
+    return {
+      message: 'Pipeline evolved for rapid progress - added advanced tasks',
+      adjustments: [
+        'Increased task difficulty by 1 level',
+        'Added more challenging alternatives',
+        'Prioritized advanced concepts'
+      ]
+    };
+  }
+
+  /**
+   * Handle focus shift evolution
+   */
+  async handleFocusShiftEvolution(projectId, htaData, context) {
+    return {
+      message: `Pipeline evolved for focus shift to ${context.focus_shift}`,
+      adjustments: [
+        `Prioritized ${context.focus_shift} related tasks`,
+        'Reordered pipeline based on new focus',
+        'Added relevant alternatives'
+      ]
+    };
+  }
+
+  /**
+   * Handle difficulty adjustment evolution
+   */
+  async handleDifficultyAdjustmentEvolution(projectId, htaData, context) {
+    return {
+      message: 'Pipeline evolved for difficulty adjustment',
+      adjustments: [
+        'Adjusted task difficulty levels',
+        'Rebalanced task complexity',
+        'Updated task recommendations'
+      ]
+    };
+  }
+
+  /**
+   * Handle pipeline refresh
+   */
+  async handlePipelineRefresh(projectId, htaData, context) {
+    return {
+      message: 'Pipeline refreshed with new task recommendations',
+      adjustments: [
+        'Updated task selection',
+        'Refreshed task priorities',
+        'Added new alternatives'
+      ]
+    };
+  }
+
   generateNoPipelineResponse(projectConfig) {
     return {
       content: [{

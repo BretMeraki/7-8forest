@@ -1,0 +1,260 @@
+{
+  "id": "report_1752080389667",
+  "timestamp": 1752080389667,
+  "duration": 1228389,
+  "systemHealth": true,
+  "summary": {
+    "totalErrors": 0,
+    "totalCodeIssues": 3048,
+    "testCoverage": 0,
+    "performanceScore": 42.853644467926024,
+    "dependencyHealth": 100,
+    "fixesApplied": 0,
+    "errorRate": 0,
+    "filesAnalyzed": 113,
+    "fixSuccessRate": "0%",
+    "overallHealth": 51
+  },
+  "details": {
+    "error_detection": {
+      "totalErrors": 0,
+      "errorsBySeverity": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "errorsBySource": {},
+      "errorRate": 0
+    },
+    "code_analysis": {
+      "filesAnalyzed": 113,
+      "totalIssues": 3048,
+      "issuesByType": {
+        "unusedVariables": 2413,
+        "longFunctions": 40,
+        "console": 528,
+        "complexConditions": 7,
+        "hardcodedValues": 44,
+        "unhandled_promise": 16
+      },
+      "issuesBySeverity": {
+        "3": 107,
+        "4": 2941
+      },
+      "averageIssuesPerFile": "28.22"
+    },
+    "test_coverage": {
+      "coverage": null,
+      "tests": {
+        "files": 15,
+        "total": 621,
+        "skipped": 31
+      },
+      "untested": {
+        "functions": 0,
+        "critical": 0
+      }
+    },
+    "performance": {
+      "monitoring": {
+        "duration": 0,
+        "dataPoints": {
+          "cpu": 100,
+          "memory": 100,
+          "responseTime": 0
+        }
+      },
+      "current": {
+        "cpu": {
+          "usage": 29.986800000000002
+        },
+        "memory": {
+          "usagePercent": 84.30591106414795
+        }
+      },
+      "trends": {
+        "cpu": {
+          "direction": "increasing",
+          "slope": 0.13,
+          "intercept": 23.52
+        },
+        "memory": {
+          "direction": "increasing",
+          "slope": 0.13,
+          "intercept": 78.11
+        }
+      },
+      "bottlenecks": 0,
+      "profiledOperations": 0
+    },
+    "dependency": {
+      "dependencies": {
+        "total": 11,
+        "production": 7,
+        "dev": 4,
+        "installed": 11
+      },
+      "vulnerabilities": {
+        "total": 0,
+        "bySeverity": {
+          "critical": 0,
+          "high": 0,
+          "moderate": 0,
+          "low": 0
+        }
+      },
+      "outdated": {
+        "total": 0,
+        "major": 0
+      },
+      "circular": 0
+    },
+    "self_healing": {
+      "totalFixes": 0,
+      "successfulFixes": 0,
+      "failedFixes": 0,
+      "successRate": "0%",
+      "queueSize": 0,
+      "fixesByType": {},
+      "autoFixEnabled": true
+    }
+  },
+  "recommendations": [
+    {
+      "priority": 1,
+      "category": "overall",
+      "message": "System health is below acceptable levels. Immediate action required.",
+      "action": "Address critical issues first, then work on medium priority items"
+    },
+    {
+      "priority": 2,
+      "category": "performance",
+      "message": "Performance issues detected. System may be under stress.",
+      "action": "Review performance bottlenecks and optimize slow operations"
+    },
+    {
+      "priority": 3,
+      "category": "code_quality",
+      "message": "Many code issues detected (3048). Consider code refactoring.",
+      "action": "Run code formatter and address high-complexity functions"
+    },
+    {
+      "priority": 3,
+      "category": "testing",
+      "message": "Low test coverage (0.0%). Add tests for critical functions.",
+      "action": "Focus on testing untested critical functions first"
+    }
+  ],
+  "criticalIssues": [],
+  "metrics": {
+    "timestamp": 1752080379793,
+    "agents": {
+      "error_detection": {
+        "totalErrors": 0,
+        "errorsBySeverity": {
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0
+        },
+        "errorsBySource": {},
+        "errorRate": 0
+      },
+      "code_analysis": {
+        "filesAnalyzed": 113,
+        "totalIssues": 3048,
+        "issuesByType": {
+          "unusedVariables": 2413,
+          "longFunctions": 40,
+          "console": 528,
+          "complexConditions": 7,
+          "hardcodedValues": 44,
+          "unhandled_promise": 16
+        },
+        "issuesBySeverity": {
+          "3": 107,
+          "4": 2941
+        },
+        "averageIssuesPerFile": "28.22"
+      },
+      "test_coverage": {
+        "coverage": null,
+        "tests": {
+          "files": 15,
+          "total": 621,
+          "skipped": 31
+        },
+        "untested": {
+          "functions": 0,
+          "critical": 0
+        }
+      },
+      "performance": {
+        "monitoring": {
+          "duration": 0,
+          "dataPoints": {
+            "cpu": 100,
+            "memory": 100,
+            "responseTime": 0
+          }
+        },
+        "current": {
+          "cpu": {
+            "usage": 29.763900000000003
+          },
+          "memory": {
+            "usagePercent": 84.28586292266846
+          }
+        },
+        "trends": {
+          "cpu": {
+            "direction": "increasing",
+            "slope": 0.13,
+            "intercept": 23.52
+          },
+          "memory": {
+            "direction": "increasing",
+            "slope": 0.12,
+            "intercept": 78.25
+          }
+        },
+        "bottlenecks": 0,
+        "profiledOperations": 0
+      },
+      "dependency": {
+        "dependencies": {
+          "total": 11,
+          "production": 7,
+          "dev": 4,
+          "installed": 11
+        },
+        "vulnerabilities": {
+          "total": 0,
+          "bySeverity": {
+            "critical": 0,
+            "high": 0,
+            "moderate": 0,
+            "low": 0
+          }
+        },
+        "outdated": {
+          "total": 0,
+          "major": 0
+        },
+        "circular": 0
+      },
+      "self_healing": {
+        "totalFixes": 0,
+        "successfulFixes": 0,
+        "failedFixes": 0,
+        "successRate": "0%",
+        "queueSize": 0,
+        "fixesByType": {},
+        "autoFixEnabled": true
+      }
+    }
+  }
+}

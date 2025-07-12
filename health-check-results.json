@@ -1,0 +1,159 @@
+{
+  "timestamp": "2025-07-12T01:13:00.292Z",
+  "checks": [
+    {
+      "type": "file",
+      "name": "Core Intelligence Module",
+      "status": "passed",
+      "path": "C:\\Users\\schlansk\\Downloads\\7-3forest-main\\___stage1\\modules\\core-intelligence.js",
+      "size": 18135
+    },
+    {
+      "type": "file",
+      "name": "Enhanced HTA Core",
+      "status": "passed",
+      "path": "C:\\Users\\schlansk\\Downloads\\7-3forest-main\\___stage1\\modules\\enhanced-hta-core.js",
+      "size": 43995
+    },
+    {
+      "type": "file",
+      "name": "Project Management",
+      "status": "passed",
+      "path": "C:\\Users\\schlansk\\Downloads\\7-3forest-main\\___stage1\\modules\\project-management.js",
+      "size": 21717
+    },
+    {
+      "type": "file",
+      "name": "SQLite Vector Provider",
+      "status": "passed",
+      "path": "C:\\Users\\schlansk\\Downloads\\7-3forest-main\\___stage1\\modules\\vector-providers\\SQLiteVecProvider.js",
+      "size": 15526
+    },
+    {
+      "type": "module",
+      "name": "Core Intelligence Module",
+      "status": "passed",
+      "availableExports": [
+        "CoreIntelligence",
+        "ForestIntelligenceAdapter",
+        "MCPIntelligenceCore"
+      ]
+    },
+    {
+      "type": "module",
+      "name": "Enhanced HTA Core Module",
+      "status": "passed",
+      "availableExports": [
+        "EnhancedHTACore",
+        "default"
+      ]
+    },
+    {
+      "type": "module",
+      "name": "Project Management Module",
+      "status": "passed",
+      "availableExports": [
+        "ProjectManagement"
+      ]
+    },
+    {
+      "type": "vector_provider",
+      "name": "SQLite Vector Provider",
+      "status": "passed",
+      "tests": [
+        "initialize",
+        "upsert",
+        "query",
+        "ping",
+        "delete",
+        "close"
+      ]
+    },
+    {
+      "type": "core_intelligence",
+      "name": "Core Intelligence",
+      "status": "passed",
+      "tests": [
+        "instantiation",
+        "request_creation"
+      ]
+    },
+    {
+      "type": "project_management",
+      "name": "Project Management",
+      "status": "passed",
+      "tests": [
+        "instantiation",
+        "project_creation"
+      ]
+    },
+    {
+      "type": "hta_core",
+      "name": "HTA Core",
+      "status": "passed",
+      "tests": [
+        "instantiation",
+        "method_availability"
+      ],
+      "availableMethods": [
+        "assessExplorationRelevance",
+        "generateGoalAdaptiveBranches",
+        "startGatedOnboarding",
+        "generateNextPipeline",
+        "expandHTATreeDepth"
+      ]
+    },
+    {
+      "type": "file",
+      "name": "SQLite Vector Database",
+      "status": "warning",
+      "error": "Optional file not found",
+      "path": ".forest-vectors/vectors.sqlite"
+    },
+    {
+      "type": "file",
+      "name": "Alternative Vector Database",
+      "status": "passed",
+      "path": "C:\\Users\\schlansk\\Downloads\\7-3forest-main\\forest_vectors.sqlite",
+      "size": 557056
+    },
+    {
+      "type": "file",
+      "name": "Forest Data Directory",
+      "status": "passed",
+      "path": "C:\\Users\\schlansk\\Downloads\\7-3forest-main\\.forest-data",
+      "size": 0
+    },
+    {
+      "type": "file",
+      "name": "Projects Data",
+      "status": "warning",
+      "error": "Optional file not found",
+      "path": ".forest-data/projects.json"
+    },
+    {
+      "type": "file",
+      "name": "MCP Log File",
+      "status": "passed",
+      "path": "C:\\Users\\schlansk\\Downloads\\7-3forest-main\\.forest-data\\forest-mcp.log",
+      "size": 770336
+    },
+    {
+      "type": "system",
+      "name": "Memory Usage",
+      "status": "passed",
+      "heapUsed": 13522240
+    },
+    {
+      "type": "system",
+      "name": "Node.js Version",
+      "status": "passed",
+      "version": "v22.16.0"
+    }
+  ],
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "warnings": 2
+  }
+}

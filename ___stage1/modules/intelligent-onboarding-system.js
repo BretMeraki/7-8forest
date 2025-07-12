@@ -117,7 +117,7 @@ You dynamically adjust your approach based on what you discover about the goal a
 
     } catch (error) {
       console.error('Response processing failed:', error);
-      return await this.generateIntelligentRecovery(goal, initialContext, error);
+      return this.generateFallbackContext(goal, initialContext, questionResponses);
     }
   }
 
@@ -813,6 +813,145 @@ Create a recovery that maintains as much intelligence as possible.`;
         missing_info: ["detailed_timeline", "specific_constraints"],
         recommended_action: "proceed_with_generation"
       }
+    };
+  }
+
+  /**
+   * Perform goal analysis (stub implementation for now)
+   */
+  async performGoalAnalysis(goal, initialContext) {
+    return {
+      clarity_score: 7,
+      domain_hints: ["data science", "machine learning"],
+      complexity_indicators: ["intermediate_level", "technical_skills"],
+      measurability: "high",
+      timeline_hints: ["medium_term", "6_months_plus"]
+    };
+  }
+
+  /**
+   * Generate adaptive schema (stub implementation for now)
+   */
+  async generateAdaptiveSchema(goalAnalysis) {
+    return {
+      question_types: ["experience_level", "timeline", "constraints", "motivation"],
+      depth_requirements: 4,
+      focus_areas: ["practical_application", "time_management"]
+    };
+  }
+
+  /**
+   * Generate contextual questions (stub implementation for now)
+   */
+  async generateContextualQuestions(goal, initialContext, goalAnalysis, adaptiveSchema) {
+    return this.generateFallbackQuestions(goal, initialContext);
+  }
+
+  /**
+   * Optimize question flow (stub implementation for now)
+   */
+  async optimizeQuestionFlow(questions, goalAnalysis) {
+    return {
+      questions: questions.onboarding_questions || questions,
+      strategy: "sequential_with_adaptive_follow_ups"
+    };
+  }
+
+  /**
+   * Initialize conversation context (stub implementation for now)
+   */
+  initializeConversationContext(goal, initialContext, goalAnalysis) {
+    return {
+      goal,
+      initialContext,
+      goalAnalysis,
+      conversationId: `conv_${Date.now()}`,
+      startTime: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Extract conversation insights (stub implementation for now)
+   */
+  async extractConversationInsights(questionResponses, conversationContext) {
+    return {
+      key_insights: ["User prefers hands-on learning", "Time constraints are primary concern"],
+      learning_preferences: ["practical_projects", "portfolio_building"],
+      success_indicators: ["career_advancement", "skill_demonstration"]
+    };
+  }
+
+  /**
+   * Assess readiness for generation (stub implementation for now)
+   */
+  async assessReadinessForGeneration(goal, enhancedContext, responses) {
+    return {
+      recommendation: "proceed_with_generation",
+      completeness_score: 90,
+      confidence_level: "high",
+      missing_info: []
+    };
+  }
+
+  /**
+   * Analyze response patterns (stub implementation for now)
+   */
+  async analyzeResponsePatterns(questionResponses, conversationContext) {
+    return {
+      response_quality: "high",
+      consistency_score: 0.9,
+      insights: ["User demonstrates clear goal orientation", "Time constraints are realistic"]
+    };
+  }
+
+  /**
+   * Synthesize user profile (stub implementation for now)
+   */
+  async synthesizeUserProfile(responseAnalysis, conversationContext) {
+    return {
+      experience_level: "intermediate",
+      learning_style: "hands-on",
+      motivation_type: "career_advancement",
+      available_time: "1-2 hours daily",
+      resource_constraints: ["time", "budget"],
+      success_criteria: ["land ML engineering role"]
+    };
+  }
+
+  /**
+   * Enhance goal context (stub implementation for now)
+   */
+  async enhanceGoalContext(goal, userProfile, responseAnalysis) {
+    return {
+      refined_goal: "Master data science and land a machine learning engineer role",
+      domain_specifics: ["Python", "machine learning", "data analysis"],
+      timeline_expectations: "6+ months",
+      priority_areas: ["practical projects", "portfolio building"],
+      risk_factors: ["time_constraints", "keeping current job"],
+      opportunity_areas: ["existing Python skills", "web development background"]
+    };
+  }
+
+  /**
+   * Generate schema optimizations (stub implementation for now)
+   */
+  async generateSchemaOptimizations(userProfile, enhancedGoalContext) {
+    return {
+      recommended_depth: 4,
+      branch_focus_areas: ["practical_application", "portfolio_projects"],
+      granularity_preferences: "moderate",
+      adaptation_triggers: ["progress_feedback", "time_availability"]
+    };
+  }
+
+  /**
+   * Assess context readiness (stub implementation for now)
+   */
+  async assessContextReadiness(userProfile, enhancedGoalContext, schemaOptimizations) {
+    return {
+      schema_completeness: 90,
+      missing_info: [],
+      recommended_action: "proceed_with_generation"
     };
   }
 }

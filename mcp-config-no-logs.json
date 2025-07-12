@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "forest": {
+      "command": "node",
+      "args": [
+        "/Users/bretmeraki/Downloads/7-3forest-main/___stage1/forest-mcp-server.js"
+      ],
+      "env": {
+        "FOREST_DATA_DIR": "/Users/bretmeraki/Downloads/7-3forest-main/.forest-data",
+        "FOREST_VECTOR_PROVIDER": "sqlitevec",
+        "LOG_LEVEL": "error"
+      }
+    },
+    "filesystem": {
+      "command": "node",
+      "args": [
+        "/Users/bretmeraki/Downloads/7-3forest-main/filtered-filesystem-server.js",
+        "/Users/bretmeraki/Downloads/7-3forest-main/.forest-data"
+      ]
+    }
+  }
+}

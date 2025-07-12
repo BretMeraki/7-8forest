@@ -10,8 +10,9 @@ import os from 'os';
 import * as vectorConfigModule from '../config/vector-config.js';
 import IVectorProvider from './vector-providers/IVectorProvider.js';
 import QdrantProvider from './vector-providers/QdrantProvider.js';
+import ChromaDBProvider from './vector-providers/ChromaDBProvider.js';
 import LocalJSONProvider from './vector-providers/LocalJSONProvider.js';
-import { SQLiteVectorProvider } from './vector-providers/SQLiteVectorProvider.js';
+import SQLiteVecProvider from './vector-providers/SQLiteVecProvider.js';
 import { enrichHTA, buildPrompt } from '../utils/hta-graph-enricher.js';
 import embeddingService from '../utils/embedding-service.js';
 
@@ -207,15 +208,14 @@ class VectorStore {
 
 function getProviderInstance(config) {
   // Try to use the configured primary provider
-  if (config.provider === 'sqlitevec') {
+  if (config.provider === 'chroma') {
     try {
-      console.error('[HTA-Vector] Initializing SQLite as primary provider');
-      return new SQLiteVectorProvider();
+      console.error('[HTA-Vector] Initializing ChromaDB as primary provider');
+      return new ChromaDBProvider(config.chroma);
     } catch (e) {
-      console.error('[HTA-Vector] SQLiteVectorProvider init failed:', e && e.message ? e.message : e);
+      console.error('[HTA-Vector] ChromaDBProvider init failed:', e && e.message ? e.message : e);
     }
   }
-  
   
   if (config.provider === 'qdrant') {
     try {
@@ -223,6 +223,15 @@ function getProviderInstance(config) {
       return new QdrantProvider(config.qdrant);
     } catch (e) {
       console.error('[HTA-Vector] QdrantProvider init failed:', e && e.message ? e.message : e);
+    }
+  }
+  
+  if (config.provider === 'sqlitevec') {
+    try {
+      console.error('[HTA-Vector] Initializing SQLite as primary provider');
+      return new SQLiteVecProvider(config.sqlitevec);
+    } catch (e) {
+      console.error('[HTA-Vector] SQLiteVecProvider init failed:', e && e.message ? e.message : e);
     }
   }
   
@@ -241,6 +250,16 @@ class HTAVectorStore {
     this.projectVectors = new Map();
     this.initialized = false;
     this.dataDir = dataDir;
+  }
+
+  /**
+   * Get the vector dimension for the currently configured provider
+   * @returns {number} The dimension size for embeddings
+   */
+  getDimension() {
+    const providerName = this.config.provider || 'sqlitevec';
+    const dimension = this.config[providerName]?.dimension || 1536;
+    return dimension;
   }
 
   async initialize() {
@@ -299,7 +318,7 @@ class HTAVectorStore {
         type: 'goal', depth: 0, sibling_index: 0, prereq_count: 0,
         child_count: (htaData.strategicBranches?.length || htaData.frontierNodes?.length || 0),
         raw: htaData.goal || '',
-      }), vectorConfig.qdrant.dimension);
+      }), this.getDimension());
 
       await this.provider.upsertVector(`${projectId}:goal`, goalVector, {
         type: 'goal', project_id: projectId, content: htaData.goal,
@@ -312,7 +331,7 @@ class HTAVectorStore {
           type: 'task', depth: 2, sibling_index: 0,
           prereq_count: Array.isArray(task.prerequisites) ? task.prerequisites.length : 0,
           child_count: 0, raw: task.description || task.title || '', branch: task.branch,
-        }), vectorConfig.qdrant.dimension);
+        }), this.getDimension());
 
         await this.provider.upsertVector(`${projectId}:task:${task.id}`, taskVector, {
           type: 'task', project_id: projectId, task_id: task.id, title: task.title,
@@ -332,7 +351,7 @@ class HTAVectorStore {
             type: 'branch', depth: 1, sibling_index: 0, prereq_count: 0,
             child_count: branch.tasks ? branch.tasks.length : 0,
             raw: branch.description || branch.name || '', branch: branch.name,
-          }), vectorConfig.qdrant.dimension);
+          }), this.getDimension());
 
           await this.provider.upsertVector(`${projectId}:branch:${branch.name}`, branchVector, {
             type: 'branch', project_id: projectId, name: branch.name,
@@ -557,7 +576,7 @@ class HTAVectorStore {
     
     try {
       // Embed the goal-focused query
-      const queryVector = await embeddingService.embedText(goalQuery, vectorConfig.qdrant.dimension);
+      const queryVector = await embeddingService.embedText(goalQuery, this.getDimension());
       
       // Enhanced filter for goal-focused task selection
       const filter = {
@@ -716,7 +735,7 @@ class HTAVectorStore {
     
     try {
       // Embed the goal-focused query
-      const queryVector = await embeddingService.embedText(goalQuery, vectorConfig.qdrant.dimension);
+      const queryVector = await embeddingService.embedText(goalQuery, this.getDimension());
       
       // Enhanced filter for goal-focused task selection
       const filter = {
@@ -886,7 +905,7 @@ class HTAVectorStore {
     const contextQuery = `${context} energy_level:${energy_level} time_available:${time_available}`.trim();
     
     // Embed the context into a query vector
-    const queryVector = await embeddingService.embedText(contextQuery, vectorConfig.qdrant.dimension);
+    const queryVector = await embeddingService.embedText(contextQuery, this.getDimension());
     
     // Query vectors with filter for this project and non-completed tasks
     const filter = {

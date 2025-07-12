@@ -3,7 +3,7 @@
  * Coordinates between task selection, strategy evolution, and goal achievement
  */
 
-import { bus } from './stubs/event-bus.js';
+import { bus } from '../../modules/utils/event-bus.js';
 import { FILE_NAMES, TASK_CONFIG, SCORING, THRESHOLDS } from './memory-sync.js';
 import { TaskSelector } from './task-selection-engine.js';
 import { StrategyEvolver } from './strategy-evolution-engine.js';

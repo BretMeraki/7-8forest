@@ -140,15 +140,18 @@ async function runHealthCheck() {
   results.checks.push(await checkFile('.forest-data/forest-mcp.log', 'MCP Log'));
   results.checks.push(await checkFile('.forest-data/projects.json', 'Projects Data'));
   
-  // Check ChromaDB if configured
-  results.checks.push(await checkPort(8000, 'ChromaDB'));
+  // Check SQLite vector database
+  results.checks.push(await checkFile('.forest-vectors/vectors.sqlite', 'SQLite Vector Store'));
+  results.checks.push(await checkFile(process.env.SQLITEVEC_PATH || 'forest_vectors.sqlite', 'Vector Database'));
+  
+  // Note: SQLite vector store doesn't require external port checks or server management
   
   // Check memory
   await checkMemory();
   
   // Check for zombie processes
   console.log('\n🧟 Checking for zombie processes...');
-  const processes = await checkProcess('powershell', ['-Command', 'Get-Process node | Select-Object Id,CPU,WorkingSet'], 'Node processes');
+  const processes = await checkProcess('powershell.exe', ['-Command', '"Get-Process node | Select-Object Id,CPU,WorkingSet"'], 'Node processes');
   
   // Summary
   console.log('\n📊 Summary:');
@@ -169,9 +172,11 @@ async function runHealthCheck() {
     console.log('  • Run: node debug-monitor.js to track stuck operations in real-time.');
   }
   
-  console.log('  • To kill all Node processes: taskkill /F /IM node.exe');
+console.log('  • To kill all Node processes: taskkill /F /IM node.exe');
   console.log('  • To clear logs: del .forest-data\\*.log');
   console.log('  • To reset data: del .forest-data\\*.json');
+  console.log('  • To optimize vector store: Use optimize_vector_store_forest MCP tool');
+  console.log('  • Vector store health: Use get_vector_store_status_forest MCP tool');
 }
 
 // Run the health check

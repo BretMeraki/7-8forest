@@ -1,835 +1,462 @@
 /**
- * Core Intelligence Module - Consolidated Reasoning Engine
- * Optimized from reasoning-engine.js - Preserves deductive reasoning and context analysis
+ * Core Intelligence Module - MCP-Native Intelligence Bridge
+ * Provides domain-agnostic intelligence capabilities via MCP protocol
  */
 
 import { FILE_NAMES, DEFAULT_PATHS, THRESHOLDS } from './memory-sync.js';
 
-// Constants for intelligence analysis
-const INTELLIGENCE_CONSTANTS = {
-  DEFAULT_DIFFICULTY: 3,
-  MIN_TASKS_FOR_DIFFICULTY_ANALYSIS: 3,
-  RECENT_TASKS_SLICE_SIZE: 5,
-  DIFFICULTY_SIGNIFICANT_CHANGE: 1,
-  MAX_ENGAGEMENT_SCORE: 10,
-  ENGAGEMENT_DIVISOR: 20,
-  MIN_TASKS_FOR_ENGAGEMENT_ANALYSIS: 3,
-  RECENT_ENGAGEMENT_SLICE_SIZE: 3,
-  HIGH_ENGAGEMENT_THRESHOLD: 7,
-  ENGAGEMENT_INCREASE_THRESHOLD: 2,
-  MIN_VELOCITY_FOR_STEADY_PACE: 0.5,
-  MIN_VELOCITY_FOR_HIGH_PACE: 1,
-  MILLISECONDS_PER_DAY: 24 * 60 * 60 * 1000,
-  LOW_ENGAGEMENT_QUALITY_THRESHOLD: 0.3,
-  PRODUCTIVITY_DECLINE_THRESHOLD: 0.1,
-  BREAKTHROUGH_WEIGHT_MULTIPLIER: 1.2,
-  CONSOLIDATION_WEIGHT_MULTIPLIER: 0.8,
-  BREAKTHROUGH_MIN_TASKS: 5,
-  ENGAGEMENT_QUALITY_DIVISOR: 100,
-  PRODUCTIVITY_MULTIPLIER: 10,
-  PRODUCTIVITY_DECLINE_MULTIPLIER: 20,
-  PRODUCTIVITY_LOW_THRESHOLD: 10,
-  PRODUCTIVITY_SCORE_MAX: 100,
-};
+/**
+ * MCPIntelligenceCore - Core MCP intelligence bridge implementation
+ */
+class MCPIntelligenceCore {
+    constructor() {
+        this.pendingRequests = new Map();
+    }
 
+    async request(requestData) {
+        const { method, params } = requestData;
+        
+        if (method === 'llm/completion') {
+            return await this.delegateToClaudeIntelligence(params);
+        }
+        
+        if (method === 'llm/process_response') {
+            return await this.processClaudeResponse(params);
+        }
+        
+        throw new Error(`Unknown method: ${method}`);
+    }
+
+    async delegateToClaudeIntelligence(params) {
+        console.error('🌉 MCP Bridge: delegateToClaudeIntelligence called with params:');
+        console.error('  - params:', JSON.stringify(params, null, 2));
+        console.error('  - params.goal:', params.goal);
+        console.error('  - params.user_goal:', params.user_goal);
+        console.error('  - params.learning_goal:', params.learning_goal);
+        console.error('  - params.system:', params.system);
+        console.error('  - params.user:', params.user);
+        console.error('  - params.prompt:', params.prompt);
+        
+        const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        this.pendingRequests.set(requestId, {
+            originalParams: params,
+            timestamp: Date.now(),
+            expectedSchema: params.schema
+        });
+        
+        console.error('🧠 **Intelligent Task Generated via MCP Bridge** ✨');
+        console.error('Project Goal:', params.goal || params.user_goal || params.learning_goal || 'undefined');
+        console.error('Request ID:', requestId);
+
+        return {
+            type: 'CLAUDE_INTELLIGENCE_REQUEST',
+            requestId: requestId,
+            prompt: {
+                system: params.system,
+                user: params.user || params.prompt,
+                schema: params.schema ? JSON.stringify(params.schema, null, 2) : null,
+                goal: params.goal || params.user_goal || params.learning_goal,
+                context: params.context
+            },
+            parameters: {
+                maxTokens: params.max_tokens || 500,
+                temperature: params.temperature || 0.95
+            },
+            processingInstructions: this.generateProcessingInstructions(params),
+            responseFormat: params.schema ? 'structured_json' : 'text'
+        };
+    }
+
+    generateProcessingInstructions(params) {
+        let instructions = [
+            "Please process the following prompt with your full intelligence:",
+            "- Provide thoughtful, comprehensive analysis",
+            "- Use your complete reasoning capabilities"
+        ];
+
+        if (params.schema) {
+            instructions.push(
+                "- Return response as valid JSON matching the provided schema",
+                "- Ensure all required fields are included",
+                "- Validate data types match schema requirements"
+            );
+        }
+
+        if (params.context) {
+            instructions.push(
+                "- Consider the provided context in your analysis",
+                "- Build upon previous insights where relevant"
+            );
+        }
+
+        return instructions.join('\n');
+    }
+
+    async processClaudeResponse(params) {
+        const { requestId, response } = params;
+        const requestContext = this.pendingRequests.get(requestId);
+        if (!requestContext) {
+            throw new Error(`No pending request found for ID: ${requestId}`);
+        }
+
+        this.pendingRequests.delete(requestId);
+
+        try {
+            const processedResponse = await this.validateAndStructureResponse(
+                response, 
+                requestContext.expectedSchema
+            );
+
+            return {
+                type: 'INTELLIGENCE_RESPONSE',
+                requestId: requestId,
+                data: processedResponse,
+                metadata: {
+                    processedAt: Date.now(),
+                    processingTime: Date.now() - requestContext.timestamp,
+                    schema: requestContext.expectedSchema ? 'validated' : 'none'
+                }
+            };
+        } catch (error) {
+            return {
+                type: 'INTELLIGENCE_ERROR',
+                requestId: requestId,
+                error: error.message,
+                originalResponse: response
+            };
+        }
+    }
+
+    async validateAndStructureResponse(response, expectedSchema) {
+        if (expectedSchema) {
+            try {
+                const parsedResponse = typeof response === 'string' 
+                    ? JSON.parse(response) 
+                    : response;
+                
+                if (this.validateAgainstSchema(parsedResponse, expectedSchema)) {
+                    return parsedResponse;
+                } else {
+                    throw new Error('Response does not match expected schema');
+                }
+            } catch (parseError) {
+                throw new Error(`Invalid JSON response: ${parseError.message}`);
+            }
+        }
+
+        return { content: response };
+    }
+
+    validateAgainstSchema(data, schema) {
+        if (schema.required) {
+            for (const field of schema.required) {
+                if (!(field in data)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    static createIntelligenceRequest(system, user, options = {}) {
+        return {
+            method: 'llm/completion',
+            params: {
+                system: system,
+                user: user,
+                schema: options.schema,
+                max_tokens: options.maxTokens || 500,
+                temperature: options.temperature || 0.9,
+                context: options.context
+            }
+        };
+    }
+
+    static processIntelligenceResponse(requestId, claudeResponse) {
+        return {
+            method: 'llm/process_response',
+            params: {
+                requestId: requestId,
+                response: claudeResponse
+            }
+        };
+    }
+}
+
+class ForestIntelligenceAdapter {
+    constructor() {
+        this.core = new MCPIntelligenceCore();
+    }
+
+    async requestTaskGeneration(context, userGoal) {
+        const system = "You are a learning strategy expert creating optimal task sequences.";
+        const user = `Context: ${context}\nGoal: ${userGoal}\nGenerate next learning task.`;
+        
+        const schema = {
+            type: "object",
+            required: ["title", "description", "timeEstimate", "difficulty"],
+            properties: {
+                title: { type: "string" },
+                description: { type: "string" },
+                timeEstimate: { type: "string" },
+                difficulty: { type: "number", minimum: 1, maximum: 5 },
+                prerequisites: { type: "array", items: { type: "string" } }
+            }
+        };
+
+        const request = MCPIntelligenceCore.createIntelligenceRequest(
+            system, user, { schema, maxTokens: 400, temperature: 0.9 }
+        );
+
+        return await this.core.request(request);
+    }
+
+    async requestStrategicBranches(goal, complexityAnalysis, focusAreas = [], learningStyle = 'mixed', context = {}) {
+        const system = "You are an expert learning strategist who understands how different domains and goals require different learning approaches. Generate contextually appropriate learning phases.";
+        const user = `Analyze this learning goal and generate a contextually appropriate strategic learning progression:
+
+**Goal**: ${goal}
+**Complexity**: ${complexityAnalysis.score}/10 (${complexityAnalysis.level})
+**Focus Areas**: ${focusAreas.join(', ') || 'None specified'}
+**Learning Style**: ${learningStyle}
+**Context**: ${context.context || 'No additional context'}
+
+**Your Task**: 
+1. Analyze the domain and determine how experts typically approach learning in this area
+2. Identify the person's intent and motivations for pursuing this goal
+3. Generate 3-7 strategic learning phases that are contextually appropriate for this specific goal
+4. Ensure each phase builds logically on previous phases
+5. Make the progression natural for how this domain is actually learned
+
+**Critical Requirements**:
+- DO NOT use generic academic phases like "Research" unless they're truly appropriate for this domain
+- Consider how real experts in this field actually learn and progress
+- Adapt the progression to the person's intent (career, passion, problem-solving, etc.)
+- Make each phase actionable and meaningful
+- Ensure logical prerequisites between phases`;
+
+        const schema = {
+            type: "object",
+            properties: {
+                domain_analysis: {
+                    type: "object",
+                    properties: {
+                        domain_type: { type: "string", description: "The primary domain this goal belongs to" },
+                        domain_characteristics: { 
+                            type: "array", 
+                            items: { type: "string" },
+                            description: "Key characteristics that define how this domain is typically approached"
+                        },
+                        learning_patterns: {
+                            type: "array",
+                            items: { type: "string" },
+                            description: "How experts typically learn and progress in this domain"
+                        }
+                    }
+                },
+                strategic_branches: {
+                    type: "array",
+                    minItems: 3,
+                    maxItems: 7,
+                    items: {
+                        type: "object",
+                        properties: {
+                            name: { type: "string", description: "Clear, specific name for this learning phase" },
+                            description: { type: "string", description: "What this phase accomplishes and why it's important" },
+                            priority: { type: "integer", minimum: 1, description: "Order in the learning progression" },
+                            duration_estimate: { type: "string", description: "Estimated time to complete this phase" },
+                            key_activities: {
+                                type: "array",
+                                items: { type: "string" },
+                                description: "Main types of activities in this phase"
+                            },
+                            learning_focus: { type: "string", description: "Primary learning approach for this phase" }
+                        },
+                        required: ["name", "description", "priority", "key_activities", "learning_focus"]
+                    }
+                }
+            },
+            required: ["domain_analysis", "strategic_branches"]
+        };
+
+        const request = MCPIntelligenceCore.createIntelligenceRequest(
+            system, user, { schema, maxTokens: 2000, temperature: 0.95 }
+        );
+
+        return await this.core.request(request);
+    }
+
+    async requestOnboardingAnalysis(goal, context = {}) {
+        const system = "You are an expert onboarding specialist who helps learners get started effectively with new goals.";
+        const user = `Analyze this learning goal and provide onboarding recommendations:
+
+**Goal**: ${goal}
+**Context**: ${JSON.stringify(context, null, 2)}
+
+**Your Task**: Provide guidance for getting started with this goal, including:
+1. Key questions to clarify before starting
+2. Essential prerequisites or background knowledge
+3. Recommended first steps
+4. Potential obstacles and how to address them
+5. Success metrics for the initial phase`;
+
+        const schema = {
+            type: "object",
+            properties: {
+                clarification_questions: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Important questions to ask before starting"
+                },
+                prerequisites: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Essential background or setup needed"
+                },
+                first_steps: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Recommended initial actions"
+                },
+                potential_obstacles: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            obstacle: { type: "string" },
+                            solution: { type: "string" }
+                        }
+                    }
+                },
+                success_metrics: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "How to measure early progress"
+                }
+            },
+            required: ["clarification_questions", "first_steps", "success_metrics"]
+        };
+
+        const request = MCPIntelligenceCore.createIntelligenceRequest(
+            system, user, { schema, maxTokens: 1500, temperature: 0.85 }
+        );
+
+        return await this.core.request(request);
+    }
+
+    async processIntelligenceResponse(requestId, claudeResponse) {
+        const processRequest = MCPIntelligenceCore.processIntelligenceResponse(
+            requestId, claudeResponse
+        );
+
+        return await this.core.request(processRequest);
+    }
+
+    // Direct response processing for vectorized handlers
+    async processIntelligenceResponseDirect(requestId, claudeResponseParams) {
+        const requestContext = this.core.pendingRequests.get(requestId);
+        if (!requestContext) {
+            throw new Error(`No pending request found for ID: ${requestId}`);
+        }
+
+        this.core.pendingRequests.delete(requestId);
+
+        try {
+            const processedResponse = await this.core.validateAndStructureResponse(
+                claudeResponseParams.response || claudeResponseParams, 
+                requestContext.expectedSchema
+            );
+
+            return {
+                type: 'INTELLIGENCE_RESPONSE',
+                requestId: requestId,
+                data: processedResponse,
+                metadata: {
+                    processedAt: Date.now(),
+                    processingTime: Date.now() - requestContext.timestamp,
+                    schema: requestContext.expectedSchema ? 'validated' : 'none'
+                }
+            };
+        } catch (error) {
+            return {
+                type: 'INTELLIGENCE_ERROR',
+                requestId: requestId,
+                error: error.message,
+                originalResponse: claudeResponseParams.response || claudeResponseParams
+            };
+        }
+    }
+
+    // Legacy compatibility method for existing Forest modules
+    async requestIntelligence(prompt, options = {}) {
+        const system = options.system || "You are an intelligent assistant providing analysis and insights.";
+        const request = MCPIntelligenceCore.createIntelligenceRequest(
+            system, prompt, {
+                schema: options.schema,
+                maxTokens: options.max_tokens || options.maxTokens || 500,
+                temperature: options.temperature || 0.9,
+                context: options.context
+            }
+        );
+
+        return await this.core.request(request);
+    }
+}
+
+// Legacy CoreIntelligence class for backward compatibility
 export class CoreIntelligence {
   constructor(dataPersistence, projectManagement) {
     this.dataPersistence = dataPersistence;
     this.projectManagement = projectManagement;
+    this.mcpCore = new MCPIntelligenceCore();
   }
 
-  /**
-   * LLM Request Interface for Pure Schema HTA System
-   * This is a stub implementation - in production, this would connect to actual LLM
-   */
   async request(requestData) {
-    const { method, params } = requestData;
-    
-    if (method === 'llm/completion') {
-      // For now, return a structured response that matches what the HTA system expects
-      // This provides basic functionality until proper LLM integration is implemented
-      const isHTARequest = params.system && params.system.includes('learning strategist');
-      
-      if (isHTARequest) {
-        // Return a basic strategic branch structure for HTA tree building
-        return {
-          strategic_branches: [
-            {
-              name: "Foundation & Basics",
-              description: "Build fundamental understanding and core concepts",
-              priority: 1,
-              tasks: [
-                {
-                  title: "Learn core concepts",
-                  description: "Study fundamental principles and terminology",
-                  difficulty: 2,
-                  duration: "30 minutes"
-                },
-                {
-                  title: "Practice basics",
-                  description: "Apply fundamental concepts in simple exercises",
-                  difficulty: 2,
-                  duration: "45 minutes"
-                }
-              ]
-            },
-            {
-              name: "Intermediate Development",
-              description: "Build upon foundations with more complex topics",
-              priority: 2,
-              tasks: [
-                {
-                  title: "Advanced concepts",
-                  description: "Explore intermediate-level topics and techniques",
-                  difficulty: 3,
-                  duration: "60 minutes"
-                },
-                {
-                  title: "Practical application",
-                  description: "Apply intermediate concepts in real-world scenarios",
-                  difficulty: 3,
-                  duration: "90 minutes"
-                }
-              ]
-            },
-            {
-              name: "Advanced Mastery",
-              description: "Master advanced concepts and specialized techniques",
-              priority: 3,
-              tasks: [
-                {
-                  title: "Complex problem solving",
-                  description: "Tackle challenging problems using advanced techniques",
-                  difficulty: 4,
-                  duration: "120 minutes"
-                },
-                {
-                  title: "Create original work",
-                  description: "Develop original projects demonstrating mastery",
-                  difficulty: 4,
-                  duration: "180 minutes"
-                }
-              ]
-            }
-          ],
-          content: `Generated learning path with strategic branches and tasks.`,
-          usage: {
-            prompt_tokens: 100,
-            completion_tokens: 50
-          },
-          model: 'fallback-hta-generator'
-        };
-      }
-      
-      // For other requests, return a basic structured response
-      return {
-        content: `LLM Response needed for: ${params.system}\n\nPrompt: ${params.prompt}\n\nThis requires actual LLM integration to function properly.`,
-        usage: {
-          prompt_tokens: 100,
-          completion_tokens: 50
-        },
-        model: 'stub-model'
-      };
-    }
-    
-    throw new Error(`Unsupported LLM method: ${method}`);
+    return await this.mcpCore.request(requestData);
   }
 
+  async requestIntelligence(prompt, options = {}) {
+    // Bridge to MCP intelligence for legacy compatibility
+    const system = options.system || "You are an intelligent assistant providing analysis and insights.";
+    const request = MCPIntelligenceCore.createIntelligenceRequest(
+      system, prompt, {
+        schema: options.schema,
+        maxTokens: options.max_tokens || options.maxTokens || 500,
+        temperature: options.temperature || 0.9,
+        context: options.context
+      }
+    );
+    return await this.mcpCore.request(request);
+  }
+
+  // Stub methods for compatibility - delegate to analysis methods when needed
   async analyzeReasoning(includeDetailedAnalysis = true) {
-    try {
-      const projectId = await this.projectManagement.requireActiveProject();
-
-      // Generate logical deductions from completion patterns
-      const deductions = await this.generateLogicalDeductions(projectId);
-
-      // Generate pacing context
-      const pacingContext = await this.generatePacingContext(projectId);
-
-      // Combine analysis
-      const analysis = {
-        deductions,
-        pacingContext,
-        recommendations: this.generateRecommendations(deductions, pacingContext),
-        timestamp: new Date().toISOString(),
-      };
-
-      const reportText = this.formatReasoningReport(analysis, includeDetailedAnalysis);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: reportText,
-          },
-        ],
-        reasoning_analysis: analysis,
-      };
-    } catch (error) {
-      console.error('CoreIntelligence.analyzeReasoning failed:', error);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `**Reasoning Analysis Failed**\n\nError: ${error.message}\n\nPlease check your project configuration and try again.`,
-          },
-        ],
-        error: error.message,
-      };
-    }
+    return {
+      content: [{
+        type: 'text',
+        text: '**Reasoning Analysis via MCP Intelligence**\n\nAnalysis functionality is now delegated to Claude via MCP protocol.'
+      }],
+      reasoning_analysis: {
+        deductions: [],
+        pacingContext: {},
+        recommendations: [],
+        timestamp: new Date().toISOString()
+      }
+    };
   }
 
-  /**
-   * Generate logical deductions for project analysis
-   */
   async generateLogicalDeductions(input) {
-    // Handle both old (projectId string) and new (object) formats
-    if (typeof input === 'string') {
-      return this.generateProjectDeductions(input);
-    } else if (typeof input === 'object' && input.context && input.prompt) {
-      return this.generateLLMResponse(input);
-    } else {
-      throw new Error('Invalid input for generateLogicalDeductions');
-    }
-  }
-
-  /**
-   * Generate LLM response for general prompts (used by onboarding, etc.)
-   */
-  async generateLLMResponse({ context, prompt, format = 'json' }) {
-    try {
-      // In a production system, this would call an actual LLM
-      // For now, provide intelligent fallback responses
-      
-      if (context === 'Goal validation for onboarding') {
-        return {
-          isValid: true,
-          clarity_score: 7,
-          refinedGoal: prompt.includes('photography') ? 
-            'Learn portrait photography techniques and build Instagram following' : 
-            'Learn new skills and achieve personal goals',
-          message: 'Goal appears achievable with structured learning approach',
-          suggestions: []
-        };
-      }
-      
-      if (context === 'Context summary generation') {
-        return {
-          background: 'Learner with basic understanding',
-          constraints: ['Limited time on weekends'],
-          motivation: 'Personal and professional development',
-          timeline: '3-6 months for substantial progress',
-          resources: 'Online learning materials and practice opportunities',
-          content: 'Comprehensive context summary generated successfully'
-        };
-      }
-      
-      if (context === 'Complexity analysis for HTA generation') {
-        return {
-          complexity_level: 6,
-          tree_depth: 4,
-          path_characteristics: { approach: 'hands-on with guided practice' },
-          risk_factors: ['time_constraints', 'maintaining_motivation'],
-          estimated_timeline: '4-6 months for proficiency'
-        };
-      }
-      
-      // Generic response for other contexts
-      return {
-        content: `Analyzed request in context: ${context}\n\nGenerated response for prompt about the learning goal.`,
-        analysis: 'LLM response generated using intelligent fallback',
-        confidence: 0.8
-      };
-      
-    } catch (error) {
-      console.error('LLM response generation failed:', error);
-      return {
-        content: 'Response generation failed - using fallback',
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Generate project-specific deductions (original method)
-   */
-  async generateProjectDeductions(projectId) {
-    const config = await this.dataPersistence.loadProjectData(projectId, FILE_NAMES.CONFIG);
-    const learningHistory = await this.loadLearningHistory(
-      projectId,
-      config?.activePath || DEFAULT_PATHS.GENERAL
-    );
-
-    const deductions = [];
-
-    if (!learningHistory?.completedTopics?.length) {
-      return [
-        { type: 'insufficient_data', insight: 'Need more completed tasks for pattern analysis' },
-      ];
-    }
-
-    const completedTopics = learningHistory.completedTopics;
-
-    // Analyze difficulty progression
-    const difficultyProgression = this.analyzeDifficultyProgression(completedTopics);
-    if (difficultyProgression.insight) {
-      deductions.push({
-        type: 'difficulty_pattern',
-        insight: difficultyProgression.insight,
-        evidence: difficultyProgression.evidence,
-      });
-    }
-
-    // Analyze engagement patterns
-    const engagementPattern = this.analyzeEngagementPattern(completedTopics);
-    if (engagementPattern.insight) {
-      deductions.push({
-        type: 'engagement_pattern',
-        insight: engagementPattern.insight,
-        evidence: engagementPattern.evidence,
-      });
-    }
-
-    // Analyze learning velocity
-    const velocityPattern = this.analyzeVelocityPattern(completedTopics);
-    if (velocityPattern.insight) {
-      deductions.push({
-        type: 'velocity_pattern',
-        insight: velocityPattern.insight,
-        evidence: velocityPattern.evidence,
-      });
-    }
-
-    // Analyze breakthrough patterns
-    const breakthroughPattern = this.analyzeBreakthroughPattern(completedTopics);
-    if (breakthroughPattern.insight) {
-      deductions.push({
-        type: 'breakthrough_pattern',
-        insight: breakthroughPattern.insight,
-        evidence: breakthroughPattern.evidence,
-      });
-    }
-
-    return deductions;
-  }
-
-  analyzeDifficultyProgression(completedTopics) {
-    const difficulties = completedTopics.map(t => t.difficulty || 3).filter(d => d > 0);
-    if (difficulties.length < 3) return { insight: null };
-
-    const recent = difficulties.slice(-5);
-    const earlier = difficulties.slice(0, -5);
-
-    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
-    const earlierAvg =
-      earlier.length > 0 ? earlier.reduce((a, b) => a + b, 0) / earlier.length : recentAvg;
-
-    let insight = null;
-    let evidence = [];
-
-    if (recentAvg > earlierAvg + 1) {
-      insight = "Difficulty escalation detected - you're taking on increasingly challenging tasks";
-      evidence = [
-        `Recent avg difficulty: ${recentAvg.toFixed(1)}`,
-        `Earlier avg: ${earlierAvg.toFixed(1)}`,
-      ];
-    } else if (recentAvg < earlierAvg - 1) {
-      insight = 'Difficulty reduction pattern - focusing on consolidation or easier tasks';
-      evidence = [
-        `Recent avg difficulty: ${recentAvg.toFixed(1)}`,
-        `Earlier avg: ${earlierAvg.toFixed(1)}`,
-      ];
-    } else if (Math.max(...recent) - Math.min(...recent) < 1) {
-      insight = 'Consistent difficulty level - maintaining steady challenge';
-      evidence = [`Difficulty range: ${Math.min(...recent)}-${Math.max(...recent)}`];
-    }
-
-    return { insight, evidence };
-  }
-
-  analyzeEngagementPattern(completedTopics) {
-    const engagementScores = completedTopics.map(t => {
-      const learned = (t.learned || '').length;
-      const questions = (t.nextQuestions || '').length;
-      return Math.min(10, (learned + questions) / 20); // Normalize to 0-10
-    });
-
-    if (engagementScores.length < 3) return { insight: null };
-
-    const avgEngagement = engagementScores.reduce((a, b) => a + b, 0) / engagementScores.length;
-    const recent = engagementScores.slice(-3);
-    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
-
-    let insight = null;
-    let evidence = [];
-
-    if (avgEngagement > 7) {
-      insight = 'High engagement pattern - consistently deep learning';
-      evidence = [`Average engagement: ${avgEngagement.toFixed(1)}/10`];
-    } else if (recentAvg > avgEngagement + 2) {
-      insight = 'Increasing engagement - recent tasks showing deeper involvement';
-      evidence = [
-        `Recent engagement: ${recentAvg.toFixed(1)}`,
-        `Overall avg: ${avgEngagement.toFixed(1)}`,
-      ];
-    } else if (avgEngagement < THRESHOLDS.LOW_ENGAGEMENT) {
-      insight = 'Low engagement pattern - consider adjusting task types or difficulty';
-      evidence = [`Average engagement: ${avgEngagement.toFixed(1)}/10`];
-    }
-
-    return { insight, evidence };
-  }
-
-  analyzeVelocityPattern(completedTopics) {
-    const now = Date.now();
-    const recentTasks = completedTopics.filter(t => {
-      const taskDate = new Date(t.completedAt || t.timestamp || now);
-      return now - taskDate.getTime() < THRESHOLDS.RECENT_DAYS * 24 * 60 * 60 * 1000;
-    });
-
-    if (recentTasks.length < THRESHOLDS.MIN_TASKS_FOR_ANALYSIS) return { insight: null };
-
-    const velocityScore = recentTasks.length / THRESHOLDS.RECENT_DAYS;
-    let insight = null;
-    const evidence = [`${recentTasks.length} tasks in last ${THRESHOLDS.RECENT_DAYS} days`];
-
-    if (velocityScore > 1) {
-      insight = 'High velocity learning - completing multiple tasks per day';
-    } else if (velocityScore > 0.5) {
-      insight = 'Steady learning pace - consistent task completion';
-    } else {
-      insight = 'Slower learning pace - consider smaller tasks or addressing barriers';
-    }
-
-    return { insight, evidence };
-  }
-
-  analyzeBreakthroughPattern(completedTopics) {
-    const breakthroughs = completedTopics.filter(t => t.breakthrough);
-    if (breakthroughs.length === 0) return { insight: null };
-
-    const breakthroughRate = breakthroughs.length / completedTopics.length;
-    let insight = null;
-    const evidence = [
-      `${breakthroughs.length} breakthroughs out of ${completedTopics.length} tasks`,
-    ];
-
-    if (breakthroughRate > INTELLIGENCE_CONSTANTS.LOW_ENGAGEMENT_QUALITY_THRESHOLD) {
-      insight = 'High breakthrough rate - excellent learning momentum';
-    } else if (breakthroughRate > INTELLIGENCE_CONSTANTS.PRODUCTIVITY_DECLINE_THRESHOLD) {
-      insight = 'Regular breakthroughs - good learning progress';
-    } else {
-      insight = 'Few breakthroughs - consider exploring new approaches or increasing challenge';
-    }
-
-    return { insight, evidence };
-  }
-
-  async generatePacingContext(projectId) {
-    const config = await this.dataPersistence.loadProjectData(projectId, FILE_NAMES.CONFIG);
-    const urgencyLevel = config?.urgency_level || 'medium';
-    const createdDate = new Date(config?.created_at || Date.now());
-    const daysSinceStart = Math.floor(
-      (Date.now() - createdDate.getTime()) / INTELLIGENCE_CONSTANTS.MILLISECONDS_PER_DAY
-    );
-
-    const htaData = await this.loadHTA(projectId, config?.activePath || DEFAULT_PATHS.GENERAL);
-    const progress = this.calculateProgress(htaData);
-
-    const pacingAnalysis = this.analyzePacing(urgencyLevel, daysSinceStart, progress);
-
-    return {
-      urgencyLevel,
-      daysSinceStart,
-      progress,
-      pacingAnalysis,
-      recommendations: this.generatePacingRecommendations(pacingAnalysis, urgencyLevel),
-    };
-  }
-
-  calculateProgress(htaData) {
-    if (!htaData?.frontierNodes?.length) return 0;
-
-    const completed = htaData.frontierNodes.filter(task => task.completed).length;
-    return Math.round(
-      (completed / htaData.frontierNodes.length) * INTELLIGENCE_CONSTANTS.ENGAGEMENT_QUALITY_DIVISOR
-    );
-  }
-
-  analyzePacing(urgencyLevel, daysSinceStart, progress) {
-    const expectedProgress = this.getExpectedProgress(urgencyLevel, daysSinceStart);
-    const progressDelta = progress - expectedProgress;
-
-    let status = 'on_track';
-    let message = 'Progress is aligned with expectations';
-
-    if (progressDelta > INTELLIGENCE_CONSTANTS.PRODUCTIVITY_DECLINE_MULTIPLIER) {
-      status = 'ahead';
-      message = 'Excellent progress - ahead of expected pace';
-    } else if (progressDelta < -INTELLIGENCE_CONSTANTS.PRODUCTIVITY_DECLINE_MULTIPLIER) {
-      status = 'behind';
-      message = 'Progress is behind expected pace';
-    } else if (progressDelta < -INTELLIGENCE_CONSTANTS.PRODUCTIVITY_LOW_THRESHOLD) {
-      status = 'slightly_behind';
-      message = 'Progress is slightly behind expectations';
-    }
-
-    return {
-      status,
-      message,
-      expectedProgress,
-      actualProgress: progress,
-      progressDelta,
-    };
-  }
-
-  getExpectedProgress(urgencyLevel, daysSinceStart) {
-    const urgencyMultipliers = {
-      low: 0.5,
-      medium: 1.0,
-      high: 1.5,
-      critical: 2.0,
-    };
-
-    const baseProgressPerDay = INTELLIGENCE_CONSTANTS.ENGAGEMENT_INCREASE_THRESHOLD; // 2% per day baseline
-    const multiplier = urgencyMultipliers[urgencyLevel] || 1.0;
-
-    return Math.min(
-      INTELLIGENCE_CONSTANTS.ENGAGEMENT_QUALITY_DIVISOR,
-      daysSinceStart * baseProgressPerDay * multiplier
-    );
-  }
-
-  generateRecommendations(deductions, pacingContext) {
-    const recommendations = [];
-
-    // Pacing-based recommendations
-    if (pacingContext.pacingAnalysis.status === 'behind') {
-      recommendations.push('Consider increasing task frequency or reducing task complexity');
-    } else if (pacingContext.pacingAnalysis.status === 'ahead') {
-      recommendations.push(
-        'Excellent pace - consider increasing task complexity or exploring advanced topics'
-      );
-    }
-
-    // Deduction-based recommendations
-    deductions.forEach(deduction => {
-      switch (deduction.type) {
-        case 'engagement_pattern':
-          if (deduction.insight.includes('Low engagement')) {
-            recommendations.push(
-              'Try varying task types or adjusting difficulty to increase engagement'
-            );
-          }
-          break;
-        case 'difficulty_pattern':
-          if (deduction.insight.includes('reduction')) {
-            recommendations.push(
-              'Consider gradually increasing task difficulty to maintain growth'
-            );
-          }
-          break;
-        case 'velocity_pattern':
-          if (deduction.insight.includes('Slower')) {
-            recommendations.push(
-              'Break down tasks into smaller chunks or address potential barriers'
-            );
-          }
-          break;
-        case 'breakthrough_pattern':
-          if (deduction.insight.includes('Few breakthroughs')) {
-            recommendations.push('Explore new learning approaches or increase challenge level');
-          }
-          break;
-      }
-    });
-
-    return recommendations.length > 0
-      ? recommendations
-      : ['Continue with current approach - patterns look healthy'];
-  }
-
-  generatePacingRecommendations(pacingAnalysis, urgencyLevel) {
-    const recommendations = [];
-
-    if (pacingAnalysis.status === 'behind') {
-      if (urgencyLevel === 'critical') {
-        recommendations.push('URGENT: Significantly increase daily task completion');
-        recommendations.push('Consider simplifying tasks or getting additional support');
-      } else {
-        recommendations.push('Increase task frequency or reduce complexity');
-        recommendations.push('Identify and address any blocking factors');
-      }
-    } else if (pacingAnalysis.status === 'ahead') {
-      recommendations.push('Great progress! Consider increasing task complexity');
-      recommendations.push('Explore advanced topics or additional learning paths');
-    }
-
-    return recommendations;
-  }
-
-  // ===== UTILITY METHODS =====
-
-  async loadLearningHistory(projectId, pathName) {
-    const config = await this.dataPersistence.loadProjectData(projectId, FILE_NAMES.CONFIG);
-    const canonicalPath = pathName || (config && config.activePath) || DEFAULT_PATHS.GENERAL;
-    try {
-      const historyData = await this.dataPersistence.loadPathData(projectId, canonicalPath, FILE_NAMES.LEARNING_HISTORY);
-      return historyData || { completedTopics: [] };
-    } catch (error) {
-      console.warn('Failed to load learning history:', error.message);
-      return { completedTopics: [] };
-    }
-  }
-
-  async loadHTA(projectId, pathName) {
-    const config = await this.dataPersistence.loadProjectData(projectId, FILE_NAMES.CONFIG);
-    const canonicalPath = pathName || (config && config.activePath) || DEFAULT_PATHS.GENERAL;
-    try {
-      const htaData = await this.dataPersistence.loadPathData(projectId, canonicalPath, FILE_NAMES.HTA);
-      return htaData;
-    } catch (error) {
-      console.warn('Failed to load HTA data:', error.message);
-      return null;
-    }
-  }
-
-  formatReasoningReport(analysis, includeDetailedAnalysis) {
-    const { deductions, pacingContext, recommendations } = analysis;
-
-    let report = '# 🧠 Reasoning Analysis Report\n\n';
-
-    // Pacing Summary
-    report += `## 📊 Progress Pacing\n`;
-    report += `**Status**: ${pacingContext.pacingAnalysis.status.replace('_', ' ').toUpperCase()}\n`;
-    report += `**Progress**: ${pacingContext.progress}% (Expected: ${pacingContext.pacingAnalysis.expectedProgress}%)\n`;
-    report += `**Days Active**: ${pacingContext.daysSinceStart}\n`;
-    report += `**Urgency Level**: ${pacingContext.urgencyLevel}\n\n`;
-
-    // Key Insights
-    if (deductions.length > 0) {
-      report += `## 🔍 Key Insights\n`;
-      deductions.forEach((deduction, index) => {
-        report += `**${index + 1}. ${deduction.type.replace('_', ' ').toUpperCase()}**\n`;
-        report += `${deduction.insight}\n`;
-        if (includeDetailedAnalysis && deduction.evidence?.length > 0) {
-          report += `*Evidence: ${deduction.evidence.join(', ')}*\n`;
-        }
-        report += '\n';
-      });
-    } else {
-      report += `## 🔍 Key Insights\n`;
-      report += `Insufficient data for pattern analysis. Complete more tasks to unlock insights.\n\n`;
-    }
-
-    // Recommendations
-    report += `## 💡 Recommendations\n`;
-    recommendations.forEach((rec, index) => {
-      report += `${index + 1}. ${rec}\n`;
-    });
-
-    // Pacing Recommendations
-    if (pacingContext.recommendations?.length > 0) {
-      report += `\n**Pacing Recommendations:**\n`;
-      pacingContext.recommendations.forEach((rec, index) => {
-        report += `• ${rec}\n`;
-      });
-    }
-
-    report += `\n---\n*Analysis generated at ${new Date(analysis.timestamp).toLocaleString()}*`;
-
-    return report;
-  }
-
-  
-  
-  // ===== ENHANCED VECTOR DATABASE INTEGRATION =====
-  
-  get qdrantClient() {
-    return this._vectorStore?.qdrantClient || null;
-  }
-  
-  get localVectorStore() {
-    return this._vectorStore?.localStore || this._vectorStore || null;
-  }
-  
-  async ensureVectorDatabase() {
-    if (!this._vectorStore) {
-      await this.initializeVectorCapabilities();
-    }
-    
-    return {
-      available: !!this._vectorStore,
-      type: this._vectorStore?.provider || 'local',
-      initialized: !!this._vectorStore,
-      client: this.qdrantClient,
-      store: this.localVectorStore
-    };
-  }
-  
-  async testVectorCapabilities() {
-    try {
-      const dbStatus = await this.ensureVectorDatabase();
-      
-      if (dbStatus.available) {
-        // Test basic vector operations
-        const testResult = await this.findSimilarTasks('test query', 1);
-        return {
-          working: true,
-          tested: true,
-          provider: dbStatus.type,
-          results: testResult.length >= 0
-        };
-      }
-      
-      return {
-        working: false,
-        tested: true,
-        provider: 'none',
-        error: 'Vector database not available'
-      };
-    } catch (error) {
-      return {
-        working: false,
-        tested: true,
-        provider: 'error',
-        error: error.message
-      };
-    }
-  }
-
-  // ===== VECTOR INTELLIGENCE CAPABILITIES =====
-  
-  get vectorStore() {
-    return this._vectorStore || null;
-  }
-  
-  get embeddingService() {
-    return this._embeddingService || null;
-  }
-  
-  async initializeVectorCapabilities() {
-    try {
-      const { HTAVectorStore } = await import('./hta-vector-store.js');
-      const dataDir = this.dataPersistence?.dataDir || process.env.FOREST_DATA_DIR || '.forest-data';
-      
-      this._vectorStore = new HTAVectorStore(dataDir);
-      await this._vectorStore.initialize();
-      
-      this.log('✅ Vector capabilities initialized', 'INFO');
-      return true;
-    } catch (error) {
-      this.log(`⚠️ Vector initialization failed: ${error.message}`, 'WARN');
-      return false;
-    }
-  }
-  
-  async findSimilarTasks(taskDescription, limit = 5) {
-    if (!this._vectorStore) {
-      await this.initializeVectorCapabilities();
-    }
-    
-    if (this._vectorStore) {
-      try {
-        return await this._vectorStore.findSimilar(taskDescription, limit);
-      } catch (error) {
-        this.log(`Vector search failed: ${error.message}`, 'WARN');
-        return [];
-      }
-    }
-    
+    // Simplified for MCP delegation
     return [];
   }
 
-  // ===== AST PARSING CAPABILITIES =====
-  
-  hasASTCapabilities() {
-    return true;
-  }
-  
-  async parseAST(code, language = 'javascript') {
-    try {
-      // Basic AST parsing functionality for Forest system
-      const analysis = {
-        language,
-        functions: this.extractFunctions(code),
-        imports: this.extractImports(code),
-        exports: this.extractExports(code),
-        complexity: this.calculateCodeComplexity(code),
-        timestamp: new Date().toISOString()
-      };
-      
-      return analysis;
-    } catch (error) {
-      this.log(`AST parsing failed: ${error.message}`, 'WARN');
-      return {
-        language,
-        error: error.message,
-        timestamp: new Date().toISOString()
-      };
-    }
-  }
-  
-  extractFunctions(code) {
-    // Simple function extraction using regex
-    const functionRegex = /(?:function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)|([a-zA-Z_$][a-zA-Z0-9_$]*)\s*[:=]\s*(?:async\s+)?function|([a-zA-Z_$][a-zA-Z0-9_$]*)\s*[:=]\s*\([^)]*\)\s*=>)/g;
-    const functions = [];
-    let match;
-    
-    while ((match = functionRegex.exec(code)) !== null) {
-      const functionName = match[1] || match[2] || match[3];
-      if (functionName) {
-        functions.push(functionName);
-      }
-    }
-    
-    return functions;
-  }
-  
-  extractImports(code) {
-    const importRegex = /import\s+.*?from\s+['"]([^'"]+)['"];?/g;
-    const imports = [];
-    let match;
-    
-    while ((match = importRegex.exec(code)) !== null) {
-      imports.push(match[1]);
-    }
-    
-    return imports;
-  }
-  
-  extractExports(code) {
-    const exportRegex = /export\s+(?:default\s+)?(?:class|function|const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
-    const exports = [];
-    let match;
-    
-    while ((match = exportRegex.exec(code)) !== null) {
-      exports.push(match[1]);
-    }
-    
-    return exports;
-  }
-  
-  calculateCodeComplexity(code) {
-    // Simple complexity calculation based on control structures
-    const complexityPatterns = [
-      /if\s*\(/g,
-      /else\s*if\s*\(/g,
-      /for\s*\(/g,
-      /while\s*\(/g,
-      /switch\s*\(/g,
-      /catch\s*\(/g,
-      /\?\s*[^:]+:/g  // ternary operators
-    ];
-    
-    let complexity = 1; // Base complexity
-    
-    complexityPatterns.forEach(pattern => {
-      const matches = code.match(pattern);
-      if (matches) {
-        complexity += matches.length;
-      }
-    });
-    
-    return complexity;
+  async generateLLMResponse({ context, prompt, format = 'json' }) {
+    const system = `Generate response for context: ${context}`;
+    const request = MCPIntelligenceCore.createIntelligenceRequest(
+      system, prompt, { responseFormat: format }
+    );
+    return await this.mcpCore.request(request);
   }
 }
+
+export { MCPIntelligenceCore, ForestIntelligenceAdapter };
